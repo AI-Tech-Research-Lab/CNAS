@@ -394,11 +394,6 @@ def _data_transforms(args):
     ])
     return train_transform, valid_transform
 
-
-if __name__ == '__main__':
-    main()
-
-
 ## ADAPTIVE MODELS ##
 
 # Compute score margin
