@@ -60,6 +60,8 @@ parser.add_argument('--drop-path', type=float, default=0.2, metavar='PCT',
                     help='Drop path rate (default: None)')
 parser.add_argument('--img-size', type=int, default=224,
                     help='input resolution (192 -> 256)')
+parser.add_argument('--threshold', type=float, default=0.2,
+                    help='threshold for score margin')
 args = parser.parse_args()
 
 dataset = args.dataset
@@ -179,29 +181,28 @@ def main():
 
     n_epochs = args.epochs
 
-    parameters = filter(lambda p: p.requires_grad, net.parameters())
-
     criterion = nn.CrossEntropyLoss().to(device)
 
-    optimizer = optim.SGD(parameters,
-                          lr=args.lr,
-                          momentum=args.momentum,
-                          weight_decay=args.weight_decay)
-
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, n_epochs)
+    if args.evaluate:
+        adaptive_infer(valid_queue, m1, m2, criterion, args.threshold)
+        sys.exit(0)
 
     nets = [m1,m2]
     infos = [info_m1,info_m2]
-    threshold = 0.2
-
-    if args.evaluate:
-        adaptive_infer(valid_queue, m1, m2, criterion, threshold)
-        sys.exit(0)
     
     for i in [0,1]:
 
         net = nets[i]
         info = infos[i]
+
+        parameters = filter(lambda p: p.requires_grad, net.parameters())
+
+        optimizer = optim.SGD(parameters,
+                            lr=args.lr,
+                            momentum=args.momentum,
+                            weight_decay=args.weight_decay)
+
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, n_epochs)
 
         for epoch in range(n_epochs):
 
