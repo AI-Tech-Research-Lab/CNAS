@@ -1,0 +1,1 @@
+{"params": 0.42, "flops": 106.95, "activations": 0.84, "tiny_ml": 3.93375, "gpu": null, "cpu": null, "loss": 1.4615232372283935, "top1": 48.26, "top5": 69.08}
