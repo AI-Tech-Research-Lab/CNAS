@@ -132,9 +132,9 @@ def main():
     net_config = json.load(open(args.model1_config))
     m1 = NSGANetV2.build_from_config(net_config, drop_connect_rate=args.drop_path)
     ####
-    if(args.initial_checkpoint != ''):
+    if(args.initial_checkpoint1 != ''):
     ####
-      init = torch.load(args.initial_checkpoint, map_location='cpu')['state_dict'] # pretrained weigths
+      init = torch.load(args.initial_checkpoint1, map_location='cpu')['state_dict'] # pretrained weigths
       m1.load_state_dict(init) 
     
     NSGANetV2.reset_classifier(
@@ -146,9 +146,9 @@ def main():
     net_config = json.load(open(args.model2_config))
     m2 = NSGANetV2.build_from_config(net_config, drop_connect_rate=args.drop_path)
     ####
-    if(args.initial_checkpoint != ''):
+    if(args.initial_checkpoint2 != ''):
     ####
-      init = torch.load(args.initial_checkpoint, map_location='cpu')['state_dict']
+      init = torch.load(args.initial_checkpoint2, map_location='cpu')['state_dict']
       m2.load_state_dict(init)
     
     NSGANetV2.reset_classifier(
