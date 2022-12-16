@@ -50,7 +50,9 @@ parser.add_argument('--model1-config', type=str, default=None,
                     help='location of a json file of specific model declaration')
 parser.add_argument('--model2-config', type=str, default=None,
                     help='location of a json file of specific model declaration')
-parser.add_argument('--initial-checkpoint', default='', type=str, metavar='PATH',
+parser.add_argument('--initial-checkpoint1', default='', type=str, metavar='PATH',
+                    help='Initialize model from this checkpoint (default: none)')
+parser.add_argument('--initial-checkpoint2', default='', type=str, metavar='PATH',
                     help='Initialize model from this checkpoint (default: none)')
 parser.add_argument('--drop', type=float, default=0.2,
                     help='dropout rate')
@@ -190,9 +192,10 @@ def main():
 
     nets = [m1,m2]
     infos = [info_m1,info_m2]
-    
+    threshold = 0.2
+
     if args.evaluate:
-        adaptive_infer(valid_queue, m1, m2, criterion)
+        adaptive_infer(valid_queue, m1, m2, criterion, threshold)
         sys.exit(0)
     
     for i in [0,1]:
@@ -404,11 +407,6 @@ def get_score_margin(outputs):
     l = top2_prob.tolist()
     score_margin = l[0] - l[1]
     return score_margin
-
-def adaptive_infer (m1, m2, theta, train_queue, valid_queue, criterion, optimizer): 
-    #m1: model N1, #m2: model N2, #theta: threshold
-    train(train_queue, m1, criterion, optimizer)
-
 
 if __name__ == '__main__':
     main()
