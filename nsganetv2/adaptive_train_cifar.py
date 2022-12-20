@@ -331,7 +331,7 @@ def adaptive_infer(valid_queue, m1, m2, criterion, threshold):
             loss = criterion(outputs[None,:], targets)
 
             test_loss += loss.item()
-            _, predicted = outputs.max(1)
+            _, predicted = outputs[None,:].max(1)
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
 
