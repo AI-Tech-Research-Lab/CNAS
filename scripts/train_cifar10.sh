@@ -1,12 +1,10 @@
 cd ../nsganetv2
 
 python train_cifar.py --data ../data/cifar10 --dataset cifar10 \
-    --epochs 5 \
+    --epochs 20 \
     --cutout --autoaugment \
     --save ../results \
-    --evaluate \
     --model adapt_tinynsganet \
-    --model-config ../results/20221220-154050cifar10adapt_tinynsganet40/net_flops@7.config \
-    --initial-checkpoint ../results/20221220-154050cifar10adapt_tinynsganet40/net_flops@7.best \
+    --model-config ../benchmarks/tiny_ml/search-cifar10-mbv3-w1.0-2022-03-23/final/net-tiny_ml@3/net.config \
     --drop 0.2 --drop-path 0.2 \
     --img-size 40
