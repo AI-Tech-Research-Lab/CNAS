@@ -2,8 +2,7 @@ cd ../nsganetv2
 
 python adaptive_train_cifar.py --data ../data/cifar10 --dataset cifar10 \
     --epochs 20 \
-    --cutout --autoaugment --save ../results \
-    --evaluate \
+    --cutout --autoaugment \
     --model adapt_tinynsganet \
     --model1-config ../results/20221220-104528cifar10adapt_tinynsganet40/net_flops@7.config \
     --model2-config ../results/20221220-104528cifar10adapt_tinynsganet40/net_flops@23.config \
