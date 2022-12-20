@@ -316,6 +316,7 @@ def adaptive_infer(valid_queue, m1, m2, criterion, threshold):
         for step, (inputs, targets) in enumerate(valid_queue): #bs of valid_queue set to 1
             
             inputs, targets = inputs.to(device), targets.to(device)
+            print(inputs.shape)
             outputs = m1(inputs)
             print(outputs)
             print(targets)
