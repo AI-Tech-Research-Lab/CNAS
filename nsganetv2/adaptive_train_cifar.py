@@ -322,7 +322,7 @@ def adaptive_infer(valid_queue, m1, m2, criterion, threshold):
                 outputs = m2(inputs)
                 count_m2 += 1
             '''
-            if (inputs.shape[0] == 1) #bs set to 1
+            if (inputs.shape[0] == 1): #bs set to 1
                outputs = outputs[None,:]
             loss = criterion(outputs, targets)
 
