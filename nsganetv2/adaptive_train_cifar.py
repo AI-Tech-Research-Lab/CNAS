@@ -163,13 +163,13 @@ def main():
     info_m1 = {}
     info_m1['flops'] = profile_macs(copy.deepcopy(m1), inputs) / 1e6
     info_m1['params'] = sum(p.numel() for p in m1.parameters() if p.requires_grad) / 1e6
-    info_m1['name'] = "net_flops@{:.0f}".format(info_m1['flops'])
+    info_m1['net_name'] = "net_flops@{:.0f}".format(info_m1['flops'])
     logging.info('#params {:.2f}M, #flops {:.0f}M'.format(info_m1['params'], info_m1['flops']))
 
     info_m2 = {}
     info_m2['flops'] = profile_macs(copy.deepcopy(m2), inputs) / 1e6
     info_m2['params'] = sum(p.numel() for p in m2.parameters() if p.requires_grad) / 1e6
-    info_m2['name'] = "net_flops@{:.0f}".format(info_m2['flops'])
+    info_m2['net_name'] = "net_flops@{:.0f}".format(info_m2['flops'])
     logging.info('#params {:.2f}M, #flops {:.0f}M'.format(info_m2['params'], info_m2['flops']))
 
     if args.n_gpus > 1:
