@@ -128,6 +128,7 @@ def main():
     ####
     if(args.initial_checkpoint != ''):
     ####
+      print('Loading pretrained weights')
       init = torch.load(args.initial_checkpoint, map_location='cpu')['state_dict']
       net.load_state_dict(init)
     
