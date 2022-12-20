@@ -127,7 +127,7 @@ def main():
         train_data, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=args.num_workers)
 
     valid_queue = torch.utils.data.DataLoader(
-        valid_data, batch_size=200, shuffle=False, pin_memory=True, num_workers=args.num_workers)
+        valid_data, batch_size=1, shuffle=False, pin_memory=True, num_workers=args.num_workers)
     
     # load model m1
 
@@ -328,7 +328,7 @@ def adaptive_infer(valid_queue, m1, m2, criterion, threshold):
                 count_m2 += 1
             '''
 
-            loss = criterion(outputs, targets)
+            loss = criterion(outputs[None,:], targets)
 
             test_loss += loss.item()
             _, predicted = outputs.max(1)
