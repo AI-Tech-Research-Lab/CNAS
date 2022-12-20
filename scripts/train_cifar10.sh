@@ -1,7 +1,7 @@
 cd ../nsganetv2
 
 python train_cifar.py --data ../data/cifar10 --dataset cifar10 \
-    --epochs 20 \
+    --epochs 5 \
     --cutout --autoaugment \
     --save ../results \
     --evaluate \
