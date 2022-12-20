@@ -336,7 +336,7 @@ def adaptive_infer(valid_queue, m1, m2, criterion, threshold):
 
     acc = 100.*correct/total
     logging.info('valid acc %f', 100. * correct / total)
-    print('Usage percentage of model m2: %f', 100. * count_m2 / total)
+    logging.info('Usage percentage of model m2: %f', 100. * count_m2 / total)
 
     return test_loss/total, acc
 
