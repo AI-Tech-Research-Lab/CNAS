@@ -314,12 +314,16 @@ def adaptive_infer(valid_queue, m1, m2, criterion, threshold):
 
     with torch.no_grad():
         for step, (inputs, targets) in enumerate(valid_queue): #bs of valid_queue set to 1
+            
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = m1(inputs)
 
             if get_score_margin(outputs) >= threshold:
                 outputs = m2(inputs)
                 count_m2 += 1
+
+            print(len(outputs))
+            print(len(targets))
 
             loss = criterion(outputs, targets)
 
