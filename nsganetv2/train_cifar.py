@@ -125,12 +125,6 @@ def main():
 
     net_config = json.load(open(args.model_config))
     net = NSGANetV2.build_from_config(net_config, drop_connect_rate=args.drop_path)
-    ####
-    if(args.initial_checkpoint != ''):
-    ####
-      print('Loading pretrained weights')
-      init = torch.load(args.initial_checkpoint, map_location='cpu')['state_dict']
-      net.load_state_dict(init)
     
     NSGANetV2.reset_classifier(
         net, last_channel=net.classifier.in_features,
@@ -161,6 +155,14 @@ def main():
                           weight_decay=args.weight_decay)
 
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, n_epochs)
+
+    ####
+    if(args.initial_checkpoint != ''):
+    ####
+      print('Loading pretrained weights')
+      init = torch.load(args.initial_checkpoint, map_location='cpu')
+      net.load_state_dict(init['state_dict'])
+      optimizer.load_state_dict(init['optimizer_state_dict'])
     
     
     if args.evaluate:
@@ -178,12 +180,12 @@ def main():
         # checkpoint saving
         if save:
             if len(top_checkpoints) < args.topk:
-                OFAEvaluator.save_net(save, net, net_name+'.ckpt{}'.format(epoch))
+                save_net(save, net, net_name+'.ckpt{}'.format(epoch), optimizer)
                 top_checkpoints.append((os.path.join(save, net_name+'.ckpt{}'.format(epoch)), valid_acc))
             else:
                 idx = np.argmin([x[1] for x in top_checkpoints])
                 if valid_acc > top_checkpoints[idx][1]:
-                    OFAEvaluator.save_net(save, net, net_name + '.ckpt{}'.format(epoch))
+                    save_net(save, net, net_name + '.ckpt{}'.format(epoch), optimizer)
                     top_checkpoints.append((os.path.join(save, net_name+'.ckpt{}'.format(epoch)), valid_acc))
                     # remove the idx
                     os.remove(top_checkpoints[idx][0])
@@ -191,7 +193,7 @@ def main():
                     print(top_checkpoints)
 
             if valid_acc > best_acc:
-                OFAEvaluator.save_net(save, net, net_name + '.best')
+                save_net(save, net, net_name + '.best', optimizer)
                 #best_acc = valid_acc
 
         ## Early stopping ##
@@ -210,6 +212,19 @@ def main():
     OFAEvaluator.save_net_config(save, net, net_name+'.config')
     
     return
+
+def save_net(path, net, model_name, optimizer):
+        print("SAVE NET!!")
+        """ dump net weight as checkpoint """
+        if isinstance(net, torch.nn.DataParallel):
+            checkpoint = {'state_dict': net.module.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict()}
+        else:
+            checkpoint = {'state_dict': net.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict()}
+        model_path = os.path.join(path, model_name)
+        torch.save(checkpoint, model_path)
+        print('Network model dump to %s' % model_path)
 
 # Training
 def train(train_queue, net, criterion, optimizer):
