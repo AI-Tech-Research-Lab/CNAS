@@ -184,7 +184,8 @@ def main():
     criterion = nn.CrossEntropyLoss().to(device)
 
     if args.evaluate:
-        adaptive_infer(valid_queue, m1, m2, criterion, args.threshold)
+        # adaptive_infer(valid_queue, m1, m2, criterion, args.threshold)
+        infer(valid_queue,m1,criterion)
         sys.exit(0)
 
     nets = [m1,m2]
