@@ -133,29 +133,11 @@ def main():
 
     net_config = json.load(open(args.model1_config))
     m1 = NSGANetV2.build_from_config(net_config, drop_connect_rate=args.drop_path)
-    ####
-    if(args.initial_checkpoint1 != ''):
-    ####
-      init = torch.load(args.initial_checkpoint1, map_location='cpu')['state_dict'] # pretrained weigths
-      m1.load_state_dict(init) 
-    
-    NSGANetV2.reset_classifier(
-        m1, last_channel=m1.classifier.in_features,
-        n_classes=NUM_CLASSES, dropout_rate=args.drop)
 
     # load model m2
     
     net_config = json.load(open(args.model2_config))
     m2 = NSGANetV2.build_from_config(net_config, drop_connect_rate=args.drop_path)
-    ####
-    if(args.initial_checkpoint2 != ''):
-    ####
-      init = torch.load(args.initial_checkpoint2, map_location='cpu')['state_dict']
-      m2.load_state_dict(init)
-    
-    NSGANetV2.reset_classifier(
-        m2, last_channel=m2.classifier.in_features,
-        n_classes=NUM_CLASSES, dropout_rate=args.drop)
     
     # calculate #Paramaters and #FLOPS of the models
     inputs = torch.randn(1, 3, args.img_size, args.img_size)
@@ -183,68 +165,57 @@ def main():
 
     criterion = nn.CrossEntropyLoss().to(device)
 
-    if args.evaluate:
-        # adaptive_infer(valid_queue, m1, m2, criterion, args.threshold)
-        infer(valid_queue,m1,criterion)
-        sys.exit(0)
+    #M1 LOAD STATE
 
-    nets = [m1,m2]
-    infos = [info_m1,info_m2]
+    parameters_m1 = filter(lambda p: p.requires_grad, m1.parameters())
+
+    optimizer_m1 = optim.SGD(parameters_m1,
+                        lr=args.lr,
+                        momentum=args.momentum,
+                        weight_decay=args.weight_decay)
+
+    scheduler_m1 = optim.lr_scheduler.CosineAnnealingLR(optimizer_m1, n_epochs)
+
+    ####
+    if(args.initial_checkpoint1 != ''):
+    ####
+      init = torch.load(args.initial_checkpoint1, map_location='cpu') # pretrained weigths
+      m1.load_state_dict(init['state_dict'])
+      optimizer_m1.load_state_dict(init['optimizer_state_dict'])
     
-    for i in [0,1]:
+    NSGANetV2.reset_classifier(
+        m1, last_channel=m1.classifier.in_features,
+        n_classes=NUM_CLASSES, dropout_rate=args.drop)
 
-        net = nets[i]
-        info = infos[i]
+    #M2 LOAD STATE
 
-        parameters = filter(lambda p: p.requires_grad, net.parameters())
+    parameters_m2 = filter(lambda p: p.requires_grad, m2.parameters())
 
-        optimizer = optim.SGD(parameters,
-                            lr=args.lr,
-                            momentum=args.momentum,
-                            weight_decay=args.weight_decay)
+    optimizer_m2 = optim.SGD(parameters_m2,
+                        lr=args.lr,
+                        momentum=args.momentum,
+                        weight_decay=args.weight_decay)
 
-        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, n_epochs)
+    scheduler_m2 = optim.lr_scheduler.CosineAnnealingLR(optimizer_m2, n_epochs)
 
-        for epoch in range(n_epochs):
+    ####
+    if(args.initial_checkpoint2 != ''):
+    ####
+      init = torch.load(args.initial_checkpoint2, map_location='cpu') # pretrained weigths
+      m2.load_state_dict(init['state_dict'])
+      optimizer_m2.load_state_dict(init['optimizer_state_dict'])
+    
+    NSGANetV2.reset_classifier(
+        m2, last_channel=m2.classifier.in_features,
+        n_classes=NUM_CLASSES, dropout_rate=args.drop)
 
-            logging.info('epoch %d lr %e', epoch, scheduler.get_lr()[0])
 
-            train(train_queue, net, criterion, optimizer)
-            _, valid_acc = infer(valid_queue, net, criterion) #validation
-
-            # checkpoint saving
-            if args.save is not None:
-                if len(top_checkpoints) < args.topk:
-                    OFAEvaluator.save_net(save, net, info['net_name']+'.ckpt{}'.format(epoch))
-                    top_checkpoints.append((os.path.join(save, info['net_name']+'.ckpt{}'.format(epoch)), valid_acc))
-                else:
-                    idx = np.argmin([x[1] for x in top_checkpoints])
-                    if valid_acc > top_checkpoints[idx][1]:
-                        OFAEvaluator.save_net(save, net, info['net_name'] + '.ckpt{}'.format(epoch))
-                        top_checkpoints.append((os.path.join(save, info['net_name']+'.ckpt{}'.format(epoch)), valid_acc))
-                        # remove the idx
-                        os.remove(top_checkpoints[idx][0])
-                        top_checkpoints.pop(idx)
-                        print(top_checkpoints)
-
-                if valid_acc > best_acc:
-                    OFAEvaluator.save_net(save, net, info['net_name'] + '.best')
-                    #best_acc = valid_acc
-
-            ## Early stopping ##
-            if valid_acc <= best_acc:
-              counter = counter + 1
-            else:
-              counter = 0
-            best_acc = valid_acc
-
-            if counter>=patience:
-              break
-            ##  
-            else:
-              scheduler.step()
-
-        OFAEvaluator.save_net_config(save, net, info['net_name']+'.config')
+    if args.evaluate:
+        adaptive_infer(valid_queue, m1, m2, criterion, args.threshold)
+        #infer(valid_queue,m1,criterion)
+        sys.exit(0)
+    else:
+        print("Not implemented!")
     
     return
 
