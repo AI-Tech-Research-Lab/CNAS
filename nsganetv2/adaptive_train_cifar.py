@@ -213,7 +213,7 @@ def main():
             _, valid_acc = infer(valid_queue, net, criterion) #validation
 
             # checkpoint saving
-            if save:
+            if args.save is not None:
                 if len(top_checkpoints) < args.topk:
                     OFAEvaluator.save_net(save, net, info['net_name']+'.ckpt{}'.format(epoch))
                     top_checkpoints.append((os.path.join(save, info['net_name']+'.ckpt{}'.format(epoch)), valid_acc))
