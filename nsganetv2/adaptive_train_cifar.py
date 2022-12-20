@@ -316,22 +316,18 @@ def adaptive_infer(valid_queue, m1, m2, criterion, threshold):
         for step, (inputs, targets) in enumerate(valid_queue): #bs of valid_queue set to 1
             
             inputs, targets = inputs.to(device), targets.to(device)
-            print(inputs.shape)
             outputs = m1(inputs)
-            print(outputs)
-            print(targets)
-            print(outputs.shape)
-            print(targets.shape)
             '''
             if get_score_margin(outputs) >= threshold:
                 outputs = m2(inputs)
                 count_m2 += 1
             '''
-
-            loss = criterion(outputs[None,:], targets)
+            if (inputs.shape[0] == 1) #bs set to 1
+               outputs = outputs[None,:]
+            loss = criterion(outputs, targets)
 
             test_loss += loss.item()
-            _, predicted = outputs[None,:].max(1)
+            _, predicted = outputs.max(1)
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
 
