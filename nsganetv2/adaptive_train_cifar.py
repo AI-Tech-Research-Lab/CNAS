@@ -317,7 +317,7 @@ def adaptive_infer(valid_queue, m1, m2, criterion, threshold):
             
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = m1(inputs)
-            print(outputs)
+            print(len(outputs))
             if get_score_margin(outputs) >= threshold:
                 outputs = m2(inputs)
                 count_m2 += 1
