@@ -319,8 +319,8 @@ def adaptive_infer(valid_queue, m1, m2, criterion, threshold):
             outputs = m1(inputs)
             print(outputs)
             print(targets)
-            print(len(outputs))
-            print(len(targets))
+            print(outputs.shape)
+            print(targets.shape)
             '''
             if get_score_margin(outputs) >= threshold:
                 outputs = m2(inputs)
