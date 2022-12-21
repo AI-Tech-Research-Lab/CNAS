@@ -183,7 +183,8 @@ def main():
     NSGANetV2.reset_classifier(
         m1, last_channel=m1.classifier.in_features,
         n_classes=NUM_CLASSES, dropout_rate=args.drop)
-
+    
+    '''
     #M2 LOAD STATE
 
     parameters_m2 = filter(lambda p: p.requires_grad, m2.parameters())
@@ -205,9 +206,10 @@ def main():
     NSGANetV2.reset_classifier(
         m2, last_channel=m2.classifier.in_features,
         n_classes=NUM_CLASSES, dropout_rate=args.drop)
+    '''    
     
     m1 = m1.to(device)
-    m2 = m2.to(device)
+    #m2 = m2.to(device)
 
 
     if args.evaluate:
