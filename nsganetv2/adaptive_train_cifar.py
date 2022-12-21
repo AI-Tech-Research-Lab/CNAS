@@ -374,8 +374,10 @@ def _data_transforms(args):
 # Compute score margin
 def get_score_margin(outputs):
     prob = F.softmax(outputs)
-    top2_prob, top2_index = torch.topk(prob,2)
-    l = top2_prob
+    top2_prob, top2_index = torch.topk(prob,2)  
+    print(top2_prob)
+    l = top2_prob.tolist()
+    print(l)
     score_margin = l[0] - l[1]
     return score_margin
 
