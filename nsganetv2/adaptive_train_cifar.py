@@ -142,6 +142,10 @@ def main():
     
     net_config = json.load(open(args.model2_config))
     m2 = NSGANetV2.build_from_config(net_config, drop_connect_rate=args.drop_path)
+
+    NSGANetV2.reset_classifier(
+        m2, last_channel=m2.classifier.in_features,
+        n_classes=NUM_CLASSES, dropout_rate=args.drop)
     
     # calculate #Paramaters and #FLOPS of the models
     inputs = torch.randn(1, 3, args.img_size, args.img_size)
@@ -184,7 +188,6 @@ def main():
       m1.load_state_dict(init['state_dict'])
       optimizer_m1.load_state_dict(init['optimizer_state_dict'])
     
-    '''
     #M2 LOAD STATE
 
     parameters_m2 = filter(lambda p: p.requires_grad, m2.parameters())
@@ -203,13 +206,8 @@ def main():
       m2.load_state_dict(init['state_dict'])
       optimizer_m2.load_state_dict(init['optimizer_state_dict'])
     
-    NSGANetV2.reset_classifier(
-        m2, last_channel=m2.classifier.in_features,
-        n_classes=NUM_CLASSES, dropout_rate=args.drop)
-    '''    
-    
     m1 = m1.to(device)
-    #m2 = m2.to(device)
+    m2 = m2.to(device)
 
 
     if args.evaluate:
