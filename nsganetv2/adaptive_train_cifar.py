@@ -127,7 +127,7 @@ def main():
         train_data, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=args.num_workers)
 
     valid_queue = torch.utils.data.DataLoader(
-        valid_data, batch_size=20, shuffle=False, pin_memory=True, num_workers=args.num_workers)
+        valid_data, batch_size=1, shuffle=False, pin_memory=True, num_workers=args.num_workers)
     
     # load model m1
 
