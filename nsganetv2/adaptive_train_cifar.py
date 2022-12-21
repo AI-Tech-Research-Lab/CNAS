@@ -158,9 +158,6 @@ def main():
         m1 = nn.DataParallel(m1)  # data parallel in case more than 1 gpu available
         m2 = nn.DataParallel(m2)
 
-    m1 = m1.to(device)
-    m2 = m2.to(device)
-
     n_epochs = args.epochs
 
     criterion = nn.CrossEntropyLoss().to(device)
@@ -179,7 +176,7 @@ def main():
     ####
     if(args.initial_checkpoint1 != ''):
     ####
-      init = torch.load(args.initial_checkpoint1, map_location=device) # pretrained weigths
+      init = torch.load(args.initial_checkpoint1, map_location='cuda:0') # pretrained weigths
       m1.load_state_dict(init['state_dict'])
       optimizer_m1.load_state_dict(init['optimizer_state_dict'])
     
@@ -201,13 +198,16 @@ def main():
     ####
     if(args.initial_checkpoint2 != ''):
     ####
-      init = torch.load(args.initial_checkpoint2, map_location=device) # pretrained weigths
+      init = torch.load(args.initial_checkpoint2, map_location='cuda:0') # pretrained weigths
       m2.load_state_dict(init['state_dict'])
       optimizer_m2.load_state_dict(init['optimizer_state_dict'])
     
     NSGANetV2.reset_classifier(
         m2, last_channel=m2.classifier.in_features,
         n_classes=NUM_CLASSES, dropout_rate=args.drop)
+    
+    m1 = m1.to(device)
+    m2 = m2.to(device)
 
 
     if args.evaluate:
@@ -288,9 +288,6 @@ def adaptive_infer(valid_queue, m1, m2, criterion, threshold):
         for step, (inputs, targets) in enumerate(valid_queue): #bs of valid_queue set to 1
             
             inputs, targets = inputs.to(device), targets.to(device)
-            print(inputs.device)
-            print(targets.device)
-            print(m1.device)
             outputs = m1(inputs)
             
             if get_score_margin(outputs) >= threshold:
