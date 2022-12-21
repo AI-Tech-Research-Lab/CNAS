@@ -179,7 +179,7 @@ def main():
     ####
     if(args.initial_checkpoint1 != ''):
     ####
-      init = torch.load(args.initial_checkpoint1, map_location='cpu') # pretrained weigths
+      init = torch.load(args.initial_checkpoint1, map_location=device) # pretrained weigths
       m1.load_state_dict(init['state_dict'])
       optimizer_m1.load_state_dict(init['optimizer_state_dict'])
     
@@ -201,7 +201,7 @@ def main():
     ####
     if(args.initial_checkpoint2 != ''):
     ####
-      init = torch.load(args.initial_checkpoint2, map_location='cpu') # pretrained weigths
+      init = torch.load(args.initial_checkpoint2, map_location=device) # pretrained weigths
       m2.load_state_dict(init['state_dict'])
       optimizer_m2.load_state_dict(init['optimizer_state_dict'])
     
