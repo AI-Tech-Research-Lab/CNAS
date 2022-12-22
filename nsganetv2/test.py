@@ -25,11 +25,15 @@ m2_config = ss_big.decode(m2_encode)
 print(m1_config)
 print(m2_config)
 
-#build from config
+#sample subnets from OFA
 
-m1 = eval.sample(m1_config)
-m2 = eval.sample(m2_config)
+m1,_ = eval.sample(m1_config)
+m2,_ = eval.sample(m2_config)
 
+info1 = eval.get_net_info(m1,(m1_config['r'],m1_config['r']))
+info2 = eval.get_net_info(m2,(m2_config['r'],m2_config['r']))
+print(info1)
+print(info2)
 
 
 
