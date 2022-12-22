@@ -293,7 +293,7 @@ def adaptive_infer(valid_queue, m1, m2, criterion, threshold):
             mask = sm < threshold
 
             outputs = (mask) * m2(inputs) +  (torch.logical_not(mask)) * x
-            count_m2 = torch.sum(mask)
+            count_m2 = torch.sum(mask).item()
             
             '''
             if get_score_margin(outputs) < threshold:
