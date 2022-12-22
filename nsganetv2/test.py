@@ -1,5 +1,5 @@
 from search_space.ofa import OFASearchSpace
-from evaluator import OFAEvaluator
+from evaluator import OFAEvaluator,get_net_info
 
 lr = 40
 ur = 80
@@ -30,8 +30,8 @@ print(m2_config)
 m1,_ = eval.sample(m1_config)
 m2,_ = eval.sample(m2_config)
 
-info1 = eval.get_net_info(m1,(m1_config['r'],m1_config['r']))
-info2 = eval.get_net_info(m2,(m2_config['r'],m2_config['r']))
+info1 = get_net_info(m1,(m1_config['r'],m1_config['r']))
+info2 = get_net_info(m2,(m2_config['r'],m2_config['r']))
 print(info1)
 print(info2)
 
