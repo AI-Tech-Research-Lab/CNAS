@@ -7,7 +7,7 @@ n_doe = 1
 ss = OFASearchSpace('resnet50_he',lr,ur)
 eval = OFAEvaluator(n_classes=10)
 m1_config = ss.initialize(n_doe)[1]
-print(m1_config)
+#print(m1_config)
 
 
 # encode m1,m2
@@ -17,6 +17,7 @@ m1_encode = ss.encode(m1_config)
 x = [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]
 depth = [3,3,3,3,3]
 new_x = ss.pad_zero(x,depth)
+print(new_x)
 
 # decode
 '''
