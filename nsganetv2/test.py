@@ -4,7 +4,7 @@ from evaluator import OFAEvaluator,get_net_info
 lr = 40
 ur = 40
 n_doe = 1
-ss = OFASearchSpace('resnet50_he',lr,ur)
+ss = OFASearchSpace('mobilenetv3',lr,ur)
 eval = OFAEvaluator(n_classes=10)
 m1_config = ss.initialize(n_doe)[1]
 #print(m1_config)
