@@ -50,6 +50,7 @@ class OFASearchSpace:
         for n in range(n_samples):
             # first sample layers
             depth = np.random.choice(d, nb, replace=True).tolist()
+
             # then sample kernel size, expansion rate and resolution
             if(self.supernet == 'resnet50_he'):
               kernel_size = np.random.choice(ks, size=len(depth), replace=True).tolist()
@@ -90,6 +91,8 @@ class OFASearchSpace:
         # encode config ({'ks': , 'd': , etc}) to integer bit-string [1, 0, 2, 1, ...]
         x = []
         depth = [np.argwhere(_x == np.array(self.depth))[0, 0] for _x in config['d']]
+        print("DEPTH")
+        print(depth)
         kernel_size = [np.argwhere(_x == np.array(self.kernel_size))[0, 0] for _x in config['ks']]
         exp_ratio = [np.argwhere(_x == np.array(self.exp_ratio))[0, 0] for _x in config['e']]
 
