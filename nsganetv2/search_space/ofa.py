@@ -3,7 +3,7 @@ import numpy as np
 
 class OFASearchSpace:
     def __init__(self,supernet,lr,ur, blocks):
-        self.num_blocks = 5  # number of blocks, default 5
+        self.num_blocks = blocks  # number of blocks, default 5
         self.supernet = supernet
 
         '''
