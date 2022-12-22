@@ -16,7 +16,7 @@ m1_encode = ss.encode(m1_config)
 
 x = [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]
 depth = [3,3,3,3,3]
-new_x = ss.pad_zero(x,)
+new_x = ss.pad_zero(x,depth)
 
 # decode
 '''
