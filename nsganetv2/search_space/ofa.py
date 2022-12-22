@@ -115,6 +115,7 @@ class OFASearchSpace:
         if(self.supernet != 'resnet50_he'):
           for i in range(0, len(x) - 2, 9):
               print("DEBUG")
+              print(len(x))
               print(i)
               depth.append(self.depth[x[i]])
               kernel_size.extend(np.array(self.kernel_size)[x[i + 1:i + 1 + self.depth[x[i]]]].tolist())
