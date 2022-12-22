@@ -7,7 +7,7 @@ n_doe = 1
 ss = OFASearchSpace('mobilenetv3',lr,ur)
 eval = OFAEvaluator(n_classes=10)
 m1_config = ss.initialize(n_doe)[0]
-#print(m1_config)
+print(m1_config)
 
 
 # encode m1,m2
