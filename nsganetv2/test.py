@@ -7,7 +7,7 @@ n_doe = 1
 ss_small = OFASearchSpace('mobilenetv3_small',lr,ur)
 ss_big = OFASearchSpace('mobilenetv3_big',lr,ur)
 m1_config = ss_small.initialize(n_doe)[0]
-m2_config = ss_big.initialize(n_doe)[1]
+m2_config = ss_big.initialize(n_doe)[0]
 print(m1_config)
 print(m2_config)
 
