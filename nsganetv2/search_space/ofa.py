@@ -123,6 +123,8 @@ class OFASearchSpace:
         else:
 
           for i in range(0,len(x)-1,self.num_blocks):
+              print("DEBUG")
+              print(i)
               depth.append(self.depth[x[i]])
               kernel_size.append(self.kernel_size[x[i+1]])
               exp_rate.append(self.exp_ratio[x[i+2]])
