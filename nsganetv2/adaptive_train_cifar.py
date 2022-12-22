@@ -127,7 +127,7 @@ def main():
         train_data, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=args.num_workers)
 
     valid_queue = torch.utils.data.DataLoader(
-        valid_data, batch_size=1, shuffle=False, pin_memory=True, num_workers=args.num_workers)
+        valid_data, batch_size=200, shuffle=False, pin_memory=True, num_workers=args.num_workers)
     
     # load model m1
 
@@ -288,14 +288,19 @@ def adaptive_infer(valid_queue, m1, m2, criterion, threshold):
         for step, (inputs, targets) in enumerate(valid_queue): #bs of valid_queue set to 1
             
             inputs, targets = inputs.to(device), targets.to(device)
-            outputs = m1(inputs)
+            x = m1(inputs)
+
+            outputs = (get_score_margin(x) < threshold) * m2(inputs) + x 
             
+            '''
             if get_score_margin(outputs) < threshold:
                 outputs = m2(inputs)
                 count_m2 += 1
             
             if (inputs.shape[0] == 1): #bs set to 1
                outputs = outputs[None,:]
+            '''
+
             loss = criterion(outputs, targets)
 
             test_loss += loss.item()
