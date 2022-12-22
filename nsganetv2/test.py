@@ -5,8 +5,8 @@ lr = 40
 ur = 40
 n_doe = 1
 ss = OFASearchSpace('mobilenetv3',lr,ur)
-#eval = OFAEvaluator(n_classes=10)
-m1_config = ss.initialize(n_doe)[0]
+eval = OFAEvaluator(n_classes=10)
+m1_config = ss.initialize(n_doe)[1]
 print(m1_config)
 
 
