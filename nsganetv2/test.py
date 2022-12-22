@@ -13,8 +13,8 @@ print(m2_config)
 
 
 # encode m1,m2
-m1_encode = ss_small.encode(m1_config[0])
-m2_encode = ss_big.encode(m2_config[0])
+m1_encode = ss_small.encode(m1_config)
+m2_encode = ss_big.encode(m2_config)
 #print(m1_encode)
 
 # decode
