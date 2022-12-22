@@ -1,5 +1,5 @@
 from search_space.ofa import OFASearchSpace
-
+from codebase.networks import NSGANetV2
 
 lr = 40
 ur = 80
@@ -21,8 +21,13 @@ m2_encode = ss_big.encode(m2_config)
 
 m1_config = ss_small.decode(m1_encode)
 m2_config = ss_big.decode(m2_encode)
-#print(m1_config)
-#print(m2_config)
+print(m1_config)
+print(m2_config)
+
+#build from config
+
+m1 = NSGANetV2.build_from_config(m1_config)
+m2 = NSGANetV2.build_from_config(m2_config)
 
 
 
