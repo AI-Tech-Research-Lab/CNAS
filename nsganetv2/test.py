@@ -1,11 +1,12 @@
 from search_space.ofa import OFASearchSpace
-from codebase.networks import NSGANetV2
+from evaluator import OFAEvaluator
 
 lr = 40
 ur = 80
 n_doe = 1
 ss_small = OFASearchSpace('mobilenetv3',lr,ur,3)
 ss_big = OFASearchSpace('mobilenetv3',lr,ur,5)
+eval = OFAEvaluator(n_classes=10)
 m1_config = ss_small.sample(n_doe)[0]
 m2_config = ss_big.sample(n_doe)[0]
 #print(m1_config)
@@ -26,8 +27,8 @@ print(m2_config)
 
 #build from config
 
-m1 = NSGANetV2.build_from_config(m1_config)
-m2 = NSGANetV2.build_from_config(m2_config)
+m1 = eval.sample(m1_config)
+m2 = eval.sample(m2_config)
 
 
 
