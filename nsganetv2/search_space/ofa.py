@@ -21,15 +21,10 @@ class OFASearchSpace:
             self.exp_ratio = [0.2,0.25,0.35]  # expansion rate
             self.depth = [0,1,2]  # number of Inverted Residual Bottleneck layers repetition          
         elif(supernet == 'resnet50_he'):
-            self.kernel_size = [3, 5, 7]  # depth-wise conv kernel size
-            self.exp_ratio = [3, 4, 6]  # expansion rate
-            self.depth = [2, 3]  # number of Inverted Residual Bottleneck layers repetition
-            '''
             self.num_blocks = 3
             self.kernel_size = [3]  # depth-wise conv kernel size
             self.exp_ratio = [1]  # expansion rate
-            self.depth = [2,3,4,5,6,7]  # number of BasicBlock layers repetition    
-            '''      
+            self.depth = [2,3,4,5,6,7]  # number of BasicBlock layers repetition          
            
         #STANDARD is lr = 192 and ur= 256
         min = lr
