@@ -289,8 +289,9 @@ def adaptive_infer(valid_queue, m1, m2, criterion, threshold):
             
             inputs, targets = inputs.to(device), targets.to(device)
             x = m1(inputs)
+            sm = get_score_margin(x)
 
-            outputs = (get_score_margin(x) < threshold) * m2(inputs) + x 
+            outputs = (sm < threshold) * m2(inputs) +  (sm >= threshold) * x
             
             '''
             if get_score_margin(outputs) < threshold:
@@ -378,13 +379,11 @@ def _data_transforms(args):
 
 # Compute score margin
 def get_score_margin(outputs):
-    print(outputs)
     prob = F.softmax(outputs)
-    print(prob)
     top2_prob, top2_index = torch.topk(prob,2) 
-    print(top2_prob) 
-    l = top2_prob.tolist()
-    score_margin = l[0] - l[1]
+    #l = top2_prob.tolist()
+    #score_margin = l[0] - l[1]
+    score_margin = torch.diff(top2_prob,dim=1)*(-1)
     return score_margin
 
 if __name__ == '__main__':
