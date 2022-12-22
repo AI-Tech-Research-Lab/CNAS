@@ -2,15 +2,24 @@ import numpy as np
 
 
 class OFASearchSpace:
-    def __init__(self,dataset,supernet,lr,ur):
+    def __init__(self,supernet,lr,ur):
         self.num_blocks = 5  # number of blocks
-        self.dataset = dataset
         self.supernet = supernet
 
+        '''
         if(supernet == 'mobilenetv3'):
             self.kernel_size = [3, 5, 7]  # depth-wise conv kernel size
             self.exp_ratio = [3, 4, 6]  # expansion rate
             self.depth = [2, 3, 4]  # number of Inverted Residual Bottleneck layers repetition
+        '''
+        if(supernet == 'mobilenetv3_small'):
+            self.kernel_size = [3, 5, 7]  # depth-wise conv kernel size
+            self.exp_ratio = [3, 4, 6]  # expansion rate
+            self.depth = [2,3]  # number of Inverted Residual Bottleneck layers repetition
+        elif(supernet == 'mobilenetv3_big'):
+            self.kernel_size = [3, 5, 7]  # depth-wise conv kernel size
+            self.exp_ratio = [3, 4, 6]  # expansion rate
+            self.depth = [4]  # number of Inverted Residual Bottleneck layers repetition
         elif(supernet == 'resnet50'):
             self.kernel_size = [3]  # depth-wise conv kernel size
             self.exp_ratio = [0.2,0.25,0.35]  # expansion rate

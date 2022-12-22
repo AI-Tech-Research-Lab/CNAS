@@ -58,11 +58,12 @@ class MSuNAS:
         self.ur = kwargs.pop('ur',256) #maximum resolution
         
         if ('w1.0' in self.supernet_path) or ('w1.2' in self.supernet_path):
-          self.search_space = OFASearchSpace(self.dataset,'mobilenetv3',self.lr,self.ur)
+          self.search_space_small = OFASearchSpace('mobilenetv3_small',self.lr,self.ur)
+          self.search_space_big = OFASearchSpace('mobilenetv3_big',self.lr,self.ur)
         elif 'resnet50_he_d' in self.supernet_path:
-          self.search_space = OFASearchSpace(self.dataset,'resnet50_he',self.lr,self.ur)
+          self.search_space = OFASearchSpace('resnet50_he',self.lr,self.ur)
         elif 'resnet50_d' in self.supernet_path:
-          self.search_space = OFASearchSpace(self.dataset,'resnet50',self.lr,self.ur)
+          self.search_space = OFASearchSpace('resnet50',self.lr,self.ur)
         else:
           raise NotImplementedError
   
