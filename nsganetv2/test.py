@@ -12,18 +12,15 @@ m1_config = ss.initialize(n_doe)[1]
 
 # encode m1,m2
 m1_encode = ss.encode(m1_config)
-#print(m1_encode)
+print(m1_encode)
 
-x = [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]
-depth = [3,3,3,3,3]
-new_x = ss.pad_zero(x,depth)
-print(new_x)
 
 # decode
-'''
-m1_config = ss.decode(m1_encode)
-#print(m1_config)
 
+m1_config = ss.decode(m1_encode)
+print(m1_config)
+
+'''
 m1,_ = eval.sample(m1_config)
 
 info1 = get_net_info(m1,(40,40))
