@@ -285,24 +285,15 @@ def adaptive_infer(valid_queue, m1, m2, criterion, threshold):
     count_m2 = 0
 
     with torch.no_grad():
-        for step, (inputs, targets) in enumerate(valid_queue): #bs of valid_queue set to 1
+        for step, (inputs, targets) in enumerate(valid_queue): 
             
             inputs, targets = inputs.to(device), targets.to(device)
             x = m1(inputs)
             sm = get_score_margin(x)
             mask = sm < threshold
 
-            outputs = (mask) * m2(inputs) +  (torch.logical_not(mask)) * x
+            outputs = (mask) * m2(inputs) + (torch.logical_not(mask)) * x
             count_m2 = torch.sum(mask).item()
-            
-            '''
-            if get_score_margin(outputs) < threshold:
-                outputs = m2(inputs)
-                count_m2 += 1
-            
-            if (inputs.shape[0] == 1): #bs set to 1
-               outputs = outputs[None,:]
-            '''
 
             loss = criterion(outputs, targets)
 
@@ -383,8 +374,6 @@ def _data_transforms(args):
 def get_score_margin(outputs):
     prob = F.softmax(outputs)
     top2_prob, top2_index = torch.topk(prob,2) 
-    #l = top2_prob.tolist()
-    #score_margin = l[0] - l[1]
     score_margin = torch.diff(top2_prob,dim=1)*(-1)
     return score_margin
 

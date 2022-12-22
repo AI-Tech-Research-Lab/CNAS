@@ -319,6 +319,7 @@ class RunManager:
     """ train and test """
 
     def validate(self, epoch=0, is_test=True, run_str='', net=None, data_loader=None, no_logs=False):
+        print("VALIDATING NETWORKS..")
         if net is None:
             net = self.net
         if not isinstance(net, nn.DataParallel):
@@ -358,6 +359,7 @@ class RunManager:
                     })
                     t.update(1)
         return losses.avg, top1.avg, top5.avg
+    
 
     def validate_all_resolution(self, epoch=0, is_test=True, net=None):
         if net is None:
