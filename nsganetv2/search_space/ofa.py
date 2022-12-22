@@ -117,14 +117,13 @@ class OFASearchSpace:
         depth, kernel_size, exp_rate = [], [], []
         if(self.supernet != 'resnet50_he'):
           for i in range(0, len(x) - 2, 9):
+              print("DEBUG")
+              print(i)
               depth.append(self.depth[x[i]])
               kernel_size.extend(np.array(self.kernel_size)[x[i + 1:i + 1 + self.depth[x[i]]]].tolist())
               exp_rate.extend(np.array(self.exp_ratio)[x[i + 5:i + 5 + self.depth[x[i]]]].tolist())
         else:
-
           for i in range(0,len(x)-1,self.num_blocks):
-              print("DEBUG")
-              print(i)
               depth.append(self.depth[x[i]])
               kernel_size.append(self.kernel_size[x[i+1]])
               exp_rate.append(self.exp_ratio[x[i+2]])
