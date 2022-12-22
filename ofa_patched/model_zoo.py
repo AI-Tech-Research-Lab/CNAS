@@ -237,7 +237,7 @@ def ofa_net(n_classes = 1000, net_id = 'ofa_mbv3_d234_e346_k357_w1.0', pretraine
         #net_id = 'ofa_resnet50_d=0+1+2_e=0.2+0.25+0.35_w=0.65+0.8+1.0'
     elif net_id == 'ofa_resnet50_he_d=0+1+2_e=0.2+0.25+0.35_w=0.65+0.8+1.0':
         net = OFAResNetsHE(
-          n_classes, dropout_rate=0, depth_list=[2,3,4,5,6,7], expand_ratio_list[1]))
+          n_classes, dropout_rate=0, depth_list=[2,3,4,5,6,7], expand_ratio_list = [1])
         #torch.nn.init.xavier_uniform_(net.input_stem[0].conv.weight)
         #net_id = 'ofa_resnet50_d=0+1+2_e=0.2+0.25+0.35_w=0.65+0.8+1.0' #no pretrained network
     else:
