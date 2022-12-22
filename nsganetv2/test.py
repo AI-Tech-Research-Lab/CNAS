@@ -2,7 +2,7 @@ from search_space.ofa import OFASearchSpace
 from evaluator import OFAEvaluator,get_net_info
 
 lr = 40
-ur = 80
+ur = 40
 n_doe = 1
 ss_small = OFASearchSpace('mobilenetv3',lr,ur,3)
 ss_big = OFASearchSpace('mobilenetv3',lr,ur,5)
