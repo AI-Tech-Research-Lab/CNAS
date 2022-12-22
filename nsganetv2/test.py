@@ -1,6 +1,18 @@
 from search_space.ofa import OFASearchSpace
 from evaluator import OFAEvaluator,get_net_info
+from ofa.model_zoo import ofa_net
 
+ofa_network = ofa_net(10,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=True)
+    
+# Manually set the sub-network
+
+ofa_network.set_active_subnet(ks=7, e=6, d=3)
+m1 = ofa_network.get_active_subnet(preserve_weight=True)
+
+ofa_network.set_active_subnet(ks=7, e=6, d=4)
+m2 = ofa_network.get_active_subnet(preserve_weight=True)
+
+'''
 lr = 40
 ur = 40
 n_doe = 1
@@ -26,15 +38,16 @@ m1_config = ss_small.decode(m1_encode)
 #print(m2_config)
 
 
+
 #sample subnets from OFA
 
 m1,_ = eval.sample(m1_config)
 #m2,_ = eval.sample(m2_config)
+'''
 
-info1 = get_net_info(m1,(m1_config['r'],m1_config['r']))
-#info2 = get_net_info(m2,(m2_config['r'],m2_config['r']))
-print(info1)
-#print(info2)
+info1 = get_net_info(m1,(40,40))
+info2 = get_net_info(m2,(40,40))
+
 
 
 
