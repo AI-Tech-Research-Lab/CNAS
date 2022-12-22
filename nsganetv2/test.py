@@ -8,8 +8,8 @@ ss_small = OFASearchSpace('mobilenetv3_small',lr,ur)
 ss_big = OFASearchSpace('mobilenetv3_big',lr,ur)
 m1_config = ss_small.sample(n_doe)
 m2_config = ss_big.sample(n_doe)
-print(m1_config)
-print(m2_config)
+print(m1_config[0])
+print(m2_config[0])
 
 # encode m1,m2
 m1_encode = ss_small.encode(m1_config[0])
