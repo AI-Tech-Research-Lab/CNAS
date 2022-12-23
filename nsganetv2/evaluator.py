@@ -108,7 +108,7 @@ class OFAEvaluator:
         self.kernel_size = [3, 5, 7] if kernel_size is None else kernel_size  # depth-wise conv kernel size
         self.exp_ratio = [3, 4, 6] if exp_ratio is None else exp_ratio  # expansion rate
         #self.depth = [2, 3, 4] if depth is None else depth  # number of MB block repetition
-        self.depth = [2, 3] if depth is None else depth  # number of MB block repetition
+        self.depth = [2, 3, 4] if depth is None else depth  # number of MB block repetition
 
         if 'w1.0' in model_path or 'resnet50' in model_path:
             self.width_mult = 1.0

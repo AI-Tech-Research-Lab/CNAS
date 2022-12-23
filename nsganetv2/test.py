@@ -7,7 +7,7 @@ n_doe = 1
 ss = OFASearchSpace('mobilenetv3',lr,ur)
 eval = OFAEvaluator(n_classes=1000,
 model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0',
-pretrained = True)
+pretrained = False)
 m1_config = ss.initialize(n_doe)[0]
 print(m1_config)
 
