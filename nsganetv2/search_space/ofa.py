@@ -147,6 +147,7 @@ class OFASearchSpace:
         m2_config["ks"] = new_ks
         m2_config["e"] = new_e
         m2_config['d'] = new_d
+        m2_config['r'] = config['r']
 
         return m2_config
 
