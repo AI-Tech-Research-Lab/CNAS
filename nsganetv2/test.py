@@ -13,6 +13,7 @@ m1_config = ss.initialize(n_doe)[0]
 m2_config = m1_config
 new_d = []
 for i in range(len(m1_config['d'])):
+    print(i)
     new_d[i] = m1_config['d'][i]
 m2_config['d'] = new_d
 print(m1_config)
