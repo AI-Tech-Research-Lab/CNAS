@@ -14,8 +14,7 @@ img_size = 40
 data = '../data/cifar10'
 dataset = 'cifar10'
 
-torch.cuda.empty_cache()
-'''
+
 ss = OFASearchSpace(supernet = 'mobilenetv3', lr = img_size, ur = img_size)
 
 config = ss.initialize(n_doe = 1)[0]
@@ -27,4 +26,3 @@ OFAEvaluator.eval(
         subnet, data_path=data, dataset=dataset, n_epochs=n_epochs,
         resolution=resolution, trn_batch_size=trn_batch_size, vld_batch_size=vld_batch_size)
 
-'''
