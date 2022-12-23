@@ -9,7 +9,7 @@ eval = OFAEvaluator(n_classes=1000,
 model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0',
 pretrained = True)
 m1_config = ss.initialize(n_doe)[0]
-m2_config = ss.initialize(n_doe)[1]
+m2_config = ss.increase_config(m1_config)
 
 '''
 m2_config = m1_config
@@ -40,10 +40,10 @@ print(m2_config)
 m1,_ = eval.sample(m1_config)
 m2,_ = eval.sample(m2_config)
 
-'''
-info1 = get_net_info(m1,(40,40))
 
-'''
+info1 = get_net_info(m1,(40,40))
+info2 = get_net_info(m2,(40,40))
+
 
 '''
 #sample subnets from OFA through config
