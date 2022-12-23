@@ -9,19 +9,26 @@ eval = OFAEvaluator(n_classes=1000,
 model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0',
 pretrained = True)
 m1_config = ss.initialize(n_doe)[0]
+
+m2_config = m1_config
+new_d = []
+for i in range(len(m1_config['d'])):
+    new_d[i] = m1_config['d'][i]
+m2_config['d'] = new_d
 print(m1_config)
+print(m2_config)
 
 
 # encode m1,m2
 m1_encode = ss.encode(m1_config)
-print(m1_encode)
-
+m2_encode = ss.encode(m2_config)
 
 # decode
 
 m1_config = ss.decode(m1_encode)
+m2_config = ss.decode(m2_encode)
 print(m1_config)
-
+print(m2_config)
 
 m1,_ = eval.sample(m1_config)
 

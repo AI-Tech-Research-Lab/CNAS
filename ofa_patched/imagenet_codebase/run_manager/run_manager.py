@@ -319,7 +319,6 @@ class RunManager:
     """ train and test """
 
     def validate(self, epoch=0, is_test=True, run_str='', net=None, data_loader=None, no_logs=False):
-        print("VALIDATING NETWORKS..")
         if net is None:
             net = self.net
         if not isinstance(net, nn.DataParallel):
@@ -467,7 +466,6 @@ class RunManager:
     def train(self, args, warmup_epoch=0, warmup_lr=0):
         
         for epoch in range(self.start_epoch, self.run_config.n_epochs + warmup_epoch):
-            print("TRAINING NETWORKS")
             train_loss, train_top1, train_top5 = self.train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
 
             if (epoch + 1) % self.run_config.validation_frequency == 0:
