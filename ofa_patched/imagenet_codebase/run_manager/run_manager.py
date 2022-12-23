@@ -391,7 +391,7 @@ class RunManager:
         data_time = AverageMeter()
 
         with tqdm(total=nBatch,
-                  desc='Train Epocha #{}'.format(epoch + 1)) as t:
+                  desc='Train Epoch #{}'.format(epoch + 1)) as t:
             end = time.time()
             for i, (images, labels) in enumerate(self.run_config.train_loader):
                 data_time.update(time.time() - end)

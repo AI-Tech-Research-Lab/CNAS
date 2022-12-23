@@ -264,7 +264,7 @@ class OFAEvaluator:
         if n_epochs > 0:
             cfgs.subnet = subnet
             print("N EPOCHS > 0")
-            subnet = run_manager.train(cfgs)
+            subnet = run_manager.train()#(cfgs)
 
         loss, top1, top5 = run_manager.validate(net=subnet, is_test=is_test, no_logs=no_logs)
 
