@@ -15,8 +15,6 @@ new_d = []
 for i in range(len(m1_config['d'])):
     item = m1_config['d'][i] + 1
     new_d.append(item)
-    print(m1_config['d'][i])
-    print(new_d)
 m2_config['d'] = new_d
 print(m1_config)
 print(m2_config)
@@ -24,16 +22,17 @@ print(m2_config)
 
 # encode m1,m2
 m1_encode = ss.encode(m1_config)
-m2_encode = ss.encode(m2_config)
+#m2_encode = ss.encode(m2_config)
 
 # decode
 
 m1_config = ss.decode(m1_encode)
-m2_config = ss.decode(m2_encode)
+#m2_config = ss.decode(m2_encode)
 print(m1_config)
-print(m2_config)
+#print(m2_config)
 
 m1,_ = eval.sample(m1_config)
+m2,_ = eval.sample(m2_config)
 
 '''
 info1 = get_net_info(m1,(40,40))
