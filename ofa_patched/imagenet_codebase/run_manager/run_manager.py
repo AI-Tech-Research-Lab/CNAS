@@ -467,7 +467,7 @@ class RunManager:
     def train(self, args, warmup_epoch=0, warmup_lr=0):
         
         for epoch in range(self.start_epoch, self.run_config.n_epochs + warmup_epoch):
-            print("TRAINING NETWORKS..")
+            print("TRAINING NETWORKS")
             train_loss, train_top1, train_top5 = self.train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
 
             if (epoch + 1) % self.run_config.validation_frequency == 0:
