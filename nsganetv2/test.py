@@ -3,7 +3,7 @@ from evaluator import OFAEvaluator,get_net_info
 
 #CONFIG
 n_classes = 10
-supernet = '../data/ofa_mbv3_d234_e346_k357_w1.0'
+supernet = './ofa_nets/ofa_mbv3_d234_e346_k357_w1.0'
 pretrained = True
 n_epochs = 5
 trn_batch_size = 128
