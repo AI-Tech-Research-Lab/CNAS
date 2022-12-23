@@ -381,7 +381,6 @@ class RunManager:
 
     def train_one_epoch(self, args, epoch, warmup_epochs=0, warmup_lr=0):
         # switch to train mode
-        print("Training networks..")
         self.net.train()
 
         nBatch = len(self.run_config.train_loader)
@@ -466,6 +465,7 @@ class RunManager:
         return losses.avg, top1.avg, top5.avg
 
     def train(self, args, warmup_epoch=0, warmup_lr=0):
+        print("Training networks..")
         for epoch in range(self.start_epoch, self.run_config.n_epochs + warmup_epoch):
             train_loss, train_top1, train_top5 = self.train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
 
