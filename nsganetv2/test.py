@@ -8,8 +8,7 @@ ss = OFASearchSpace('mobilenetv3',lr,ur)
 eval = OFAEvaluator(n_classes=1000,
 model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0',
 pretrained = True)
-m1_config = ss.sample(n_samples = n_doe, d = [2,3])
-print(m1_config)
+m1_config = ss.sample(n_samples = n_doe, d = [2,3])[0]
 m2_config = ss.increase_config(m1_config)
 
 '''
