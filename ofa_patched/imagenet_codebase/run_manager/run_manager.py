@@ -381,6 +381,7 @@ class RunManager:
 
     def train_one_epoch(self, args, epoch, warmup_epochs=0, warmup_lr=0):
         # switch to train mode
+        print("Training networks..")
         self.net.train()
 
         nBatch = len(self.run_config.train_loader)
