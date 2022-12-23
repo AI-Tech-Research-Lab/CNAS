@@ -15,6 +15,7 @@ new_d = []
 for i in range(len(m1_config['d'])):
     item = m1_config['d'][i] + 1
     new_d.append(item)
+    print(m1_config['d'][i])
     print(new_d)
 m2_config['d'] = new_d
 print(m1_config)
