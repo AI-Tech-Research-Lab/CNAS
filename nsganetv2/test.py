@@ -10,6 +10,7 @@ model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0',
 pretrained = True)
 m1_config = ss.initialize(n_doe)[0]
 
+'''
 m2_config = m1_config
 new_d = []
 for i in range(len(m1_config['d'])):
@@ -18,6 +19,7 @@ for i in range(len(m1_config['d'])):
 m2_config['d'] = new_d
 print(m1_config)
 print(m2_config)
+'''
 
 
 # encode m1,m2
