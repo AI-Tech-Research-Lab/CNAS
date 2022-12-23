@@ -391,7 +391,7 @@ class RunManager:
         data_time = AverageMeter()
 
         with tqdm(total=nBatch,
-                  desc='Train Epoch #{}'.format(epoch + 1)) as t:
+                  desc='Train Epocha #{}'.format(epoch + 1)) as t:
             end = time.time()
             for i, (images, labels) in enumerate(self.run_config.train_loader):
                 data_time.update(time.time() - end)
@@ -466,7 +466,6 @@ class RunManager:
 
     def train(self, args, warmup_epoch=0, warmup_lr=0):
         
-        print("TRAINING ...")
         for epoch in range(self.start_epoch, self.run_config.n_epochs + warmup_epoch):
             train_loss, train_top1, train_top5 = self.train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
 
