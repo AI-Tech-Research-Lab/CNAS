@@ -319,21 +319,18 @@ class OFAEvaluator:
             '''
 
         run_manager = RunManager(log_dir, subnet, run_config, init=False)
-        run_managerB = RunManager(log_dir, netB, run_config, init=False)
         
         if reset_running_statistics:
             # run_manager.reset_running_statistics(net=subnet, batch_size=vld_batch_size)
             run_manager.reset_running_statistics(net=subnet)
-            run_managerB.reset_running_statistics(net=netB)
 
         if n_epochs > 0:
             cfgs.subnet = subnet
             subnet = run_manager.train(cfgs)
             cfgsB = cfgs
             cfgsB.subnet = netB
-            netB = run_managerB.train(cfgsB)
+            netB = run_manager.train(cfgsB)
 
-        
         loss, top1, top5 = run_manager.adaptive_validate(net=subnet, netB = netB, is_test=is_test, no_logs=no_logs)
 
         info['loss'], info['top1'], info['top5'] = loss, top1, top5
