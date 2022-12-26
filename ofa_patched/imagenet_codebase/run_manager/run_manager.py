@@ -361,6 +361,8 @@ class RunManager:
 
     def adaptive_validate(self, epoch=0, is_test=True, run_str='', net=None, netB = None, data_loader=None, no_logs=False):
 
+        if net is None:
+            net = self.net
         if not isinstance(net, nn.DataParallel):
             net = nn.DataParallel(net)
 
