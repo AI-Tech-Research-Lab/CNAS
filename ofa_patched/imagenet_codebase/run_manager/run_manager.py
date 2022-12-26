@@ -366,6 +366,8 @@ class RunManager:
         if not isinstance(net, nn.DataParallel):
             net = nn.DataParallel(net)
 
+        if netB is None:
+            netB = self.netB
         if not isinstance(netB, nn.DataParallel):
             netB = nn.DataParallel(netB)
 
