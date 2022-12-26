@@ -553,6 +553,8 @@ class RunManager:
                 'optimizer': self.optimizer.state_dict(),
                 'state_dict': self.network.state_dict(),
             }, is_best=is_best)
+        
+        return self.net
 
     def reset_running_statistics(self, net=None):
         from ofa.elastic_nn.utils import set_running_statistics
