@@ -12,7 +12,6 @@ from ofa.elastic_nn.networks import OFAMobileNetV3, OFAResNets, OFAResNetsHE, OF
 from ofa.imagenet_codebase.run_manager import RunManager
 from ofa.elastic_nn.modules.dynamic_op import DynamicSeparableConv2d
 from ofa.utils import download_url
-from search_space.ofa import OFASearchSpace
 
 import warnings
 warnings.simplefilter("ignore")
@@ -280,70 +279,6 @@ class OFAEvaluator:
         
         print(info)
 
-    def adaptive_eval(subnet, config, data_path, dataset='imagenet', n_epochs=0, resolution=(224,224), trn_batch_size=128, vld_batch_size=250,
-             num_workers=4, valid_size=None, is_test=True, log_dir='.tmp/eval', measure_latency=None, no_logs=False,
-             reset_running_statistics=True, pmax = 2, fmax = 100, amax = 5, wp = 1, wf = 1/40, wa = 1, penalty = 10**10):
-
-        lut = {'cpu': 'data/i7-8700K_lut.yaml'}
-
-        
-        ss = OFASearchSpace('mobilenetv3',resolution[0],resolution[1]) #works for squared images
-        eval = eval = OFAEvaluator(n_classes=1000, model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0', pretrained = True)
-
-        configB = ss.increase_config(config)
-
-        print("ADAPTIVE EVAL")
-        print(config)
-        print(configB)
-        netB,_ = eval.sample(configB)
-
-        info = get_net_info(
-              subnet, (3, resolution, resolution), measure_latency=measure_latency,
-              print_info=False, clean=True, lut=lut, pmax = pmax, fmax = fmax, amax = amax, wp = wp, wf = wf, wa = wa, penalty = penalty)
-
-        run_config = get_run_config(
-            dataset=dataset, data_path=data_path, image_size=resolution, n_epochs=n_epochs,
-            train_batch_size=trn_batch_size, test_batch_size=vld_batch_size,
-            n_worker=num_workers, valid_size=valid_size)
-
-        # set the image size. You can set any image size from 192 to 256 here
-        run_config.data_provider.assign_active_img_size(resolution)
-
-        if n_epochs > 0:
-            # for datasets other than the one supernet was trained on (ImageNet)
-            # a few epochs of training need to be applied
-            ''' these lines are commented to avoid AttributeError: 'MobileNetV3' object has no attribute 'reset_classifier'
-            subnet.reset_classifier(
-                last_channel=subnet.classifier.in_features,
-                n_classes=run_config.data_provider.n_classes, dropout_rate=cfgs.drop_rate)
-            '''
-
-        run_manager = RunManager(log_dir, subnet, run_config, init=False)
-        
-        if reset_running_statistics:
-            # run_manager.reset_running_statistics(net=subnet, batch_size=vld_batch_size)
-            run_manager.reset_running_statistics(net=subnet)
-
-        if n_epochs > 0:
-            cfgs.subnet = subnet
-            subnet = run_manager.train(cfgs)
-            cfgsB = cfgs
-            cfgsB.subnet = netB
-            netB = run_manager.train(cfgsB)
-
-        loss, top1, top5 = run_manager.validate(net=subnet, is_test=is_test, no_logs=no_logs)
-
-        info['loss'], info['top1'], info['top5'] = loss, top1, top5
-
-        save_path = os.path.join(log_dir, 'net.stats') if cfgs.save is None else cfgs.save
-        if cfgs.save_config:
-            OFAEvaluator.save_net_config(log_dir, subnet, "net.config")
-            OFAEvaluator.save_net(log_dir, subnet, "net.init")
-        with open(save_path, 'w') as handle:
-            json.dump(info, handle)
-        
-        print(info)
-
 
 def main(args):
     """ one evaluation of a subnet or a config from a file """
@@ -372,16 +307,9 @@ def main(args):
 
     else:
         raise NotImplementedError
-    '''
+    
     OFAEvaluator.eval(
         subnet, log_dir=args.log_dir, data_path=args.data, dataset=args.dataset, n_epochs=args.n_epochs,
-        resolution=resolution, trn_batch_size=args.trn_batch_size, vld_batch_size=args.vld_batch_size,
-        num_workers=args.num_workers, valid_size=args.valid_size, is_test=args.test, measure_latency=args.latency,
-        no_logs=(not args.verbose), reset_running_statistics=args.reset_running_statistics, 
-        pmax = args.pmax, fmax = args.fmax, amax = args.amax, wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
-    '''
-    OFAEvaluator.eval(
-        subnet, config, log_dir=args.log_dir, data_path=args.data, dataset=args.dataset, n_epochs=args.n_epochs,
         resolution=resolution, trn_batch_size=args.trn_batch_size, vld_batch_size=args.vld_batch_size,
         num_workers=args.num_workers, valid_size=args.valid_size, is_test=args.test, measure_latency=args.latency,
         no_logs=(not args.verbose), reset_running_statistics=args.reset_running_statistics, 

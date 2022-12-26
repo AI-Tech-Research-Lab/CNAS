@@ -15,7 +15,7 @@ class OFASearchSpace:
         if(supernet == 'mobilenetv3'):
             self.kernel_size = [3, 5, 7]  # depth-wise conv kernel size
             self.exp_ratio = [3, 4, 6]  # expansion rate
-            self.depth = [2, 3, 4]  # number of Inverted Residual Bottleneck layers repetition 
+            self.depth = [2, 3, 4]  # number of Inverted Residual Bottleneck layers repetition
         elif(supernet == 'resnet50'):
             self.kernel_size = [3]  # depth-wise conv kernel size
             self.exp_ratio = [0.2,0.25,0.35]  # expansion rate
