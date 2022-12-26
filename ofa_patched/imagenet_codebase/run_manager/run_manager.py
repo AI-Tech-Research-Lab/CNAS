@@ -358,6 +358,54 @@ class RunManager:
                     })
                     t.update(1)
         return losses.avg, top1.avg, top5.avg
+
+    def adaptive_validate(self, epoch=0, is_test=True, run_str='', net=None, netB, data_loader=None, no_logs=False):
+
+        if net is None:
+            net = self.net
+        if not isinstance(net, nn.DataParallel):
+            net = nn.DataParallel(net)
+
+        if netB is None:
+            netB = self.netB
+        if not isinstance(netB, nn.DataParallel):
+            netB = nn.DataParallel(netB)
+
+        if data_loader is None:
+            if is_test:
+                data_loader = self.run_config.test_loader
+            else:
+                data_loader = self.run_config.valid_loader
+
+        net.eval()
+
+
+        losses = AverageMeter()
+        top1 = AverageMeter()
+        top5 = AverageMeter()
+
+        with torch.no_grad():
+            with tqdm(total=len(data_loader),
+                      desc='Validate Epoch #{} {}'.format(epoch + 1, run_str), disable=no_logs) as t:
+                for i, (images, labels) in enumerate(data_loader):
+                    images, labels = images.to(self.device), labels.to(self.device)
+                    # compute output
+                    output = net(images)
+                    loss = self.test_criterion(output, labels)
+                    # measure accuracy and record loss
+                    acc1, acc5 = accuracy(output, labels, topk=(1, 5))
+
+                    losses.update(loss.item(), images.size(0))
+                    top1.update(acc1[0].item(), images.size(0))
+                    top5.update(acc5[0].item(), images.size(0))
+                    t.set_postfix({
+                        'loss': losses.avg,
+                        'top1': top1.avg,
+                        'top5': top5.avg,
+                        'img_size': images.size(2),
+                    })
+                    t.update(1)
+        return losses.avg, top1.avg, top5.avg
     
 
     def validate_all_resolution(self, epoch=0, is_test=True, net=None):
