@@ -267,9 +267,9 @@ class OFAEvaluator:
             cfgs.subnet = subnet
             subnet = run_manager.train(cfgs)
 
-        loss, top1, top5 = run_manager.validate(net=subnet, is_test=is_test, no_logs=no_logs)
+        loss, top1, top5, netB_util = run_manager.validate(net=subnet, is_test=is_test, no_logs=no_logs)
 
-        info['loss'], info['top1'], info['top5'] = loss, top1, top5
+        info['loss'], info['top1'], info['top5'], info['netB_util'] = loss, top1, top5, netB_util
 
         save_path = os.path.join(log_dir, 'net.stats') if cfgs.save is None else cfgs.save
         if cfgs.save_config:

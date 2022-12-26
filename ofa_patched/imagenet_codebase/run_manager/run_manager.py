@@ -380,8 +380,9 @@ class RunManager:
         losses = AverageMeter()
         top1 = AverageMeter()
         top5 = AverageMeter()
+        netB_util = AverageMeter()
 
-        print("START VALIDATION")
+        #print("START VALIDATION")
 
         with torch.no_grad():
             with tqdm(total=len(data_loader),
@@ -398,6 +399,7 @@ class RunManager:
 
                     mask = sm < threshold
                     output = (mask) * netB(images) + (torch.logical_not(mask)) * x
+                    count = torch.sum(mask)
 
                     loss = self.test_criterion(output, labels)
                     # measure accuracy and record loss
@@ -406,14 +408,17 @@ class RunManager:
                     losses.update(loss.item(), images.size(0))
                     top1.update(acc1[0].item(), images.size(0))
                     top5.update(acc5[0].item(), images.size(0))
+                    netB_util.update(count.item(), images.size(0))
+
                     t.set_postfix({
                         'loss': losses.avg,
                         'top1': top1.avg,
                         'top5': top5.avg,
+                        'netB_util': netB_util.avg,
                         'img_size': images.size(2),
                     })
                     t.update(1)
-        return losses.avg, top1.avg, top5.avg
+        return losses.avg, top1.avg, top5.avg, netB_util.avg
 
     # Compute score margin
     def get_score_margin(outputs):
