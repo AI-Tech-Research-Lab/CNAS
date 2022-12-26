@@ -287,7 +287,7 @@ class OFAEvaluator:
         lut = {'cpu': 'data/i7-8700K_lut.yaml'}
 
         
-        ss = OFASearchSpace('mobilenetv3',config['r'],config['r']) #works for squared images
+        ss = OFASearchSpace('mobilenetv3',resolution[0],resolution[1]) #works for squared images
         eval = eval = OFAEvaluator(n_classes=1000, model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0', pretrained = True)
 
         configB = ss.increase_config(config)
