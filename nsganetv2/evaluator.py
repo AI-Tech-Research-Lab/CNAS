@@ -288,7 +288,7 @@ class OFAEvaluator:
 
         
         ss = OFASearchSpace('mobilenetv3',config['r'],config['r']) #works for squared images
-        eval = OFAEvaluator(n_classes=10, model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0', pretrained = True)
+        eval = eval = OFAEvaluator(n_classes=1000, model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0', pretrained = True)
 
         configB = ss.increase_config(config)
 
