@@ -359,7 +359,7 @@ class RunManager:
                     t.update(1)
         return losses.avg, top1.avg, top5.avg
 
-    def adaptive_validate(self, epoch=0, is_test=True, run_str='', net=None, netB, data_loader=None, no_logs=False):
+    def adaptive_validate(self, epoch=0, is_test=True, run_str='', net=None, netB = None, data_loader=None, no_logs=False):
 
         if net is None:
             net = self.net
@@ -378,8 +378,9 @@ class RunManager:
                 data_loader = self.run_config.valid_loader
 
         net.eval()
-
-
+        netB.eval()
+        
+        threshold = 0.1 # hardcoded
         losses = AverageMeter()
         top1 = AverageMeter()
         top5 = AverageMeter()
@@ -390,7 +391,16 @@ class RunManager:
                 for i, (images, labels) in enumerate(data_loader):
                     images, labels = images.to(self.device), labels.to(self.device)
                     # compute output
-                    output = net(images)
+                    x = net(images)
+                    
+                    #compute score margin
+                    prob = F.softmax(x)
+                    top2_prob, top2_index = torch.topk(prob,2) 
+                    sm = torch.diff(top2_prob,dim=1)*(-1)
+
+                    mask = sm < threshold
+                    output = (mask) * netB(images) + (torch.logical_not(mask)) * x
+
                     loss = self.test_criterion(output, labels)
                     # measure accuracy and record loss
                     acc1, acc5 = accuracy(output, labels, topk=(1, 5))
@@ -406,6 +416,13 @@ class RunManager:
                     })
                     t.update(1)
         return losses.avg, top1.avg, top5.avg
+
+    # Compute score margin
+    def get_score_margin(outputs):
+        prob = F.softmax(outputs)
+        top2_prob, top2_index = torch.topk(prob,2) 
+        score_margin = torch.diff(top2_prob,dim=1)*(-1)
+        return score_margin
     
 
     def validate_all_resolution(self, epoch=0, is_test=True, net=None):
