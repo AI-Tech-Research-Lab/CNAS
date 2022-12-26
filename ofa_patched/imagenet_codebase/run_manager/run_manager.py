@@ -376,7 +376,7 @@ class RunManager:
         net.eval()
         netB.eval()
         
-        threshold = 0.1 # hardcoded
+        threshold = 0.2 # hardcoded
         losses = AverageMeter()
         top1 = AverageMeter()
         top5 = AverageMeter()
