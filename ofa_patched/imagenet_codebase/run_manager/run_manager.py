@@ -415,6 +415,7 @@ class RunManager:
                         'top1': top1.avg,
                         'top5': top5.avg,
                         'netB_util': netB_util.avg,
+                        'threshold': threshold,
                         'img_size': images.size(2),
                     })
                     t.update(1)
