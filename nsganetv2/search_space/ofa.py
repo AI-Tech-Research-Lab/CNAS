@@ -26,6 +26,8 @@ class OFASearchSpace:
             self.exp_ratio = [1]  # expansion rate
             self.depth = [2,3,4,5,6,7]  # number of BasicBlock layers repetition          
            
+        self.threshold = [0.1,0.2] # threshold for selection model   
+
         #STANDARD is lr = 192 and ur= 256
         min = lr
         max = ur + 1
@@ -34,12 +36,13 @@ class OFASearchSpace:
         else:
           self.resolution = list(range(min, max, 1))
 
-    def sample(self, n_samples=1, nb=None, ks=None, e=None, d=None, r=None):
+    def sample(self, n_samples=1, nb=None, ks=None, e=None, d=None, t = None, r=None):
         """ randomly sample a architecture"""
         nb = self.num_blocks if nb is None else nb
         ks = self.kernel_size if ks is None else ks
         e = self.exp_ratio if e is None else e
         d = self.depth if d is None else d
+        t = self.threshold if t is None else t
         r = self.resolution if r is None else r
 
         data = []
@@ -55,9 +58,11 @@ class OFASearchSpace:
               kernel_size = np.random.choice(ks, size=int(np.sum(depth)), replace=True).tolist()
               exp_ratio = np.random.choice(e, size=int(np.sum(depth)), replace=True).tolist()
 
+            threshold = float(np.random.choice(t))
+
             resolution = int(np.random.choice(r))
             
-            data.append({'ks': kernel_size, 'e': exp_ratio, 'd': depth, 'r': resolution})
+            data.append({'ks': kernel_size, 'e': exp_ratio, 'd': depth, 't': threshold, 'r': resolution})
 
         return data
 
@@ -65,9 +70,9 @@ class OFASearchSpace:
         # sample one arch with least (lb of hyperparameters) and most complexity (ub of hyperparameters)
         data = [
             self.sample(1, ks=[min(self.kernel_size)], e=[min(self.exp_ratio)],
-                        d=[min(self.depth)], r=[min(self.resolution)])[0],
+                        d=[min(self.depth)], t = [min(self.threshold)], r=[min(self.resolution)])[0],
             self.sample(1, ks=[max(self.kernel_size)], e=[max(self.exp_ratio)],
-                        d=[max(self.depth)], r=[max(self.resolution)])[0]
+                        d=[max(self.depth)], t = [min(self.threshold)], r=[max(self.resolution)])[0]
         ]
         data.extend(self.sample(n_samples=n_doe - 2))
         return data
@@ -100,6 +105,8 @@ class OFASearchSpace:
             for i in range(len(depth)):
                 x = x + [depth[i]] + [kernel_size[i]] + [exp_ratio[i]]
           
+        x.append(np.argwhere(config['t'] == np.array(self.threshold))[0, 0]) 
+
         x.append(np.argwhere(config['r'] == np.array(self.resolution))[0, 0])
 
         return x
@@ -124,7 +131,8 @@ class OFASearchSpace:
               kernel_size.append(self.kernel_size[x[i+1]])
               exp_rate.append(self.exp_ratio[x[i+2]])
               
-        return {'ks': kernel_size, 'e': exp_rate, 'd': depth, 'r': self.resolution[x[-1]]}
+        return {'ks': kernel_size, 'e': exp_rate, 'd': depth, 
+        't': self.threshold[x[-2]], 'r': self.resolution[x[-1]]}
 
     def increase_config(self, config): #increase d for every block and adds maximum ks and e for each d
         m2_config = {}
@@ -147,6 +155,7 @@ class OFASearchSpace:
         m2_config["ks"] = new_ks
         m2_config["e"] = new_e
         m2_config['d'] = new_d
+        m2_config['t'] = config['t']
         m2_config['r'] = config['r']
 
         return m2_config

@@ -68,8 +68,6 @@ def get_net_info(net, data_shape, measure_latency=None, print_info=True, clean=F
     }
 
 
-
-
 def validate_config(config, max_depth=4):
     kernel_size, exp_ratio, depth = config['ks'], config['e'], config['d']
 
@@ -292,14 +290,15 @@ class OFAEvaluator:
 
         configB = ss.increase_config(config)
 
-        print("ADAPTIVE EVAL")
-        print(config)
-        print(configB)
         netB,_ = eval.sample(configB)
 
         info = get_net_info(
               subnet, (3, resolution, resolution), measure_latency=measure_latency,
               print_info=False, clean=True, lut=lut, pmax = pmax, fmax = fmax, amax = amax, wp = wp, wf = wf, wa = wa, penalty = penalty)
+
+        infoB = get_net_info(
+              netB, (3, resolution, resolution), measure_latency=measure_latency,
+              print_info=False, clean=True, lut=lut, pmax = pmax, fmax = fmax, amax = amax, wp = wp, wf = wf, wa = wa, penalty = penalty)     
 
         run_config = get_run_config(
             dataset=dataset, data_path=data_path, image_size=resolution, n_epochs=n_epochs,
@@ -337,6 +336,7 @@ class OFAEvaluator:
         loss, top1, top5, netB_util = run_manager.adaptive_validate(net=subnet, netB = netB, is_test=is_test, no_logs=no_logs)
 
         info['loss'], info['top1'], info['top5'], info['netB_util'] = loss, top1, top5, netB_util
+        info['tiny_ml'] = info['tiny_ml'] + netB_util*infoB['tiny_ml']
 
         save_path = os.path.join(log_dir, 'net.stats') if cfgs.save is None else cfgs.save
         if cfgs.save_config:
