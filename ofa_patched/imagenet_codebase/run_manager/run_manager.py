@@ -382,8 +382,6 @@ class RunManager:
         top5 = AverageMeter()
         netB_util = AverageMeter()
 
-        #print("START VALIDATION")
-
         with torch.no_grad():
             with tqdm(total=len(data_loader),
                       desc='Validate Epoch #{} {}'.format(epoch + 1, run_str), disable=no_logs) as t:
