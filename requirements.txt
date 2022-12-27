@@ -54,7 +54,7 @@ six==1.16.0
 threadpoolctl==3.0.0
 timm==0.1.30
 toml==0.10.2
-torch==1.5.1
+torch==1.11.0
 torchprofile==0.0.1
 torchvision==0.6.1
 tornado==6.1
