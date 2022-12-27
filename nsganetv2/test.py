@@ -37,12 +37,12 @@ m2_config = ss.decode(m2_encode)
 print(m1_config)
 print(m2_config)
 
-m1,_ = eval.sample(m1_config)
-m2,_ = eval.sample(m2_config)
+#m1,_ = eval.sample(m1_config)
+#m2,_ = eval.sample(m2_config)
 
 
-info1 = get_net_info(m1,(40,40))
-info2 = get_net_info(m2,(40,40))
+#info1 = get_net_info(m1,(40,40))
+#info2 = get_net_info(m2,(40,40))
 
 
 '''
