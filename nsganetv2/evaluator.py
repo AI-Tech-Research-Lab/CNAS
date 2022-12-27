@@ -278,8 +278,8 @@ class OFAEvaluator:
         
         print(info)
 
-    def adaptive_eval(subnet, config, data_path, dataset='imagenet', n_epochs=0, resolution=(224,224), trn_batch_size=128, vld_batch_size=250,
-             num_workers=4, valid_size=None, is_test=True, log_dir='.tmp/eval', measure_latency=None, no_logs=False,
+    def adaptive_eval(subnet, config, data_path, dataset='imagenet', n_epochs=0, resolution=(224,224), threshold=0.1,
+             trn_batch_size=128, vld_batch_size=250, num_workers=4, valid_size=None, is_test=True, log_dir='.tmp/eval', measure_latency=None, no_logs=False,
              reset_running_statistics=True, pmax = 2, fmax = 100, amax = 5, wp = 1, wf = 1/40, wa = 1, penalty = 10**10):
 
         lut = {'cpu': 'data/i7-8700K_lut.yaml'}
@@ -333,7 +333,7 @@ class OFAEvaluator:
             netB = run_managerB.train(cfgsB)
 
         
-        loss, top1, top5, netB_util = run_manager.adaptive_validate(net=subnet, netB = netB, is_test=is_test, no_logs=no_logs)
+        loss, top1, top5, netB_util = run_manager.adaptive_validate(net=subnet, netB = netB, threshold=threshold, is_test=is_test, no_logs=no_logs)
 
         info['loss'], info['top1'], info['top5'], info['netB_util'] = loss, top1, top5, netB_util
         info['tiny_ml'] = info['tiny_ml'] + netB_util*infoB['tiny_ml']
@@ -371,6 +371,7 @@ def main(args):
         config = json.load(open(args.subnet))
         evaluator = OFAEvaluator(n_classes=args.n_classes, model_path=args.supernet, pretrained = args.pretrained)
         subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
+        threshold = config['t']
         resolution = config['r']
 
     else:
@@ -385,10 +386,11 @@ def main(args):
     '''
     OFAEvaluator.adaptive_eval(
         subnet, config = config, log_dir=args.log_dir, data_path=args.data, dataset=args.dataset, n_epochs=args.n_epochs,
-        resolution=resolution, trn_batch_size=args.trn_batch_size, vld_batch_size=args.vld_batch_size,
+        resolution=resolution, threshold = threshold, trn_batch_size=args.trn_batch_size, vld_batch_size=args.vld_batch_size,
         num_workers=args.num_workers, valid_size=args.valid_size, is_test=args.test, measure_latency=args.latency,
         no_logs=(not args.verbose), reset_running_statistics=args.reset_running_statistics, 
-        pmax = args.pmax, fmax = args.fmax, amax = args.amax, wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
+        pmax = args.pmax, fmax = args.fmax, amax = args.amax, wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty,
+        )
     
 
 if __name__ == '__main__':

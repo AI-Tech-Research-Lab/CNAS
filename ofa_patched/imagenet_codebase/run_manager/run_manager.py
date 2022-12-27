@@ -359,7 +359,8 @@ class RunManager:
                     t.update(1)
         return losses.avg, top1.avg, top5.avg
 
-    def adaptive_validate(self, epoch=0, is_test=True, run_str='', net=None, netB = None, data_loader=None, no_logs=False):
+    def adaptive_validate(self, epoch=0, is_test=True, run_str='', net=None, netB = None, threshold = 0.1,
+                         data_loader=None, no_logs=False):
 
         if not isinstance(net, nn.DataParallel):
             net = nn.DataParallel(net)
@@ -376,7 +377,6 @@ class RunManager:
         net.eval()
         netB.eval()
         
-        threshold = 0.2 # hardcoded
         losses = AverageMeter()
         top1 = AverageMeter()
         top5 = AverageMeter()
