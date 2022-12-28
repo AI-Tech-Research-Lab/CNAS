@@ -53,6 +53,7 @@ m2,_ = eval.sample(m2_config)
 '''
 
 
+import torch
 from ofa.model_zoo import ofa_net
 
 ofa_network = ofa_net(10,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=False)
