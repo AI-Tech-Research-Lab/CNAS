@@ -133,6 +133,8 @@ class OFAMobileNetV3(MobileNetV3):
         return 'OFAMobileNetV3'
 
     def forward(self, x):
+
+        print("OFAMOBILENETV3")
         # first conv
         x = self.first_conv(x)
         # first block
