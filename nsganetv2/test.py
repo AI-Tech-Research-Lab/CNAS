@@ -59,6 +59,8 @@ ofa_network = ofa_net(10,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=False)
 
 ofa_network.set_active_subnet(ks=7, e=6, d=3)
 m1 = ofa_network.get_active_subnet(preserve_weight=True)
+input = torch.randn(1, 3, 40, 40)
+x = m1(input)
 
 ofa_network.set_active_subnet(ks=7, e=6, d=4)
 m2 = ofa_network.get_active_subnet(preserve_weight=True)
