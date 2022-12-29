@@ -104,10 +104,10 @@ class OFAMobileNetV3(MobileNetV3):
         print(n_classes)
         print("FINAL_EXPAND_WIDTH")
         print(final_expand_width)
-        print(self.blocks[-1].mobile_inverted_conv.active_expand_ratio)
+        print(blocks[-1].mobile_inverted_conv.active_expand_ratio)
         print("FEATURE DIM")
         print(feature_dim)
-        print(self.blocks[-1].mobile_inverted_conv.active_out_channel)
+        print(blocks[-1].mobile_inverted_conv.active_out_channel)
         print("LAST CHANNEL")
         print(last_channel)
         #####
