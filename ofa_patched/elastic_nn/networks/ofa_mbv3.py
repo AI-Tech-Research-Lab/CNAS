@@ -316,7 +316,7 @@ class OFAMobileNetV3(MobileNetV3):
                 input_channel = stage_blocks[-1].mobile_inverted_conv.out_channels
             blocks += stage_blocks
 
-        _subnet = MobileNetV3(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier, self.runtime_depth)
+        _subnet = MobileNetV3(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier)
         _subnet.set_bn_param(**self.get_bn_param())
         return _subnet
 
