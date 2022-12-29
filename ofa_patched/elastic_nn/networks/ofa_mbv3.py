@@ -126,8 +126,7 @@ class OFAMobileNetV3(MobileNetV3):
 
         # runtime_depth
         self.runtime_depth = [len(block_idx) for block_idx in self.block_group_info]
-        print(self.runtime_depth)
-        print(self.runtime_depth)
+        
 
     """ MyNetwork required methods """
 
@@ -295,6 +294,8 @@ class OFAMobileNetV3(MobileNetV3):
         }
 
     def get_active_subnet(self, preserve_weight=True):
+        print("RUNTIME DEPTH IN GET ACTIVE SUBNET")
+        print(self.runtime_depth)
         first_conv = copy.deepcopy(self.first_conv)
         blocks = [copy.deepcopy(self.blocks[0])]
 
