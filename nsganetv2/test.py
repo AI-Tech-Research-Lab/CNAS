@@ -51,9 +51,6 @@ for stage_id, block_idx in enumerate(ofa.block_group_info):
             print(stage_id)
             depth = ofa.runtime_depth[stage_id]
             active_idx = block_idx[:depth]
-            for idx in active_idx:
-                print("OFA BLOCKS")
-                print(ofa.blocks[idx])
 
 #m1 = ofa_network.get_active_subnet(preserve_weight=True)
 #input = torch.randn(1, 3, 40, 40)
