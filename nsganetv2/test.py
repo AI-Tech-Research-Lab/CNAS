@@ -44,6 +44,7 @@ from ofa.model_zoo import ofa_net
 
 ofa = ofa_net(10,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=False)
 
+'''
 ofa.set_active_subnet(ks=7, e=6, d=[3,2,4,2,3])
 
 for stage_id, block_idx in enumerate(ofa.block_group_info):
@@ -51,7 +52,8 @@ for stage_id, block_idx in enumerate(ofa.block_group_info):
             print(stage_id)
             depth = ofa.runtime_depth[stage_id]
             active_idx = block_idx[:depth]
-
+            ofa.blocks[-1].mobile_inverted_conv.active_out_channel
+'''
 #m1 = ofa_network.get_active_subnet(preserve_weight=True)
 #input = torch.randn(1, 3, 40, 40)
 #x = m1(input)

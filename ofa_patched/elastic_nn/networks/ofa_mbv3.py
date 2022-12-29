@@ -99,6 +99,17 @@ class OFAMobileNetV3(MobileNetV3):
                 blocks.append(MobileInvertedResidualBlock(mobile_inverted_conv, shortcut))
                 feature_dim = output_channel
 
+        ##TEST
+        print("N_CLASSES")
+        print(n_classes)
+        print("FINAL_EXPAND_WIDTH")
+        print(final_expand_width)
+        print("FEATURE DIM")
+        print(feature_dim)
+        print("LAST CHANNEL")
+        print(last_channel)
+        #####
+
         # final expand layer, feature mix layer & classifier
         if len(final_expand_width) == 1:
             final_expand_layer = ConvLayer(max(feature_dim), max(final_expand_width), kernel_size=1, act_func='h_swish')
