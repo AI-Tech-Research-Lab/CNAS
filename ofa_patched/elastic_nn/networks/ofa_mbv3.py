@@ -7,7 +7,7 @@ import random
 
 import torch
 
-from ofa.elastic_nn.modules.dynamic_layers import DynamicMBConvLayer, DynamicConvLayer, DynamicLinearLayer
+from ofa.elastic_nn.modules.dynamic_layers import DynamicMBConvLayer, DynamicConvLayer, DynamicLinearLayer, ExitBlock
 from ofa.layers import ConvLayer, IdentityLayer, LinearLayer, MBInvertedConvLayer
 from ofa.imagenet_codebase.networks.mobilenet_v3 import MobileNetV3, MobileInvertedResidualBlock, EEMobileNetV3
 from ofa.imagenet_codebase.utils import make_divisible, int2list
@@ -294,8 +294,6 @@ class OFAMobileNetV3(MobileNetV3):
         }
 
     def get_active_subnet(self, preserve_weight=True):
-        print("RUNTIME DEPTH IN GET ACTIVE SUBNET")
-        print(self.runtime_depth)
         first_conv = copy.deepcopy(self.first_conv)
         blocks = [copy.deepcopy(self.blocks[0])]
 
@@ -494,6 +492,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
             classifier = DynamicLinearLayer(
                 in_features_list=last_channel, out_features=n_classes, bias=True, dropout_rate=dropout_rate
             )
+            
         super(OFAMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier)
 
         # set bn param
