@@ -42,12 +42,22 @@ m2,_ = eval.sample(m2_config)
 import torch
 from ofa.model_zoo import ofa_net
 
-ofa_network = ofa_net(10,'ofa_eembv3_d234_e346_k357_w1.0', pretrained=False)
+ofa = ofa_net(10,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=False)
 
-ofa_network.set_active_subnet(ks=7, e=6, d=[3,2,4,2,3])
-m1 = ofa_network.get_active_subnet(preserve_weight=True)
-input = torch.randn(1, 3, 40, 40)
-x = m1(input)
+ofa.set_active_subnet(ks=7, e=6, d=[3,2,4,2,3])
+
+for stage_id, block_idx in enumerate(ofa.block_group_info):
+            print("STAGE ID")
+            print(stage_id)
+            depth = ofa.runtime_depth[stage_id]
+            active_idx = block_idx[:depth]
+            for idx in active_idx:
+                print("OFA BLOCKS")
+                print(ofa.blocks[idx])
+
+#m1 = ofa_network.get_active_subnet(preserve_weight=True)
+#input = torch.randn(1, 3, 40, 40)
+#x = m1(input)
 
 #ofa_network.set_active_subnet(ks=7, e=6, d=4)
 #m2 = ofa_network.get_active_subnet(preserve_weight=True)

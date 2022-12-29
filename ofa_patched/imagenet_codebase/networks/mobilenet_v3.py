@@ -139,7 +139,7 @@ class EEMobileNetV3(MyNetwork):
 
     def __init__(self, first_conv, blocks, final_expand_layer, feature_mix_layer, classifier, 
     #NEW
-    depth, threshold):
+    exit_block, idx_exit, threshold):
 
         super(EEMobileNetV3, self).__init__()
 
@@ -148,8 +148,8 @@ class EEMobileNetV3(MyNetwork):
         self.final_expand_layer = final_expand_layer
         self.feature_mix_layer = feature_mix_layer
         self.classifier = classifier
-        self.depth = depth
-        self.idx_exit = 1 + depth[0] + depth[1] + depth[2] #exit is placed after the 3rd group
+        self.exit_block = exit_block
+        self.idx_exit = idx_exit #exit is placed after the 3rd group
         self.threshold = threshold
 
     def forward(self, x):
@@ -157,7 +157,7 @@ class EEMobileNetV3(MyNetwork):
         idx = 0
         for idx,block in enumerate(self.blocks):
             if (idx==self.idx_exit): #exit block
-                pred, conf = block(x)
+                pred, conf = self.exit_block(x)
                 if conf >= self.threshold:
                     return pred
             else:
