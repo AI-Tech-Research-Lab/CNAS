@@ -492,8 +492,8 @@ class OFAEEMobileNetV3(EEMobileNetV3):
             classifier = DynamicLinearLayer(
                 in_features_list=last_channel, out_features=n_classes, bias=True, dropout_rate=dropout_rate
             )
-            
-        super(OFAMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier)
+
+        super(OFAEEMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier)
 
         # set bn param
         self.set_bn_param(momentum=bn_param[0], eps=bn_param[1])
@@ -505,7 +505,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
 
     @staticmethod
     def name():
-        return 'OFAMobileNetV3'
+        return 'OFAEEMobileNetV3'
 
     def forward(self, x):
 
@@ -547,7 +547,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
     @property
     def config(self):
         return {
-            'name': OFAMobileNetV3.__name__,
+            'name': OFAEEMobileNetV3.__name__,
             'bn': self.get_bn_param(),
             'first_conv': self.first_conv.config,
             'blocks': [
@@ -744,7 +744,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
             block_config_list += stage_blocks
 
         return {
-            'name': MobileNetV3.__name__,
+            'name': EEMobileNetV3.__name__,
             'bn': self.get_bn_param(),
             'first_conv': first_conv_config,
             'blocks': block_config_list,
