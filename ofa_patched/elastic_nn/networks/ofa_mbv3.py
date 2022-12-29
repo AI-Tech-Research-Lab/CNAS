@@ -9,7 +9,7 @@ import torch
 
 from ofa.elastic_nn.modules.dynamic_layers import DynamicMBConvLayer, DynamicConvLayer, DynamicLinearLayer
 from ofa.layers import ConvLayer, IdentityLayer, LinearLayer, MBInvertedConvLayer
-from ofa.imagenet_codebase.networks.mobilenet_v3 import MobileNetV3, MobileInvertedResidualBlock
+from ofa.imagenet_codebase.networks.mobilenet_v3 import MobileNetV3, MobileInvertedResidualBlock, EEMobileNetV3
 from ofa.imagenet_codebase.utils import make_divisible, int2list
 
 
