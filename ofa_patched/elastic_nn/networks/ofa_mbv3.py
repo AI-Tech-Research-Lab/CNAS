@@ -126,6 +126,8 @@ class OFAMobileNetV3(MobileNetV3):
 
         # runtime_depth
         self.runtime_depth = [len(block_idx) for block_idx in self.block_group_info]
+        print(self.runtime_depth)
+        print(self.runtime_depth)
 
     """ MyNetwork required methods """
 
