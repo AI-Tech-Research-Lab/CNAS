@@ -5,6 +5,11 @@
 from collections import OrderedDict
 import copy
 
+#ExitBlock
+import torch
+import torch.nn.functional as F
+##
+
 from ofa.layers import MBInvertedConvLayer, ConvLayer, LinearLayer, IdentityLayer, set_layer_from_config, ResNetBottleneckBlock
 from ofa.imagenet_codebase.utils import MyModule, MyNetwork, int2list, get_net_device, build_activation, val2list
 from ofa.elastic_nn.modules.dynamic_op import *
@@ -528,3 +533,52 @@ class DynamicResNetBottleneckBlock(MyModule):
         self.conv1.conv.conv.weight.data = torch.index_select(self.conv1.conv.conv.weight.data, 0, sorted_idx)
 
         return None
+
+class ExitBlock(MyModule):
+
+    """Exit Block definition.
+    This allows the model to terminate early when it is confident for classification.
+    The block returns:
+    (1) pred, that is the predicted outcome
+    (2) conf, that is the confidence value of the predicted outcome
+    The block must be defined by the OFA supernet and passed in the init list for the Mbv3 block
+    """
+
+    def __init__(self, n_classes, final_expand_width, feature_dim, last_channel, dropout_rate):
+        super(ExitBlock, self).__init__()
+
+        # final expand layer, feature mix layer & classifier
+        if len(final_expand_width) == 1:
+            self.final_expand_layer = ConvLayer(max(feature_dim), max(final_expand_width), kernel_size=1, act_func='h_swish')
+            self.feature_mix_layer = ConvLayer(
+                max(final_expand_width), max(last_channel), kernel_size=1, bias=False, use_bn=False, act_func='h_swish',
+            )
+        else:
+            self.final_expand_layer = DynamicConvLayer(
+                in_channel_list=feature_dim, out_channel_list=final_expand_width, kernel_size=1, act_func='h_swish'
+            )
+            self.feature_mix_layer = DynamicConvLayer(
+                in_channel_list=final_expand_width, out_channel_list=last_channel, kernel_size=1,
+                use_bn=False, act_func='h_swish',
+            )
+        if len(set(last_channel)) == 1:
+            self.classifier = LinearLayer(max(last_channel), n_classes, dropout_rate=dropout_rate)
+        else:
+            self.classifier = DynamicLinearLayer(
+                in_features_list=last_channel, out_features=n_classes, bias=True, dropout_rate=dropout_rate)
+    
+    def confidence(x):
+        prob = F.softmax(x)
+        top2_prob, top2_index = torch.topk(prob,2) 
+        sm = torch.diff(top2_prob,dim=1)*(-1)
+        return sm 
+
+    def forward(self, x):
+
+        x = self.final_expand_layer(x)
+        x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
+        x = self.feature_mix_layer(x)
+        x = torch.squeeze(x)
+        x = self.classifier(x)
+        conf = self.confidence(x)
+        return x, conf
