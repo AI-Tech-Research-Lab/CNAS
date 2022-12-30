@@ -105,7 +105,7 @@ class OFAMobileNetV3(MobileNetV3):
         print("FINAL_EXPAND_WIDTH")
         print(final_expand_width)
         exp_ratio = blocks[-1].mobile_inverted_conv.active_expand_ratio
-        input_channels = self.blocks[0].config['mobile_inverted_conv']['out_channels']
+        input_channels = blocks[0].config['mobile_inverted_conv']['out_channels']
         print(exp_ratio * input_channels)
         # input_channel * active expand ratio?
         print("FEATURE DIM")
