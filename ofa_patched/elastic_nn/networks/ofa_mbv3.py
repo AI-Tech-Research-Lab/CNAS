@@ -99,24 +99,6 @@ class OFAMobileNetV3(MobileNetV3):
                 blocks.append(MobileInvertedResidualBlock(mobile_inverted_conv, shortcut))
                 feature_dim = output_channel
 
-        ##TEST
-        print("N_CLASSES")
-        print(n_classes)
-        print("FINAL_EXPAND_WIDTH")
-        print(final_expand_width)
-        exp_ratio = blocks[-1].mobile_inverted_conv.active_expand_ratio
-        input_channels = blocks[-1].mobile_inverted_conv.active_out_channel
-        #blocks[0].config['mobile_inverted_conv']['out_channels']
-        print(exp_ratio * input_channels)
-        # input_channel * active expand ratio?
-        print("FEATURE DIM")
-        print(feature_dim)
-        print(blocks[-1].mobile_inverted_conv.active_out_channel) # OK
-        print("LAST CHANNEL")
-        print(last_channel)
-        print(base_stage_width[-1] * max(self.width_mult_list))
-        #####
-
         # final expand layer, feature mix layer & classifier
         if len(final_expand_width) == 1:
             final_expand_layer = ConvLayer(max(feature_dim), max(final_expand_width), kernel_size=1, act_func='h_swish')
@@ -144,7 +126,47 @@ class OFAMobileNetV3(MobileNetV3):
 
         # runtime_depth
         self.runtime_depth = [len(block_idx) for block_idx in self.block_group_info]
-        
+
+        '''
+        ##TEST
+        print("N_CLASSES")
+        print(n_classes)
+        print("FINAL_EXPAND_WIDTH")
+        print(final_expand_width)
+        exp_ratio = blocks[-1].mobile_inverted_conv.active_expand_ratio
+        input_channels = blocks[-1].mobile_inverted_conv.active_out_channel
+        #blocks[0].config['mobile_inverted_conv']['out_channels']
+        print(exp_ratio * input_channels)
+        # input_channel * active expand ratio?
+        print("FEATURE DIM")
+        print(feature_dim)
+        print(blocks[-1].mobile_inverted_conv.active_out_channel) # OK
+        print("LAST CHANNEL")
+        print(last_channel)
+        print(base_stage_width[-1] * max(int(self.width_mult_list)))
+        #####
+        '''
+
+        d = self.runtime_depth
+
+        idx = 1 + d[0] + d[1] + d[2]
+
+        print("N_CLASSES")
+        print(n_classes)
+        print("FINAL_EXPAND_WIDTH")
+        print(final_expand_width)
+        exp_ratio = blocks[idx].mobile_inverted_conv.active_expand_ratio
+        input_channels = blocks[idx].mobile_inverted_conv.active_out_channel
+        #blocks[0].config['mobile_inverted_conv']['out_channels']
+        print(exp_ratio * input_channels)
+        # input_channel * active expand ratio?
+        print("FEATURE DIM")
+        print(feature_dim)
+        print(input_channels) # OK
+        print("LAST CHANNEL")
+        print(last_channel)
+        print(base_stage_width[3] * max(int(self.width_mult_list)))
+
 
     """ MyNetwork required methods """
 
