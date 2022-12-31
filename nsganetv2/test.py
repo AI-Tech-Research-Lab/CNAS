@@ -1,5 +1,19 @@
 from search_space.ofa import OFASearchSpace
 from evaluator import OFAEvaluator,get_net_info
+from ofa.elastic_nn.dynamic_layers import ExitBlock
+
+
+import torch
+from ofa.model_zoo import ofa_net
+
+n_classes = 10
+ofa = ofa_net(n_classes,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=False)
+final_expand_width = [960]
+feature_dim = [160]
+last_channel = [1280]
+dropout_rate = 0.1
+exit = ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate)
+
 
 '''
 lr = 40
@@ -38,11 +52,6 @@ m1,_ = eval.sample(m1_config)
 m2,_ = eval.sample(m2_config)
 '''
 
-
-import torch
-from ofa.model_zoo import ofa_net
-
-ofa = ofa_net(10,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=False)
 
 '''
 ofa.set_active_subnet(ks=7, e=6, d=[3,2,4,2,3])

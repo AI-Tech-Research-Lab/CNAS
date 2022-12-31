@@ -566,6 +566,8 @@ class ExitBlock(MyModule):
         else:
             self.classifier = DynamicLinearLayer(
                 in_features_list=last_channel, out_features=n_classes, bias=True, dropout_rate=dropout_rate)
+
+        print(self.classifier)
     
     def confidence(x):
         prob = F.softmax(x)
