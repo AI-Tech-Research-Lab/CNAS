@@ -11,6 +11,8 @@ feature_dim = [160]
 last_channel = [1280]
 dropout_rate = 0.1
 exit = ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate)
+input = torch.randn(20, 3, 160, 160)
+x,conf=exit(input)
 
 
 '''
