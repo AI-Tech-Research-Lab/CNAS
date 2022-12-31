@@ -159,9 +159,6 @@ class EEMobileNetV3(MyNetwork):
         x = self.first_conv(x)
 
         for idx,block in enumerate(self.blocks):
-            print("IDX")
-            print(idx)
-            print(self.idx_exit)
             if (idx==self.idx_exit): #exit block
                 pred, conf = self.exit_block(x)
                 if conf >= self.threshold:

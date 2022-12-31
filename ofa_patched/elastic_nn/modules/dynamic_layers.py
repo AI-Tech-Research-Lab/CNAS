@@ -570,21 +570,17 @@ class ExitBlock(MyModule):
     def confidence(self,x):
         prob = F.softmax(x)
         top2_prob, top2_index = torch.topk(prob,2) 
+        print("TOP2 PROB")
+        print(top2_prob)
         sm = torch.diff(top2_prob,dim=1)*(-1)
         return sm 
 
     def forward(self, x):
 
-        print(x.shape)
         x = self.final_expand_layer(x)
-        print(x.shape)
         x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
-        print(x.shape)
         x = self.feature_mix_layer(x)
-        print(x.shape)
         x = torch.squeeze(x)
-        print(x.shape)
         x = self.classifier(x)
-        print(x.shape)
         conf = self.confidence(x)
         return x, conf
