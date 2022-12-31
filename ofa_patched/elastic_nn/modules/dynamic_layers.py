@@ -567,7 +567,7 @@ class ExitBlock(MyModule):
             self.classifier = DynamicLinearLayer(
                 in_features_list=last_channel, out_features=n_classes, bias=True, dropout_rate=dropout_rate)
     
-    def confidence(x):
+    def confidence(self,x):
         prob = F.softmax(x)
         top2_prob, top2_index = torch.topk(prob,2) 
         sm = torch.diff(top2_prob,dim=1)*(-1)
