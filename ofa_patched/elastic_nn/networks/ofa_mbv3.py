@@ -711,6 +711,11 @@ class OFAEEMobileNetV3(EEMobileNetV3):
                     copy.deepcopy(self.blocks[idx].shortcut)
                 ))
                 input_channel = stage_blocks[-1].mobile_inverted_conv.out_channels
+            print("STAGE ID")
+            print(stage_id)
+            print("OUTPUT CHANNELS")
+            print(stage_blocks[-1].mobile_inverted_conv.out_channels)
+
             blocks += stage_blocks
 
         d = self.runtime_depth
