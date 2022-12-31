@@ -570,8 +570,6 @@ class ExitBlock(MyModule):
     def confidence(self,x):
         prob = F.softmax(x)
         top2_prob, top2_index = torch.topk(prob,2) 
-        print("TOP2 PROB")
-        print(top2_prob)
         sm = torch.diff(top2_prob,dim=1)*(-1)
         return sm 
 

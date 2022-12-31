@@ -161,6 +161,8 @@ class EEMobileNetV3(MyNetwork):
         for idx,block in enumerate(self.blocks):
             if (idx==self.idx_exit): #exit block
                 pred, conf = self.exit_block(x)
+                print("CONF")
+                print(conf)
                 if conf >= self.threshold:
                     return pred
             else:
