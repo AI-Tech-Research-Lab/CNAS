@@ -575,10 +575,16 @@ class ExitBlock(MyModule):
 
     def forward(self, x):
 
+        print(x.shape)
         x = self.final_expand_layer(x)
+        print(x.shape)
         x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
+        print(x.shape)
         x = self.feature_mix_layer(x)
+        print(x.shape)
         x = torch.squeeze(x)
+        print(x.shape)
         x = self.classifier(x)
+        print(x.shape)
         conf = self.confidence(x)
         return x, conf
