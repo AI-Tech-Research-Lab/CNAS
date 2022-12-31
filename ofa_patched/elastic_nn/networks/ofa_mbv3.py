@@ -715,7 +715,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
 
         d = self.runtime_depth
         idx_exit = 1+d[0]+d[1]+d[3]   
-        feature_dim = [blocks[idx_exit].mobile_inverted_conv.active_out_channel]
+        feature_dim = [self.blocks[idx_exit].mobile_inverted_conv.active_out_channel]
         print(feature_dim)
         final_expand_width = [960]
         last_channel = [make_divisible(self.base_stage_width[-1] * max(self.width_mult_list), 8) for _ in self.width_mult_list]
