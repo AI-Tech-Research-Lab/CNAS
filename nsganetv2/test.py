@@ -13,6 +13,7 @@ dropout_rate = 0.1
 exit = ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate)
 input = torch.randn(20, 160, 40, 40)
 x,conf=exit(input)
+print(x,conf)
 
 
 '''
