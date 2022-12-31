@@ -514,13 +514,18 @@ class OFAEEMobileNetV3(EEMobileNetV3):
                 in_features_list=last_channel, out_features=n_classes, bias=True, dropout_rate=dropout_rate
             )
 
-        super(OFAEEMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier)
-
         # set bn param
         self.set_bn_param(momentum=bn_param[0], eps=bn_param[1])
 
         # runtime_depth
         self.runtime_depth = [len(block_idx) for block_idx in self.block_group_info]
+
+        d = self.runtime_depth
+        idx_exit = 1+d[0]+d[1]+d[3]   
+        feature_dim = [blocks[idx_exit].mobile_inverted_conv.active_out_channel]
+        print(feature_dim)
+        super(OFAEEMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
+        self.n_classes, final_expand_width, feature_dim, last_channel, self.dropout_rate, idx_exit, self.threshold)
 
     """ MyNetwork required methods """
 
@@ -711,7 +716,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
 
         d = self.runtime_depth
         idx_exit = 1+d[0]+d[1]+d[3]   
-        feature_dim = [blocks[-1].mobile_inverted_conv.active_out_channel]
+        feature_dim = [blocks[idx_exit].mobile_inverted_conv.active_out_channel]
         print(feature_dim)
         final_expand_width = [960]
         last_channel = [make_divisible(self.base_stage_width[-1] * max(self.width_mult_list), 8) for _ in self.width_mult_list]
