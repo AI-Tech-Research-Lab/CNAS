@@ -5,7 +5,13 @@ import torch
 from ofa.model_zoo import ofa_net
 
 n_classes = 10
-#ofa = ofa_net(n_classes,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=False)
+ofa = ofa_net(n_classes,'ofa_eembv3_d234_e346_k357_w1.0', pretrained=False)
+ofa.set_active_subnet(ks=7, e=6, d=[3,2,4,2,3])
+m = ofa.get_active_subnet(preserve_weight=True)
+input = torch.randn(1, 3, 40, 40)
+x   = m(input)
+
+'''
 final_expand_width = [960]
 feature_dim = [112]
 last_channel = [1280]
@@ -14,7 +20,7 @@ exit = ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_r
 input = torch.randn(20, 112, 40, 40)
 x,conf=exit(input)
 print(conf)
-
+'''
 
 '''
 lr = 40

@@ -127,30 +127,6 @@ class OFAMobileNetV3(MobileNetV3):
         # runtime_depth
         self.runtime_depth = [len(block_idx) for block_idx in self.block_group_info]
 
-        '''
-        ##TEST
-        print("N_CLASSES")
-        print(n_classes)
-        print("FINAL_EXPAND_WIDTH")
-        print(final_expand_width)
-        exp_ratio = blocks[-1].mobile_inverted_conv.active_expand_ratio
-        input_channels = blocks[-1].mobile_inverted_conv.active_out_channel
-        #blocks[0].config['mobile_inverted_conv']['out_channels']
-        print(exp_ratio * input_channels)
-        # input_channel * active expand ratio?
-        print("FEATURE DIM")
-        print(feature_dim)
-        print(blocks[-1].mobile_inverted_conv.active_out_channel) # OK
-        print("LAST CHANNEL")
-        print(last_channel)
-        print(base_stage_width[-1] * max(int(self.width_mult_list)))
-        #####
-        '''
-
-        d = self.runtime_depth
-
-        idx = 1 + d[0] + d[1] + d[2]
-
         print("N_CLASSES")
         print(n_classes)
         print("FINAL_EXPAND_WIDTH / OUTPUT CHANNELS")
@@ -440,7 +416,14 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         self.expand_ratio_list.sort()
         self.depth_list.sort()
 
+        self.n_classes = n_classes
+        self.dropout_rate = dropout_rate
+
         base_stage_width = [16, 24, 40, 80, 112, 160, 960, 1280]
+
+        self.base_stage_width = base_stage_width
+
+        self.threshold = 0.1
 
         final_expand_width = [
             make_divisible(base_stage_width[-2] * max(self.width_mult_list), 8) for _ in self.width_mult_list
@@ -726,7 +709,14 @@ class OFAEEMobileNetV3(EEMobileNetV3):
                 input_channel = stage_blocks[-1].mobile_inverted_conv.out_channels
             blocks += stage_blocks
 
-        _subnet = MobileNetV3(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier, self.runtime_depth)
+        d = self.runtime_depth
+        idx_exit = 1+d[0]+d[1]+d[3]   
+        feature_dim = [blocks[-1].mobile_inverted_conv.active_out_channel]
+        print(feature_dim)
+        final_expand_width = [960]
+        last_channel = [make_divisible(self.base_stage_width[-1] * max(self.width_mult_list), 8) for _ in self.width_mult_list]
+        _subnet = EEMobileNetV3(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
+        self.n_classes, final_expand_width, feature_dim, last_channel, self.dropout_rate, idx_exit, self.threshold)
         _subnet.set_bn_param(**self.get_bn_param())
         return _subnet
 
