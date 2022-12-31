@@ -7,13 +7,13 @@ from ofa.model_zoo import ofa_net
 n_classes = 10
 #ofa = ofa_net(n_classes,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=False)
 final_expand_width = [960]
-feature_dim = [160]
+feature_dim = [112]
 last_channel = [1280]
 dropout_rate = 0.1
 exit = ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate)
-input = torch.randn(20, 160, 40, 40)
+input = torch.randn(20, 112, 40, 40)
 x,conf=exit(input)
-print(x,conf)
+print(conf)
 
 
 '''
