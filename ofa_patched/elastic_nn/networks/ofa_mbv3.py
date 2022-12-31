@@ -153,19 +153,17 @@ class OFAMobileNetV3(MobileNetV3):
 
         print("N_CLASSES")
         print(n_classes)
-        print("FINAL_EXPAND_WIDTH")
-        print(final_expand_width)
-        exp_ratio = blocks[idx].mobile_inverted_conv.active_expand_ratio
-        input_channels = blocks[idx].mobile_inverted_conv.active_out_channel
+        print("FINAL_EXPAND_WIDTH / OUTPUT CHANNELS")
+        exp_ratio = [blocks[idx].mobile_inverted_conv.active_expand_ratio]
+        input_channels = [blocks[idx].mobile_inverted_conv.active_out_channel]
         #blocks[0].config['mobile_inverted_conv']['out_channels']
         print(exp_ratio * input_channels)
         # input_channel * active expand ratio?
-        print("FEATURE DIM")
-        print(feature_dim)
+        print("FEATURE DIM / INPUT CHANNELS")
         print(input_channels) # OK
         print("LAST CHANNEL")
-        print(last_channel)
-        print(base_stage_width[3] * max(int(self.width_mult_list)))
+        last_channel = [make_divisible(base_stage_width[3] * max(self.width_mult_list), 8) for _ in self.width_mult_list]
+        #which stage is correct?
 
 
     """ MyNetwork required methods """
