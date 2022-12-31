@@ -5,7 +5,7 @@ import torch
 from ofa.model_zoo import ofa_net
 
 n_classes = 10
-ofa = ofa_net(n_classes,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=False)
+#ofa = ofa_net(n_classes,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=False)
 final_expand_width = [960]
 feature_dim = [160]
 last_channel = [1280]
