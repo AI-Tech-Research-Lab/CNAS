@@ -1,8 +1,6 @@
 from search_space.ofa import OFASearchSpace
 from evaluator import OFAEvaluator,get_net_info
-from ofa.elastic_nn.dynamic_layers import ExitBlock
-
-
+from ofa.elastic_nn.modules.dynamic_layers import ExitBlock
 import torch
 from ofa.model_zoo import ofa_net
 
