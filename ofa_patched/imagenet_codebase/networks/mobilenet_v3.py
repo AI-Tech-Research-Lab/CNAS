@@ -160,6 +160,8 @@ class EEMobileNetV3(MyNetwork):
 
         for idx,block in enumerate(self.blocks):
             if (idx==self.idx_exit): #exit block
+                print("TENSOR SHAPE")
+                print(x.shape)
                 pred, conf = self.exit_block(x)
                 if conf >= self.threshold: #Tensor of boolean values is ambiguous
                     return pred
