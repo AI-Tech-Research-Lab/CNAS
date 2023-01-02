@@ -170,27 +170,25 @@ class EEMobileNetV3(MyNetwork):
             if (idx==self.idx_exit): #exit block
                 pred, conf = self.exit_block(x)
                 mask = conf >= self.threshold 
-                idxs = np.where(np.array(mask)==True)
-                pred = mask * pred #EE predictions
-                print(x.shape)
-                x = x[mask==False]
-                print(x.shape)
+                idxs = np.where(np.array(mask)==True) #idxs EE predictions
+                x = x[mask==False,:,:,:]
                 count = torch.sum(mask).item()
                 print("Early Exit samples:")
                 print(count)
             x = block(x)
-        
-        # Reconstruct tensor x mixing EE block predictions with network ones
-        tensors = tf.unstack(x,x.shape[0],axis=0)
-        for i in idxs[0]:
-            tensors.insert(i,pred[i])
-        x = tf.stack(tensors,axis=0)
 
         x = self.final_expand_layer(x)
         x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
         x = self.feature_mix_layer(x)
         x = torch.squeeze(x)
         x = self.classifier(x)
+
+        # Reconstruct tensor x mixing EE block predictions with network ones
+        tensors = list(torch.unbind(x,axis=0))
+        for i in idxs[0]:
+            tensors.insert(i,pred[i])
+        x = torch.stack(tensors,axis=0)
+
         return x
 
     @property
