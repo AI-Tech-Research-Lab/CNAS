@@ -127,21 +127,6 @@ class OFAMobileNetV3(MobileNetV3):
         # runtime_depth
         self.runtime_depth = [len(block_idx) for block_idx in self.block_group_info]
 
-        print("N_CLASSES")
-        print(n_classes)
-        print("FINAL_EXPAND_WIDTH / OUTPUT CHANNELS")
-        exp_ratio = [blocks[idx].mobile_inverted_conv.active_expand_ratio]
-        input_channels = [blocks[idx].mobile_inverted_conv.active_out_channel]
-        #blocks[0].config['mobile_inverted_conv']['out_channels']
-        print(exp_ratio * input_channels)
-        # input_channel * active expand ratio?
-        print("FEATURE DIM / INPUT CHANNELS")
-        print(input_channels) # OK
-        print("LAST CHANNEL")
-        last_channel = [make_divisible(base_stage_width[3] * max(self.width_mult_list), 8) for _ in self.width_mult_list]
-        #which stage is correct?
-
-
     """ MyNetwork required methods """
 
     @staticmethod
@@ -710,12 +695,6 @@ class OFAEEMobileNetV3(EEMobileNetV3):
                     copy.deepcopy(self.blocks[idx].shortcut)
                 ))
                 input_channel = stage_blocks[-1].mobile_inverted_conv.out_channels
-            '''    
-            print("STAGE ID")
-            print(stage_id)
-            print("OUTPUT CHANNELS")
-            print(stage_blocks[-1].mobile_inverted_conv.out_channels)
-            '''
 
             blocks += stage_blocks
 
