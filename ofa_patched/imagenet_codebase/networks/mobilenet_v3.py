@@ -171,6 +171,9 @@ class EEMobileNetV3(MyNetwork):
                 idxs = np.where(np.array(mask)==True)
                 pred = mask * x #EE predictions
                 x = x[pred==False]
+                count = torch.sum(mask).item()
+                print("Early Exit samples:")
+                print(count)
             x = block(x)
         
         # Reconstruct tensor x mixing EE block predictions with network ones
