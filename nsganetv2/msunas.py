@@ -76,7 +76,7 @@ class MSuNAS:
 
             # Design Of Experiment
             if self.iterations < 1:
-                arch_doe = self.search_space.sample(n_samples = self.n_doe, d = [2,3])
+                arch_doe = self.search_space.sample(n_samples = self.n_doe)
             else:
                 arch_doe = self.search_space.initialize(self.n_doe)
 
