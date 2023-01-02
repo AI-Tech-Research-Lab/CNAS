@@ -168,10 +168,10 @@ class EEMobileNetV3(MyNetwork):
 
         for idx,block in enumerate(self.blocks):
             if (idx==self.idx_exit): #exit block
-                x, conf = self.exit_block(x)
+                pred, conf = self.exit_block(x)
                 mask = conf >= self.threshold 
                 idxs = np.where(np.array(mask)==True)
-                pred = mask * x #EE predictions
+                pred = mask * pred #EE predictions
                 print(x.shape)
                 x = x[pred==False]
                 print(x.shape)
