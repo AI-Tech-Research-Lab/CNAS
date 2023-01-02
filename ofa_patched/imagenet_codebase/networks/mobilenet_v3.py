@@ -173,7 +173,7 @@ class EEMobileNetV3(MyNetwork):
                 idxs = np.where(np.array(mask)==True)
                 pred = mask * pred #EE predictions
                 print(x.shape)
-                x = x[pred==False]
+                x = x[mask==False]
                 print(x.shape)
                 count = torch.sum(mask).item()
                 print("Early Exit samples:")
