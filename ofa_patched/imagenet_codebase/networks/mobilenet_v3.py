@@ -6,7 +6,6 @@ import copy
 import torch
 import torch.nn as nn
 import numpy as np
-import tensorflow as tf
 
 # from layers import *
 from ofa.layers import set_layer_from_config, MBInvertedConvLayer, ConvLayer, IdentityLayer, LinearLayer
@@ -170,6 +169,8 @@ class EEMobileNetV3(MyNetwork):
             if (idx==self.idx_exit): #exit block
                 pred, conf = self.exit_block(x)
                 mask = conf >= self.threshold 
+                print("MASK")
+                print(mask)
                 idxs = np.where(np.array(mask)==True) #idxs EE predictions
                 x = x[mask==False,:,:,:]
                 count = torch.sum(mask).item()
