@@ -8,7 +8,7 @@ import math
 import utils
 from codebase.networks import NSGANetV2
 from codebase.run_manager import get_run_config
-from ofa.elastic_nn.networks import OFAMobileNetV3, OFAResNets, OFAResNetsHE, OFAMobileNetV3HE
+from ofa.elastic_nn.networks import OFAMobileNetV3, OFAEEMobileNetV3, OFAResNets, OFAResNetsHE, OFAMobileNetV3HE
 from ofa.imagenet_codebase.run_manager import RunManager
 from ofa.elastic_nn.modules.dynamic_op import DynamicSeparableConv2d
 from ofa.utils import download_url
@@ -117,7 +117,7 @@ class OFAEvaluator:
             raise ValueError
 
         if ('mbv3_d234_e346_k357_w1.0' in model_path) or ('mbv3_d234_e346_k357_w1.2' in model_path):
-            self.engine = OFAMobileNetV3(
+            self.engine = OFAEEMobileNetV3(
                 n_classes=n_classes,
                 dropout_rate=0, width_mult_list=self.width_mult, ks_list=self.kernel_size,
                 expand_ratio_list=self.exp_ratio, depth_list=self.depth)
