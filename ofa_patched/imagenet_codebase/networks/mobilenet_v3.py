@@ -159,11 +159,11 @@ class EEMobileNetV3(MyNetwork):
         x = self.first_conv(x)
 
         for idx,block in enumerate(self.blocks):
-            x = block(x)
             if (idx==self.idx_exit): #exit block
                 pred, conf = self.exit_block(x)
                 if conf >= self.threshold: #Tensor of boolean values is ambiguous
                     return pred
+            x = block(x)
         x = self.final_expand_layer(x)
         x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
         x = self.feature_mix_layer(x)
