@@ -5,6 +5,8 @@
 import copy
 import torch
 import torch.nn as nn
+import numpy as np
+import tensorflow as tf
 
 # from layers import *
 from ofa.layers import set_layer_from_config, MBInvertedConvLayer, ConvLayer, IdentityLayer, LinearLayer
@@ -156,14 +158,27 @@ class EEMobileNetV3(MyNetwork):
 
 
     def forward(self, x):
+
         x = self.first_conv(x)
+
+        pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
+        idxs = []
 
         for idx,block in enumerate(self.blocks):
             if (idx==self.idx_exit): #exit block
-                pred, conf = self.exit_block(x)
-                if conf >= self.threshold: #Tensor of boolean values is ambiguous
-                    return pred
+                x, conf = self.exit_block(x)
+                mask = conf >= self.threshold 
+                idxs = np.where(np.array(mask)==True)
+                pred = mask * x #EE predictions
+                x = x[pred==False]
             x = block(x)
+        
+        # Reconstruct tensor x mixing EE block predictions with network ones
+        tensors = tf.unstack(x,x.shape[0],axis=0)
+        for i in idxs[0]:
+            tensors.insert(i,pred[i])
+        x = tf.stack(tensors,axis=0)
+
         x = self.final_expand_layer(x)
         x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
         x = self.feature_mix_layer(x)
