@@ -164,13 +164,17 @@ class EEMobileNetV3(MyNetwork):
         pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
         idxs = []
 
+        self.threshold = 0.001
+
         for idx,block in enumerate(self.blocks):
             if (idx==self.idx_exit): #exit block
                 x, conf = self.exit_block(x)
                 mask = conf >= self.threshold 
                 idxs = np.where(np.array(mask)==True)
                 pred = mask * x #EE predictions
+                print(x.shape)
                 x = x[pred==False]
+                print(x.shape)
                 count = torch.sum(mask).item()
                 print("Early Exit samples:")
                 print(count)
