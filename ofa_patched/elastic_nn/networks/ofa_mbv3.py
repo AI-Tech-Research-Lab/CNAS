@@ -408,8 +408,6 @@ class OFAEEMobileNetV3(EEMobileNetV3):
 
         self.base_stage_width = base_stage_width
 
-        self.threshold = 0.1
-
         final_expand_width = [
             make_divisible(base_stage_width[-2] * max(self.width_mult_list), 8) for _ in self.width_mult_list
         ]
@@ -704,7 +702,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         final_expand_width = [960]
         last_channel = [make_divisible(self.base_stage_width[-1] * max(self.width_mult_list), 8) for _ in self.width_mult_list]
         _subnet = EEMobileNetV3(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
-        self.n_classes, final_expand_width, feature_dim, last_channel, self.dropout_rate, idx_exit, self.threshold)
+        self.n_classes, final_expand_width, feature_dim, last_channel, self.dropout_rate, idx_exit)
         _subnet.set_bn_param(**self.get_bn_param())
         return _subnet
 
