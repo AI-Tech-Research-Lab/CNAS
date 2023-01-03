@@ -9,6 +9,7 @@ ofa = ofa_net(n_classes,'ofa_eembv3_d234_e346_k357_w1.0', pretrained=False)
 ofa.set_active_subnet(ks=7, e=6, d=[3,2,4,2,3])
 m= ofa.get_active_subnet(preserve_weight=True)
 input = torch.randn(96, 3, 40, 40)
+m.set_threshold(0.001)
 m.eval()
 x = m(input)
 
