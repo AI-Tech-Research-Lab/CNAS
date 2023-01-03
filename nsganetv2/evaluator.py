@@ -278,8 +278,7 @@ class OFAEvaluator:
         print(info)
 
     @staticmethod   
-    def adaptive_eval(subnet, data_path, dataset='imagenet', n_epochs=0, resolution=(224,224), threshold = 0.1, 
-             trn_batch_size=128, vld_batch_size=250,
+    def adaptive_eval(subnet, data_path, dataset='imagenet', n_epochs=0, resolution=(224,224), trn_batch_size=128, vld_batch_size=250,
              num_workers=4, valid_size=None, is_test=True, log_dir='.tmp/eval', measure_latency=None, no_logs=False,
              reset_running_statistics=True, pmax = 2, fmax = 100, amax = 5, wp = 1, wf = 1/40, wa = 1, penalty = 10**10):
 
@@ -316,7 +315,7 @@ class OFAEvaluator:
             cfgs.subnet = subnet
             subnet = run_manager.train(cfgs)
 
-        loss, top1, top5 = run_manager.adaptive_validate(net=subnet, threshold = threshold, is_test=is_test, no_logs=no_logs)
+        loss, top1, top5 = run_manager.adaptive_validate(net=subnet, is_test=is_test, no_logs=no_logs)
 
         info['loss'], info['top1'], info['top5'] = loss, top1, top5
 
@@ -425,6 +424,7 @@ def main(args):
         evaluator = OFAEvaluator(n_classes=args.n_classes, model_path=args.supernet, pretrained = args.pretrained)
         subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
         threshold = config['t']
+        subnet.threshold = threshold
         resolution = config['r']
 
     else:

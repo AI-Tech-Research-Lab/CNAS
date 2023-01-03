@@ -421,7 +421,7 @@ class RunManager:
         return losses.avg, top1.avg, top5.avg, netB_util.avg
     '''
 
-    def adaptive_validate(self, epoch=0, is_test=True, run_str='', net=None, threshold = 0.1, data_loader=None, no_logs=False):
+    def adaptive_validate(self, epoch=0, is_test=True, run_str='', net=None, data_loader=None, no_logs=False):
 
         if net is None:
             net = self.net
@@ -433,18 +433,12 @@ class RunManager:
                 data_loader = self.run_config.test_loader
             else:
                 data_loader = self.run_config.valid_loader
-
-        #net.set_threshold(threshold)
-        net.threshold = 0.001
         
         net.eval()
 
         losses = AverageMeter()
         top1 = AverageMeter()
         top5 = AverageMeter()
-
-        print("THRESHOLD")
-        print(net.threshold)
 
         with torch.no_grad():
             with tqdm(total=len(data_loader),
@@ -486,13 +480,13 @@ class RunManager:
                 img_size_list.append(img_size)
                 self.run_config.data_provider.assign_active_img_size(img_size)
                 self.reset_running_statistics(net=net)
-                loss, top1, top5 = self.adaptive_validate(epoch, is_test, net=net, threshold = 0.1)
+                loss, top1, top5 = self.adaptive_validate(epoch, is_test, net=net)
                 loss_list.append(loss)
                 top1_list.append(top1)
                 top5_list.append(top5)
             return img_size_list, loss_list, top1_list, top5_list
         else:
-            loss, top1, top5 = self.adaptive_validate(epoch, is_test, net=net, threshold = 0.1)
+            loss, top1, top5 = self.adaptive_validate(epoch, is_test, net=net)
             return [self.run_config.data_provider.active_img_size], [loss], [top1], [top5]
 
     def train_one_epoch(self, args, epoch, warmup_epochs=0, warmup_lr=0):

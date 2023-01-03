@@ -150,8 +150,8 @@ class EEMobileNetV3(MyNetwork):
         self.final_expand_layer = final_expand_layer
         self.feature_mix_layer = feature_mix_layer
         self.classifier = classifier
-        self.idx_exit = idx_exit #exit is placed after the 3rd group
-        self.threshold = 0.1
+        self.idx_exit = idx_exit #exit is placed after the 4rd group
+        self.threshold = 0 #default value
 
         self.exit_block = ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate)
 
@@ -163,11 +163,13 @@ class EEMobileNetV3(MyNetwork):
         pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
         idxs = []
 
+        print(self.threshold)
+
         for idx,block in enumerate(self.blocks):
             if (idx==(self.idx_exit-1) and not(self.training)): #exit block
                 pred, conf = self.exit_block(x)
                 conf = torch.squeeze(conf)
-                mask = conf >= 0.1#self.threshold 
+                mask = conf >= self.threshold 
                 #print(torch.mean(conf))
                 mask = mask.cpu() #gpu>cpu memory
                 idxs = np.where(np.array(mask)==False) #idxs of non EE predictions
