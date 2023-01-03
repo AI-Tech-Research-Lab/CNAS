@@ -167,7 +167,7 @@ class EEMobileNetV3(MyNetwork):
             if (idx==(self.idx_exit-1) and not(self.training)): #exit block
                 pred, conf = self.exit_block(x)
                 conf = torch.squeeze(conf)
-                mask = conf >= self.threshold 
+                mask = conf >= 0.001#self.threshold 
                 #print(torch.mean(conf))
                 mask = mask.cpu() #gpu>cpu memory
                 idxs = np.where(np.array(mask)==True) #idxs EE predictions
