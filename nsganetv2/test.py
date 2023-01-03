@@ -12,6 +12,8 @@ input = torch.randn(96, 3, 40, 40)
 m.threshold = 0.001
 m.train()
 x = m(input)
+m.eval()
+x = m(input)
 
 '''
 final_expand_width = [960]
