@@ -44,7 +44,8 @@ def tiny_ml(params,flops,activations,pmax,fmax,amax,wp,wf,wa,penalty):
 
 def get_net_info(net, data_shape, measure_latency=None, print_info=True, clean=False, lut=None, 
                  pmax = 2, fmax = 100, amax = 5, wp = 1, wf = 1/40, wa = 1, penalty = 10**10):
-
+    
+    print(net)
     net_info = utils.get_net_info(net, data_shape, measure_latency, print_info=print_info, clean=clean, lut=lut)
     gpu_latency, cpu_latency = None, None
     for k in net_info.keys():
