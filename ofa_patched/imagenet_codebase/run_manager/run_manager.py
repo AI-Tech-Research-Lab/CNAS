@@ -442,6 +442,9 @@ class RunManager:
         top1 = AverageMeter()
         top5 = AverageMeter()
 
+        print("THRESHOLD")
+        print(net.threshold)
+
         with torch.no_grad():
             with tqdm(total=len(data_loader),
                       desc='Validate Epoch #{} {}'.format(epoch + 1, run_str), disable=no_logs) as t:
