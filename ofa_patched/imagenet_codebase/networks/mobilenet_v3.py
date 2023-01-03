@@ -168,13 +168,13 @@ class EEMobileNetV3(MyNetwork):
                 pred, conf = self.exit_block(x)
                 conf = torch.squeeze(conf)
                 mask = conf >= self.threshold 
-                print(torch.mean(conf))
+                #print(torch.mean(conf))
                 mask = mask.cpu() #gpu>cpu memory
                 idxs = np.where(np.array(mask)==True) #idxs EE predictions
                 x = x[mask==False,:,:,:]
                 count = torch.sum(mask).item()
-                #print("Early Exit samples:")
-                #print(count)
+                print("Early Exit samples:")
+                print(count)
             x = block(x)
         x = self.final_expand_layer(x)
         x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
