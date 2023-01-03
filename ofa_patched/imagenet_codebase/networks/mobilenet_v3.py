@@ -161,13 +161,12 @@ class EEMobileNetV3(MyNetwork):
 
         pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
         idxs = []
-        threshold = self.get_threshold()
 
         for idx,block in enumerate(self.blocks):
             if (idx==self.idx_exit and not(self.training)): #exit block
                 pred, conf = self.exit_block(x)
                 conf = torch.squeeze(conf)
-                mask = conf >= threshold 
+                mask = conf >= self.threshold 
                 idxs = np.where(np.array(mask)==True) #idxs EE predictions
                 x = x[mask==False,:,:,:]
                 count = torch.sum(mask).item()
