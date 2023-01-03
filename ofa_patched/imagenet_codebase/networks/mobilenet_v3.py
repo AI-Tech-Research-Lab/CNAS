@@ -166,7 +166,6 @@ class EEMobileNetV3(MyNetwork):
         for idx,block in enumerate(self.blocks):
             if (idx==(self.idx_exit-1) and not(self.training)): #exit block
                 pred, conf = self.exit_block(x)
-                print(pred)
                 conf = torch.squeeze(conf)
                 mask = conf >= 0.1#self.threshold 
                 #print(torch.mean(conf))
