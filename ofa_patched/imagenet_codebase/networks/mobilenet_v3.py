@@ -161,6 +161,7 @@ class EEMobileNetV3(MyNetwork):
         x = self.first_conv(x)
 
         pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
+        print(pred)
         idxs = []
 
         for idx,block in enumerate(self.blocks):
