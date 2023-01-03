@@ -117,7 +117,7 @@ class OFAEvaluator:
             raise ValueError
 
         if ('mbv3_d234_e346_k357_w1.0' in model_path) or ('mbv3_d234_e346_k357_w1.2' in model_path):
-            self.engine = OFAMobileNetV3(
+            self.engine = OFAEEMobileNetV3(
                 n_classes=n_classes,
                 dropout_rate=0, width_mult_list=self.width_mult, ks_list=self.kernel_size,
                 expand_ratio_list=self.exp_ratio, depth_list=self.depth)
