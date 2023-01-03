@@ -434,7 +434,8 @@ class RunManager:
             else:
                 data_loader = self.run_config.valid_loader
 
-        net.set_threshold(threshold)
+        #net.set_threshold(threshold)
+        net.threshold = threshold
         
         net.eval()
 
@@ -485,13 +486,13 @@ class RunManager:
                 img_size_list.append(img_size)
                 self.run_config.data_provider.assign_active_img_size(img_size)
                 self.reset_running_statistics(net=net)
-                loss, top1, top5 = self.validate(epoch, is_test, net=net)
+                loss, top1, top5 = self.adaptive_validate(epoch, is_test, net=net, threshold = 0.1)
                 loss_list.append(loss)
                 top1_list.append(top1)
                 top5_list.append(top5)
             return img_size_list, loss_list, top1_list, top5_list
         else:
-            loss, top1, top5 = self.validate(epoch, is_test, net=net)
+            loss, top1, top5 = self.adaptive_validate(epoch, is_test, net=net, threshold = 0.1)
             return [self.run_config.data_provider.active_img_size], [loss], [top1], [top5]
 
     def train_one_epoch(self, args, epoch, warmup_epochs=0, warmup_lr=0):
