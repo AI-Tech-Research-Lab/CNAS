@@ -167,12 +167,12 @@ class EEMobileNetV3(MyNetwork):
             if (idx==(self.idx_exit-1) and not(self.training)): #exit block
                 pred, conf = self.exit_block(x)
                 conf = torch.squeeze(conf)
-                mask = conf >= 0.1#self.threshold 
+                mask = conf >= 0.#self.threshold 
                 #print(torch.mean(conf))
                 mask = mask.cpu() #gpu>cpu memory
                 idxs = np.where(np.array(mask)==False) #idxs EE predictions
                 x = x[mask==False,:,:,:]
-                pred = pred[mask==True,:,:,:]
+                pred = pred[mask==True,:]
                 count = torch.sum(mask).item()
                 #print("Early Exit samples:")
                 #print(count)
