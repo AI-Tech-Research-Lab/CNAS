@@ -164,6 +164,7 @@ class EEMobileNetV3(MyNetwork):
         idxs = []
 
         for idx,block in enumerate(self.blocks):
+            print(x.shape)
             if (idx==self.idx_exit and not(self.training)): #exit block
                 pred, conf = self.exit_block(x)
                 conf = torch.squeeze(conf)
