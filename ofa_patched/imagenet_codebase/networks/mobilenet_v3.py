@@ -161,7 +161,6 @@ class EEMobileNetV3(MyNetwork):
         x = self.first_conv(x)
 
         pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
-        print(pred)
         idxs = []
 
         for idx,block in enumerate(self.blocks):
@@ -169,13 +168,15 @@ class EEMobileNetV3(MyNetwork):
                 pred, conf = self.exit_block(x)
                 print(pred)
                 conf = torch.squeeze(conf)
-                mask = conf >= 0.#self.threshold 
+                mask = conf >= 0.1#self.threshold 
                 #print(torch.mean(conf))
                 mask = mask.cpu() #gpu>cpu memory
-                idxs = np.where(np.array(mask)==False) #idxs EE predictions
+                idxs = np.where(np.array(mask)==False) #idxs of non EE predictions
                 x = x[mask==False,:,:,:]
                 pred = pred[mask==True,:]
                 count = torch.sum(mask).item()
+                del mask 
+                del conf
                 #print("Early Exit samples:")
                 #print(count)
             x = block(x)
@@ -185,13 +186,13 @@ class EEMobileNetV3(MyNetwork):
         x = torch.squeeze(x)
         x = self.classifier(x)
         
-        print(pred)
         if(not(self.training)): #it would be better to insert non EE predictions into the EE list
             # Reconstruct tensor x mixing EE block predictions with network ones
             tensors = list(torch.unbind(pred,axis=0))
             for i in idxs[0]:
                 tensors.insert(i,x[i])
             x = torch.stack(tensors,axis=0)
+            del pred
 
         return x
 
