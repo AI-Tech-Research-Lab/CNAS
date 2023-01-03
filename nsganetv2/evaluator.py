@@ -439,7 +439,7 @@ def main(args):
     '''
     OFAEvaluator.adaptive_eval(
         subnet, log_dir=args.log_dir, data_path=args.data, dataset=args.dataset, n_epochs=args.n_epochs,
-        resolution=resolution, threshold = threshold, trn_batch_size=args.trn_batch_size, vld_batch_size=args.vld_batch_size,
+        resolution=resolution, trn_batch_size=args.trn_batch_size, vld_batch_size=args.vld_batch_size,
         num_workers=args.num_workers, valid_size=args.valid_size, is_test=args.test, measure_latency=args.latency,
         no_logs=(not args.verbose), reset_running_statistics=args.reset_running_statistics, 
         pmax = args.pmax, fmax = args.fmax, amax = args.amax, wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty,
