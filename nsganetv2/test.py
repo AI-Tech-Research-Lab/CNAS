@@ -3,13 +3,19 @@ from evaluator import OFAEvaluator,get_net_info
 from ofa.elastic_nn.modules.dynamic_layers import ExitBlock
 import torch
 from ofa.model_zoo import ofa_net
+from ofa.imagenet_codebase.utils.pytorch_utils import count_parameters
 
 n_classes = 10
 ofa = ofa_net(n_classes,'ofa_eembv3_d234_e346_k357_w1.0', pretrained=False)
 ofa.set_active_subnet(ks=7, e=6, d=[3,2,4,2,3])
-m = ofa.get_active_subnet(preserve_weight=True)
-input = torch.randn(96, 3, 40, 40)
-x   = m(input)
+m1= ofa.get_active_subnet(preserve_weight=True)
+ofa = ofa_net(n_classes,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=False)
+ofa.set_active_subnet(ks=7, e=6, d=[3,2,4,2,3])
+m2= ofa.get_active_subnet(preserve_weight=True)
+params1 = count_parameters(m1)
+params2 = count_parameters(m2)
+print(params1)
+print(params2)
 
 '''
 final_expand_width = [960]
