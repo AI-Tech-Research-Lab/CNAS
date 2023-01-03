@@ -139,7 +139,7 @@ class MobileNetV3(MyNetwork):
 class EEMobileNetV3(MyNetwork):
 
     def __init__(self, first_conv, blocks, final_expand_layer, feature_mix_layer, classifier, 
-    n_classes, final_expand_width, feature_dim, last_channel, dropout_rate, idx_exit, threshold):
+    n_classes, final_expand_width, feature_dim, last_channel, dropout_rate, idx_exit):
 
         from ofa.elastic_nn.modules.dynamic_layers import ExitBlock
 
@@ -151,7 +151,6 @@ class EEMobileNetV3(MyNetwork):
         self.feature_mix_layer = feature_mix_layer
         self.classifier = classifier
         self.idx_exit = idx_exit #exit is placed after the 3rd group
-        self.threshold = threshold
 
         self.exit_block = ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate)
 
@@ -162,14 +161,13 @@ class EEMobileNetV3(MyNetwork):
 
         pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
         idxs = []
-
-        self.threshold = 0.001
+        threshold = self.get_threshold()
 
         for idx,block in enumerate(self.blocks):
-            if (idx==self.idx_exit): #exit block
+            if (idx==self.idx_exit and not(self.training)): #exit block
                 pred, conf = self.exit_block(x)
                 conf = torch.squeeze(conf)
-                mask = conf >= self.threshold 
+                mask = conf >= threshold 
                 idxs = np.where(np.array(mask)==True) #idxs EE predictions
                 x = x[mask==False,:,:,:]
                 count = torch.sum(mask).item()
@@ -183,13 +181,22 @@ class EEMobileNetV3(MyNetwork):
         x = torch.squeeze(x)
         x = self.classifier(x)
 
-        # Reconstruct tensor x mixing EE block predictions with network ones
-        tensors = list(torch.unbind(x,axis=0))
-        for i in idxs[0]:
-            tensors.insert(i,pred[i])
-        x = torch.stack(tensors,axis=0)
+        if(not(self.training)): #it would be better to insert non EE predictions into the EE list
+            # Reconstruct tensor x mixing EE block predictions with network ones
+            tensors = list(torch.unbind(x,axis=0))
+            for i in idxs[0]:
+                tensors.insert(i,pred[i])
+            x = torch.stack(tensors,axis=0)
 
         return x
+    
+    @property
+    def set_threshold(self, threshold):
+        self.threshold = threshold
+    
+    @property
+    def get_threshold(self):
+        return self.threshold
 
     @property
     def module_str(self):
