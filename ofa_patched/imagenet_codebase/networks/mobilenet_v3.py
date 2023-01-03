@@ -174,8 +174,8 @@ class EEMobileNetV3(MyNetwork):
                 x = x[mask==False,:,:,:]
                 pred = pred[mask==True,:,:,:]
                 count = torch.sum(mask).item()
-                print("Early Exit samples:")
-                print(count)
+                #print("Early Exit samples:")
+                #print(count)
             x = block(x)
         x = self.final_expand_layer(x)
         x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
