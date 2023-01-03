@@ -157,6 +157,9 @@ class EEMobileNetV3(MyNetwork):
 
     def forward(self, x):
 
+        if(self.training):
+            print("TRAINING!!")
+
         x = self.first_conv(x)
 
         pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
