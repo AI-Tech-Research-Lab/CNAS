@@ -166,6 +166,7 @@ class EEMobileNetV3(MyNetwork):
         for idx,block in enumerate(self.blocks):
             if (idx==(self.idx_exit-1) and not(self.training)): #exit block
                 pred, conf = self.exit_block(x)
+                print(pred)
                 conf = torch.squeeze(conf)
                 mask = conf >= 0.#self.threshold 
                 #print(torch.mean(conf))
@@ -182,7 +183,8 @@ class EEMobileNetV3(MyNetwork):
         x = self.feature_mix_layer(x)
         x = torch.squeeze(x)
         x = self.classifier(x)
-
+        
+        print(pred)
         if(not(self.training)): #it would be better to insert non EE predictions into the EE list
             # Reconstruct tensor x mixing EE block predictions with network ones
             tensors = list(torch.unbind(pred,axis=0))
