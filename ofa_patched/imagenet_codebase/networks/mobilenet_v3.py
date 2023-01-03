@@ -151,7 +151,7 @@ class EEMobileNetV3(MyNetwork):
         self.feature_mix_layer = feature_mix_layer
         self.classifier = classifier
         self.idx_exit = idx_exit #exit is placed after the 3rd group
-        self.threshold = 0.001
+        self.threshold = 0.1
 
         self.exit_block = ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate)
 

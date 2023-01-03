@@ -435,7 +435,7 @@ class RunManager:
                 data_loader = self.run_config.valid_loader
 
         #net.set_threshold(threshold)
-        net.threshold = threshold
+        net.threshold = 1.1
         
         net.eval()
 
