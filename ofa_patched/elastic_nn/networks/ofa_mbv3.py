@@ -504,7 +504,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         idx_exit = 1+d[0]+d[1]+d[2]   
         feature_dim = [blocks[idx_exit].mobile_inverted_conv.active_out_channel]
         super(OFAEEMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
-        self.n_classes, final_expand_width, feature_dim, last_channel, self.dropout_rate, idx_exit, self.threshold)
+        self.n_classes, final_expand_width, feature_dim, last_channel, self.dropout_rate, idx_exit)
 
         # set bn param
         self.set_bn_param(momentum=bn_param[0], eps=bn_param[1])
