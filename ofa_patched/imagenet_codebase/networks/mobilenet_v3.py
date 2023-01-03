@@ -189,7 +189,7 @@ class EEMobileNetV3(MyNetwork):
         return x
     
     @property
-    def set_threshold(self, threshold):
+    def set_threshold(self, threshold = 0.001):
         self.threshold = threshold
     
     @property
