@@ -166,7 +166,7 @@ class EEMobileNetV3(MyNetwork):
         if(self.training): #training 
             for idx,block in enumerate(self.blocks):
                 if (idx==(self.idx_exit-1)): #exit block
-                    pred, conf = self.exit_block(x)
+                    pred, _ = self.exit_block(x)
                 x = block(x)
             x = self.final_expand_layer(x)
             x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
@@ -198,8 +198,8 @@ class EEMobileNetV3(MyNetwork):
             x = self.classifier(x)
             
             tensors = list(torch.unbind(pred,axis=0))
-            for i in idxs[0]:
-                tensors.insert(i,x[i])
+            for i,idx in enumerate(idxs[0]):
+                tensors.insert(idx,x[i])
             x = torch.stack(tensors,axis=0)
             del pred
             return x

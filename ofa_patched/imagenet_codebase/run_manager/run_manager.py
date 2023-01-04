@@ -617,7 +617,7 @@ class RunManager:
                     output, exit_output = self.net(images)
                     loss1 = self.train_criterion(output, labels)
                     loss2 = self.train_criterion(exit_output, labels)
-                    loss = 0.2 * loss1 + loss2
+                    loss = 0.4 * loss1 + loss2
 
                 if args.teacher_model is None:
                     loss_type = 'ce'
