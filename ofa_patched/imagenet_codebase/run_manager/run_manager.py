@@ -614,7 +614,6 @@ class RunManager:
                     loss2 = self.train_criterion(aux_outputs, labels)
                     loss = loss1 + 0.4 * loss2
                 else:
-                    print("TRAINING MULTI-LOSS")
                     output, exit_output = self.net(images)
                     loss1 = self.train_criterion(output, labels)
                     loss2 = self.train_criterion(exit_output, labels)
