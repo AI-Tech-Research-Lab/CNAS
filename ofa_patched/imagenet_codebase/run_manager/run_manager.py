@@ -447,7 +447,7 @@ class RunManager:
                 for i, (images, labels) in enumerate(data_loader):
                     images, labels = images.to(self.device), labels.to(self.device)
                     # compute output
-                    output, util = net(images)
+                    output, count = net(images)
                     loss = self.test_criterion(output, labels)
                     # measure accuracy and record loss
                     acc1, acc5 = accuracy(output, labels, topk=(1, 5))
@@ -455,7 +455,7 @@ class RunManager:
                     losses.update(loss.item(), images.size(0))
                     top1.update(acc1[0].item(), images.size(0))
                     top5.update(acc5[0].item(), images.size(0))
-                    util.update(util.item(), images.size(0))
+                    util.update(count.item(), images.size(0))
 
                     t.set_postfix({
                         'loss': losses.avg,
