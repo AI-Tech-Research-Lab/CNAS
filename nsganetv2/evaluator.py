@@ -26,8 +26,7 @@ def parse_string_list(string):
         return list(map(int, string[1:-1].split()))
     else:
         return string
-
-
+        
 def pad_none(x, depth, max_depth):
     new_x, counter = [], 0
     for d in depth:
@@ -414,6 +413,8 @@ def main(args):
         init = torch.load(args.init, map_location='cpu')['state_dict']
         subnet.load_state_dict(init)
         subnet.classifier.dropout_rate = args.drop_rate
+        threshold = net_config['t']
+        subnet.threshold = threshold
         try:
             resolution = net_config['resolution']
         except KeyError:

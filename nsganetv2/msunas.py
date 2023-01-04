@@ -53,12 +53,18 @@ class MSuNAS:
         self.wp = kwargs.pop('pmax',1) #weight for params 
         self.wf = kwargs.pop('fmax',1/40) #weight for flops
         self.wa = kwargs.pop('amax',1) #weight for activations
+        #NEW!!
+        self.we = kwargs.pop('we',0.4) #weight for early exit training loss
+        ##
         self.penalty = kwargs.pop('amax',10**10) #penalty factor
         self.lr = kwargs.pop('lr',192) #minimum resolution
         self.ur = kwargs.pop('ur',256) #maximum resolution
         
+        
         if ('w1.0' in self.supernet_path) or ('w1.2' in self.supernet_path):
           self.search_space= OFASearchSpace('mobilenetv3',self.lr,self.ur)
+        if ('eembv3' in self.supernet_path):
+          self.search_space= OFASearchSpace('eemobilenetv3',self.lr,self.ur)
         elif 'resnet50_he_d' in self.supernet_path:
           self.search_space = OFASearchSpace('resnet50_he',self.lr,self.ur)
         elif 'resnet50_d' in self.supernet_path:
@@ -470,6 +476,8 @@ if __name__ == '__main__':
                         help='weight for flops')
     parser.add_argument('--wa', type = float, default=1.0,
                         help='weight for activations')
+    parser.add_argument('--we', type = float, default=0.4,
+                        help='weight for early exit training loss')
     parser.add_argument('--penalty', type = float, default=10**10,
                         help='penalty factor')
     cfgs = parser.parse_args()

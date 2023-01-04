@@ -6,16 +6,15 @@ class OFASearchSpace:
         self.num_blocks = 5  # number of blocks, default 5
         self.supernet = supernet
 
-        '''
-        if(supernet == 'mobilenetv3'):
-            self.kernel_size = [3, 5, 7]  # depth-wise conv kernel size
-            self.exp_ratio = [3, 4, 6]  # expansion rate
-            self.depth = [2, 3, 4]  # number of Inverted Residual Bottleneck layers repetition
-        '''
         if(supernet == 'mobilenetv3'):
             self.kernel_size = [3, 5, 7]  # depth-wise conv kernel size
             self.exp_ratio = [3, 4, 6]  # expansion rate
             self.depth = [2, 3, 4]  # number of Inverted Residual Bottleneck layers repetition 
+        if(supernet == 'eemobilenetv3'): # Early Exit Mbv3
+            self.kernel_size = [3, 5, 7]  # depth-wise conv kernel size
+            self.exp_ratio = [3, 4, 6]  # expansion rate
+            self.depth = [2, 3, 4]  # number of Inverted Residual Bottleneck layers repetition
+            self.threshold = [0.1, 0.2] #threshold value for selection scheme
         elif(supernet == 'resnet50'):
             self.kernel_size = [3]  # depth-wise conv kernel size
             self.exp_ratio = [0.2,0.25,0.35]  # expansion rate
@@ -134,6 +133,7 @@ class OFASearchSpace:
         return {'ks': kernel_size, 'e': exp_rate, 'd': depth, 
         't': self.threshold[x[-2]], 'r': self.resolution[x[-1]]}
 
+    '''
     def increase_config(self, config): #increase d for every block and adds maximum ks and e for each d
         m2_config = {}
         new_ks = [] 
@@ -159,5 +159,6 @@ class OFASearchSpace:
         m2_config['r'] = config['r']
 
         return m2_config
+    '''
 
 
