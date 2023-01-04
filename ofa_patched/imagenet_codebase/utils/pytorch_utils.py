@@ -153,7 +153,7 @@ def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_inf
     net_info['params'] = count_parameters(net)
     
     # flops
-    net_info['flops'] = count_net_flops(net, [1] + list(input_shape))
+    net_info['flops'] = 0#count_net_flops(net, [1] + list(input_shape))
     
     # latencies
     latency_types = [] if measure_latency is None else measure_latency.split('#')
