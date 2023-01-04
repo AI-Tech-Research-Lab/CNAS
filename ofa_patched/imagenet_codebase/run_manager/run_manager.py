@@ -455,7 +455,7 @@ class RunManager:
                     losses.update(loss.item(), images.size(0))
                     top1.update(acc1[0].item(), images.size(0))
                     top5.update(acc5[0].item(), images.size(0))
-                    util.update(count.item(), images.size(0))
+                    util.update(count.item()/images.size(0), images.size(0))
 
                     t.set_postfix({
                         'loss': losses.avg,
