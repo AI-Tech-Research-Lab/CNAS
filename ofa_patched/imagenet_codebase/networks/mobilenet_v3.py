@@ -163,37 +163,46 @@ class EEMobileNetV3(MyNetwork):
         pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
         idxs = []
 
-        for idx,block in enumerate(self.blocks):
-            if (idx==(self.idx_exit-1) and not(self.training)): #exit block
-                pred, conf = self.exit_block(x)
-                conf = torch.squeeze(conf)
-                mask = conf >= self.threshold 
-                #print(torch.mean(conf))
-                mask = mask.cpu() #gpu>cpu memory
-                idxs = np.where(np.array(mask)==False) #idxs of non EE predictions
-                x = x[mask==False,:,:,:]
-                pred = pred[mask==True,:]
-                count = torch.sum(mask).item()
-                del mask 
-                del conf
-                #print("Early Exit samples:")
-                #print(count)
-            x = block(x)
-        x = self.final_expand_layer(x)
-        x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
-        x = self.feature_mix_layer(x)
-        x = torch.squeeze(x)
-        x = self.classifier(x)
-        
-        if(not(self.training)): #it would be better to insert non EE predictions into the EE list
-            # Reconstruct tensor x mixing EE block predictions with network ones
+        if(self.training): #training 
+            for idx,block in enumerate(self.blocks):
+                if (idx==(self.idx_exit-1)): #exit block
+                    pred, conf = self.exit_block(x)
+                x = block(x)
+            x = self.final_expand_layer(x)
+            x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
+            x = self.feature_mix_layer(x)
+            x = torch.squeeze(x)
+            x = self.classifier(x)
+            return x,pred
+        else:
+            for idx,block in enumerate(self.blocks):
+                if (idx==(self.idx_exit-1)): #exit block
+                    pred, conf = self.exit_block(x)
+                    conf = torch.squeeze(conf)
+                    mask = conf >= self.threshold 
+                    #print(torch.mean(conf))
+                    mask = mask.cpu() #gpu>cpu memory
+                    idxs = np.where(np.array(mask)==False) #idxs of non EE predictions
+                    x = x[mask==False,:,:,:]
+                    pred = pred[mask==True,:]
+                    count = torch.sum(mask).item()
+                    del mask 
+                    del conf
+                    #print("Early Exit samples:")
+                    #print(count)
+                x = block(x)
+            x = self.final_expand_layer(x)
+            x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
+            x = self.feature_mix_layer(x)
+            x = torch.squeeze(x)
+            x = self.classifier(x)
+            
             tensors = list(torch.unbind(pred,axis=0))
             for i in idxs[0]:
                 tensors.insert(i,x[i])
             x = torch.stack(tensors,axis=0)
             del pred
-
-        return x
+            return x
 
     @property
     def module_str(self):

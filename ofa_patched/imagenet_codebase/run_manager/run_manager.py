@@ -574,10 +574,100 @@ class RunManager:
                 end = time.time()
         return losses.avg, top1.avg, top5.avg
 
+    def adaptive_train_one_epoch(self, args, epoch, warmup_epochs=0, warmup_lr=0):
+        # switch to train mode
+        self.net.train()
+
+        nBatch = len(self.run_config.train_loader)
+
+        losses = AverageMeter()
+        top1 = AverageMeter()
+        top1_exit = AverageMeter()
+        data_time = AverageMeter()
+
+        with tqdm(total=nBatch,
+                  desc='Train Epoch #{}'.format(epoch + 1)) as t:
+            end = time.time()
+            for i, (images, labels) in enumerate(self.run_config.train_loader):
+                data_time.update(time.time() - end)
+                if epoch < warmup_epochs:
+                    new_lr = self.run_config.warmup_adjust_learning_rate(
+                        self.optimizer, warmup_epochs * nBatch, nBatch, epoch, i, warmup_lr,
+                    )
+                else:
+                    new_lr = self.run_config.adjust_learning_rate(self.optimizer, epoch - warmup_epochs, i, nBatch)
+
+                images, labels = images.to(self.device), labels.to(self.device)
+                target = labels
+
+                # soft target
+                if args.teacher_model is not None:
+                    args.teacher_model.train()
+                    with torch.no_grad():
+                        soft_logits = args.teacher_model(images).detach()
+                        soft_label = F.softmax(soft_logits, dim=1)
+
+                # compute output
+                if isinstance(self.network, torchvision.models.Inception3):
+                    output, aux_outputs = self.net(images)
+                    loss1 = self.train_criterion(output, labels)
+                    loss2 = self.train_criterion(aux_outputs, labels)
+                    loss = loss1 + 0.4 * loss2
+                else:
+                    print("TRAINING MULTI-LOSS")
+                    output, exit_output = self.net(images)
+                    loss1 = self.train_criterion(output, labels)
+                    loss2 = self.train_criterion(exit_output, labels)
+                    loss = 0.2 * loss1 + loss2
+
+                if args.teacher_model is None:
+                    loss_type = 'ce'
+                else:
+                    if args.kd_type == 'ce':
+                        kd_loss = cross_entropy_loss_with_soft_target(output, soft_label)
+                    else:
+                        kd_loss = F.mse_loss(output, soft_logits)
+                    loss = args.kd_ratio * kd_loss + loss
+                    loss_type = '%.1fkd-%s & ce' % (args.kd_ratio, args.kd_type)
+
+                # compute gradient and do SGD step
+                self.net.zero_grad()  # or self.optimizer.zero_grad()
+                if self.mix_prec is not None:
+                    from apex import amp
+                    with amp.scale_loss(loss, self.optimizer) as scaled_loss:
+                        scaled_loss.backward()
+                else:
+                    loss.backward()
+
+                torch.nn.utils.clip_grad_norm_(self.net.parameters(), 1)
+
+                self.optimizer.step()
+
+                # measure accuracy and record loss
+                acc1, acc5 = accuracy(output, target, topk=(1, 5))
+                acc1_exit, acc5_exit = accuracy(exit_output, target, topk=(1, 5))
+                losses.update(loss.item(), images.size(0))
+                top1.update(acc1[0].item(), images.size(0))
+                top1_exit.update(acc1_exit[0].item(), images.size(0))
+
+                t.set_postfix({
+                    'loss': losses.avg,
+                    'top1': top1.avg,
+                    'top1_exit': top1_exit.avg,
+                    #'top5': top5.avg,
+                    'img_size': images.size(2),
+                    'lr': new_lr,
+                    'loss_type': loss_type,
+                    'data_time': data_time.avg,
+                })
+                t.update(1)
+                end = time.time()
+        return losses.avg, top1.avg, top1_exit.avg
+
     def train(self, args, warmup_epoch=0, warmup_lr=0):
         
         for epoch in range(self.start_epoch, self.run_config.n_epochs + warmup_epoch):
-            train_loss, train_top1, train_top5 = self.train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
+            train_loss, train_top1, train_top1_exit = self.adaptive_train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
 
             if (epoch + 1) % self.run_config.validation_frequency == 0:
                 img_size, val_loss, val_acc, val_acc5 = self.validate_all_resolution(epoch=epoch, is_test=False)
