@@ -202,7 +202,7 @@ class EEMobileNetV3(MyNetwork):
                 tensors.insert(idx,x[i])
             x = torch.stack(tensors,axis=0)
             del pred
-            return x
+            return x,count
 
     @property
     def module_str(self):

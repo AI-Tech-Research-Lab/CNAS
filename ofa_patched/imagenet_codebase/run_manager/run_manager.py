@@ -439,6 +439,7 @@ class RunManager:
         losses = AverageMeter()
         top1 = AverageMeter()
         top5 = AverageMeter()
+        util = AverageMeter()
 
         with torch.no_grad():
             with tqdm(total=len(data_loader),
@@ -446,7 +447,7 @@ class RunManager:
                 for i, (images, labels) in enumerate(data_loader):
                     images, labels = images.to(self.device), labels.to(self.device)
                     # compute output
-                    output = net(images)
+                    output, util = net(images)
                     loss = self.test_criterion(output, labels)
                     # measure accuracy and record loss
                     acc1, acc5 = accuracy(output, labels, topk=(1, 5))
@@ -454,14 +455,18 @@ class RunManager:
                     losses.update(loss.item(), images.size(0))
                     top1.update(acc1[0].item(), images.size(0))
                     top5.update(acc5[0].item(), images.size(0))
+                    util.update(util.item(), images.size(0))
+
                     t.set_postfix({
                         'loss': losses.avg,
                         'top1': top1.avg,
                         'top5': top5.avg,
+                        'util': util.avg,
                         'img_size': images.size(2),
                     })
                     t.update(1)
-        return losses.avg, top1.avg, top5.avg
+
+        return losses.avg, top1.avg, top5.avg, util.avg
 
     # Compute score margin
     def get_score_margin(outputs):
