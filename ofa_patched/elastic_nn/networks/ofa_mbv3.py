@@ -500,7 +500,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         # runtime_depth
         d = [len(block_idx) for block_idx in self.block_group_info]
         idx_exit = d[0]+d[1]+d[2]+1
-        for i in range(0,idx_exit-1,1):
+        for i in range(1,idx_exit-1,1):
             print(blocks[i].mobile_inverted_conv.active_out_channel)
         feature_dim = [blocks[idx_exit-1].mobile_inverted_conv.active_out_channel]
         super(OFAEEMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
