@@ -153,6 +153,8 @@ class EEMobileNetV3(MyNetwork):
         self.idx_exit = idx_exit #exit is placed after the 4rd group
         self.threshold = 0 #default value
 
+        print("FEATURE DIM")
+        print(feature_dim)
         self.exit_block = ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate)
 
 
