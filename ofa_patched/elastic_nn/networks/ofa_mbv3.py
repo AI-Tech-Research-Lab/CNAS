@@ -499,6 +499,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
 
         # runtime_depth
         d = [len(block_idx) for block_idx in self.block_group_info]
+        print(d)
         idx_exit = d[0]+d[1]+d[2]+1
         print("IDX_EXIT")
         print(idx_exit)
