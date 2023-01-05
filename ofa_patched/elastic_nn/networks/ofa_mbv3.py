@@ -499,7 +499,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
 
         # runtime_depth
         d = [len(block_idx) for block_idx in self.block_group_info]
-        idx_exit = 1+d[0]+d[1]+d[2]+1
+        idx_exit = d[0]+d[1]+d[2]+1
         feature_dim = [blocks[idx_exit-1].mobile_inverted_conv.active_out_channel]
         super(OFAEEMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
         self.n_classes, final_expand_width, feature_dim, last_channel, self.dropout_rate, idx_exit)
@@ -697,10 +697,8 @@ class OFAEEMobileNetV3(EEMobileNetV3):
             blocks += stage_blocks
 
         d = self.runtime_depth
-        idx_exit = 1+d[0]+d[1]+d[2]+1
+        idx_exit = d[0]+d[1]+d[2]+1
         feature_dim = [self.blocks[idx_exit-1].mobile_inverted_conv.active_out_channel]
-        print("FEATURE DIM")
-        print(feature_dim)
         final_expand_width = [960]
         last_channel = [make_divisible(self.base_stage_width[-1] * max(self.width_mult_list), 8) for _ in self.width_mult_list]
         _subnet = EEMobileNetV3(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
