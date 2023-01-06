@@ -674,7 +674,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         }
 
     def get_active_subnet(self, preserve_weight=True):
-        print("GET ACTIVE SUBNET")
+        #print("GET ACTIVE SUBNET")
         first_conv = copy.deepcopy(self.first_conv)
         blocks = [copy.deepcopy(self.blocks[0])]
 
