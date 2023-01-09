@@ -9,7 +9,7 @@ n_classes = 10
 ofa = ofa_net(n_classes,'ofa_eembv3_d234_e346_k357_w1.0', pretrained=False)
 depth = [2, 3, 4]
 nb = 5
-d = [2,3,2,3,4]#np.random.choice(depth, nb, replace=True).tolist()
+d = [3,4,4,2,3]#np.random.choice(depth, nb, replace=True).tolist()
 print("CONFIG")
 print(d)
 ofa.set_active_subnet(ks=7, e=6, d=d)
