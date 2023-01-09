@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 
 from ofa.imagenet_codebase.utils.flops_counter import profile
-
+from torchvision import profile_macs
 
 def mix_images(images, lam):
     flipped_images = torch.flip(images, dims=[0])  # flip along the batch dimension
@@ -77,8 +77,12 @@ def count_net_flops(net, data_shape=(1, 3, 224, 224)):
         net = net.module
 
     net = copy.deepcopy(net)
+
+    inputs = torch.randn(1, 3, data_shape[-2], data_shape[-1])
+
+    flop = int(profile_macs(net, inputs))
     
-    flop, _ = profile(net, data_shape)
+    #flop, _ = profile(net, data_shape)
     return flop
 
 
@@ -153,8 +157,8 @@ def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_inf
     net_info['params'] = count_parameters(net)
     
     # flops
-    net_info['flops'] = 0#count_net_flops(net, [1] + list(input_shape))
-    
+    net_info['flops'] = count_net_flops(net, [1] + list(input_shape))   
+     
     # latencies
     latency_types = [] if measure_latency is None else measure_latency.split('#')
     for l_type in latency_types:
