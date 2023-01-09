@@ -77,6 +77,8 @@ def count_parameters(net):
 
 def count_net_flops(net, data_shape=(1, 3, 224, 224)):
 
+    inputs = torch.randn(1, 3, data_shape[-2], data_shape[-1])
+
     # move network to GPU if available
     if torch.cuda.is_available():
         device = torch.device('cuda:0')
@@ -88,8 +90,6 @@ def count_net_flops(net, data_shape=(1, 3, 224, 224)):
         net = net.module
 
     net = copy.deepcopy(net)
-
-    inputs = torch.randn(1, 3, data_shape[-2], data_shape[-1])
 
     flop = int(profile_macs(net, inputs))
     
