@@ -159,12 +159,15 @@ class EEMobileNetV3(MyNetwork):
     def forward(self, x):
 
         x = self.first_conv(x)
+        print("OUTPUT SHAPE")
+        print(x.shape)
 
         pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
         idxs = []
 
         if(self.training): #training 
             for idx,block in enumerate(self.blocks):
+                print(x.shape)
                 if (idx==self.idx_exit): #exit block
                     pred, _ = self.exit_block(x)
                 x = block(x)
