@@ -167,7 +167,8 @@ class EEMobileNetV3(MyNetwork):
 
         if(self.training): #training 
             for idx,block in enumerate(self.blocks):
-                print(x.shape)
+                if (idx<=self.idx_exit):
+                  print(x.shape)
                 if (idx==self.idx_exit): #exit block
                     pred, _ = self.exit_block(x)
                 x = block(x)
