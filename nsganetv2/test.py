@@ -14,14 +14,10 @@ print("CONFIG")
 print(d)
 ofa.set_active_subnet(ks=7, e=6, d=d)
 m= ofa.get_active_subnet(preserve_weight=True)
-print("BLOCK 1")
-print(ofa.blocks[0].config)
-print("BLOCK 2")
-print(ofa.blocks[1].config)
-#input = torch.randn(96, 3, 40, 40)
-#m.threshold = 0.0005
-#m.train()
-#x = m(input)
+input = torch.randn(96, 3, 40, 40)
+m.threshold = 0.0005
+m.train()
+x = m(input)
 
 '''
 final_expand_width = [960]
