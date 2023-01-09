@@ -7,9 +7,12 @@ import time
 
 import torch
 import torch.nn as nn
-
+import torch.backends.cudnn as cudnn
 from ofa.imagenet_codebase.utils.flops_counter import profile
 from torchprofile import profile_macs
+
+
+
 
 def mix_images(images, lam):
     flipped_images = torch.flip(images, dims=[0])  # flip along the batch dimension
@@ -73,6 +76,14 @@ def count_parameters(net):
 
 
 def count_net_flops(net, data_shape=(1, 3, 224, 224)):
+
+    # move network to GPU if available
+    if torch.cuda.is_available():
+        device = torch.device('cuda:0')
+        net = net.to(device)
+        cudnn.benchmark = True
+        inputs = inputs.to(device)
+
     if isinstance(net, nn.DataParallel):
         net = net.module
 
