@@ -699,14 +699,14 @@ class OFAEEMobileNetV3(EEMobileNetV3):
 
         d = self.runtime_depth
         idx_exit = d[0]+d[1]+d[2]+1
-        '''
-        print(d)
+        
+        #print(d)
         print("IDX_EXIT")
         print(idx_exit)
         for i in range(1,idx_exit+1,1):
             print(i)
             print(self.blocks[i].mobile_inverted_conv.active_out_channel)
-        '''
+        
         feature_dim = [self.blocks[idx_exit].mobile_inverted_conv.active_out_channel]
         #take into account that block 0 is the initial conv and block 1 is a preliminary mobile conv
         #the other blocks are controlled by the values d 
