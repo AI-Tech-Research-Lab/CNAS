@@ -165,7 +165,7 @@ class EEMobileNetV3(MyNetwork):
 
         if(self.training): #training 
             for idx,block in enumerate(self.blocks):
-                if (idx==(self.idx_exit+1)): #exit block
+                if (idx==self.idx_exit): #exit block
                     pred, _ = self.exit_block(x)
                 x = block(x)
             x = self.final_expand_layer(x)
@@ -176,7 +176,7 @@ class EEMobileNetV3(MyNetwork):
             return x,pred
         else:
             for idx,block in enumerate(self.blocks):
-                if (idx==(self.idx_exit+1)): #exit block
+                if (idx==self.idx_exit): #exit block
                     pred, conf = self.exit_block(x)
                     conf = torch.squeeze(conf)
                     mask = conf >= self.threshold 
