@@ -701,12 +701,14 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         idx_exit = d[0]+d[1]+d[2]+1
         
         #print(d)
+        '''
         print("IDX_EXIT")
         print(idx_exit)
         for i in range(1,idx_exit+1,1):
             print("LAYER:",i)
             print("CONFIG:",self.blocks[i].config)
             print("OUT_CHANNEL:",self.blocks[i].mobile_inverted_conv.active_out_channel)
+        '''
         
         feature_dim = [self.base_stage_width[3]] #[self.blocks[idx_exit].mobile_inverted_conv.active_out_channel]
         #take into account that block 0 is the initial conv and block 1 is a preliminary mobile conv

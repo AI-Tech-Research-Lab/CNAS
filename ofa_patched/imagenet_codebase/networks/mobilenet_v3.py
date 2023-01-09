@@ -159,8 +159,8 @@ class EEMobileNetV3(MyNetwork):
     def forward(self, x):
 
         x = self.first_conv(x)
-        print("OUTPUT SHAPE")
-        print(x.shape)
+        #print("OUTPUT SHAPE")
+        #print(x.shape)
 
         pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
         idxs = []
@@ -170,8 +170,8 @@ class EEMobileNetV3(MyNetwork):
                 if (idx==self.idx_exit): #exit block
                     pred, _ = self.exit_block(x)
                 x = block(x)
-                if (idx<=self.idx_exit):
-                  print(x.shape)
+                #if (idx<=self.idx_exit):
+                #  print(x.shape)
             x = self.final_expand_layer(x)
             x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
             x = self.feature_mix_layer(x)
