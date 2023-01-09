@@ -4,9 +4,25 @@ from ofa.elastic_nn.modules.dynamic_layers import ExitBlock
 import torch
 from ofa.model_zoo import ofa_net
 import numpy as np
+from utils import get_net_info
 
 n_classes = 10
-ofa = ofa_net(n_classes,'ofa_eembv3_d234_e346_k357_w1.0', pretrained=False)
+input_shape = (3,40,40)
+ofa_ee = ofa_net(n_classes,'ofa_eembv3_d234_e346_k357_w1.0', pretrained=False)
+ofa = ofa_net(n_classes,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=False)
+d = [2,2,2,2,2]
+ofa.set_active_subnet(ks=7, e=6, d=d)
+m1 = ofa.get_active_subnet(preserve_weight=True)
+ofa_ee.set_active_subnet(ks=7, e=6, d=d)
+m2 = ofa_ee.get_active_subnet(preserve_weight=True)
+info1 = get_net_info(m1,input_shape)
+info2 = get_net_info(m2,input_shape)
+print(info1)
+print(info2)
+
+
+
+'''
 depth = [2, 3, 4]
 nb = 5
 d = np.random.choice(depth, nb, replace=True).tolist()
@@ -18,6 +34,7 @@ input = torch.randn(96, 3, 40, 40)
 m.threshold = 0.0005
 m.train()
 x = m(input)
+'''
 
 '''
 final_expand_width = [960]
