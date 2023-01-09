@@ -166,6 +166,7 @@ class EEMobileNetV3(MyNetwork):
         idxs = []
 
         if(self.training): #training 
+            print("TRAIN MODE")
             for idx,block in enumerate(self.blocks):
                 if (idx==self.idx_exit): #exit block
                     pred, _ = self.exit_block(x)
@@ -179,6 +180,7 @@ class EEMobileNetV3(MyNetwork):
             x = self.classifier(x)
             return x,pred
         else:
+            print("INFERENCE MODE")
             for idx,block in enumerate(self.blocks):
                 if (idx==self.idx_exit): #exit block
                     pred, conf = self.exit_block(x)

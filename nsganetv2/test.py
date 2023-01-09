@@ -6,6 +6,8 @@ from ofa.model_zoo import ofa_net
 import numpy as np
 from utils import get_net_info
 
+#Compute MACS of the exit gate (< MACs of the whole net)
+
 n_classes = 10
 input_shape = (3,40,40)
 ofa_ee = ofa_net(n_classes,'ofa_eembv3_d234_e346_k357_w1.0', pretrained=False)
@@ -18,8 +20,12 @@ m2 = ofa_ee.get_active_subnet(preserve_weight=True)
 info1 = get_net_info(m1,input_shape)
 info2 = get_net_info(m2,input_shape)
 print(info1)
-m2.eval()
-m2.threshold = 0 #equals to classify all sample with exit gate
+
+#These two conditions are equals to force to classify all samples with exit gate:
+#m2.eval()
+#m2.threshold = 0 #equals to classify all sample with exit gate
+#Check that computation skips the final layers..
+
 print(info2)
 
 
