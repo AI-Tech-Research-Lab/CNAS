@@ -705,7 +705,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         print(idx_exit)
         for i in range(1,idx_exit+1,1):
             print("LAYER:",i)
-            print("OUT_CHANNEL:",self.blocks[i])#.mobile_inverted_conv.active_out_channel)
+            #print("OUT_CHANNEL:",self.blocks[i])#.mobile_inverted_conv.active_out_channel)
             print("OUT_CHANNEL:",self.blocks[i].mobile_inverted_conv.active_out_channel)
         
         feature_dim = [self.blocks[idx_exit].mobile_inverted_conv.active_out_channel]
