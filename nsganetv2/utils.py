@@ -336,11 +336,18 @@ def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_inf
     # parameters
     net_info['params'] = count_parameters(net)
 
-    # flops
-    net_info['flops'] = int(profile_macs(copy.deepcopy(net), inputs))
+    net = copy.deepcopy(net)
 
+    # macs final exit
+    net_info['macs_final_exit'] = int(profile_macs(net, inputs))
+
+    # macs first exit
+    net.threshold = 0
+    net.eval()
+    net_info['macs_first_exit'] = int(profile_macs(net, inputs))
+   
     # activation_size
-    net_info['activations'] = 0#int(profile_activation_size(copy.deepcopy(net), inputs))
+    net_info['activations'] = 0#int(profile_activation_size(net, inputs))
 
     # latencies
     latency_types = [] if measure_latency is None else measure_latency.split('#')
@@ -362,7 +369,8 @@ def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_inf
     if print_info:
         # print(net)
         print('Total training params: %.2fM' % (net_info['params'] / 1e6))
-        print('Total FLOPs: %.2fM' % (net_info['flops'] / 1e6))
+        print('Total MACs final exit: %.2fM' % (net_info['macs_final_exit'] / 1e6))
+        print('Total MACs first exit: %.2fM' % (net_info['macs_first_exit'] / 1e6))
         print('Total activations: %.2fM' % (net_info['activations'] / 1e6))
         for l_type in latency_types:
             print('Estimated %s latency: %.3fms' % (l_type, net_info['%s latency' % l_type]['val']))

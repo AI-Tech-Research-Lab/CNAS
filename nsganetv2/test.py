@@ -19,14 +19,14 @@ ofa_ee.set_active_subnet(ks=7, e=6, d=d)
 m2 = ofa_ee.get_active_subnet(preserve_weight=True)
 
 #These two conditions are equals to force to classify all samples with exit gate:
-m2.eval()
-m2.threshold = 0 #equals to classify all sample with exit gate
+#m2.eval()
+#m2.threshold = 0 #equals to classify all sample with exit gate
 #Check that computation skips the final layers..
 
-info1 = get_net_info(m1,input_shape)
+#info1 = get_net_info(m1,input_shape)
 info2 = get_net_info(m2,input_shape)
 
-print(info1)
+#print(info1)
 print(info2)
 
 
