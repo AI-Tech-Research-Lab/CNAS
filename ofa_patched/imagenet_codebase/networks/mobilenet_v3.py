@@ -188,6 +188,8 @@ class EEMobileNetV3(MyNetwork):
                     idxs = np.where(np.array(mask)==False) #idxs of non EE predictions
                     count = torch.sum(mask)
                     x_dim = pred.size(dim=0).item() - count.item()
+                    print("X_DIM")
+                    print(x_dim)
                     if (x_dim == 0): # if no samples left
                         del mask 
                         del conf
