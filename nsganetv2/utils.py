@@ -340,6 +340,7 @@ def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_inf
 
     net.eval()
 
+    net.threshold = 1.1
     # macs final exit
     net_info['macs_final_exit'] = int(profile_macs(net, inputs))
 
