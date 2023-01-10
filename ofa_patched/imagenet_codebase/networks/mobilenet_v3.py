@@ -220,6 +220,9 @@ class EEMobileNetV3(MyNetwork):
                 x = torch.stack(tensors,axis=0)
 
             del pred
+
+            print("x")
+            print(x.size(dim=0))
             
             return x,count
 
