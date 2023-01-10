@@ -160,6 +160,9 @@ class EEMobileNetV3(MyNetwork):
 
         x = self.first_conv(x)
 
+        print("x")
+        print(x.size(dim=0))
+
         pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
         idxs = []
         x_dim = 0
@@ -190,7 +193,7 @@ class EEMobileNetV3(MyNetwork):
                         del mask 
                         del conf
                         return pred,count
-                    if(count.item() != 0): # if no early samples
+                    if(count.item() != 0): # if at least one early sample
                         x = x[mask==False,:,:,:]
                         pred = pred[mask==True,:]
                     del mask 
@@ -203,6 +206,13 @@ class EEMobileNetV3(MyNetwork):
             x = self.feature_mix_layer(x)
             x = torch.squeeze(x)
             x = self.classifier(x)
+
+            print("COUNT ITEM")
+            print(count.item())
+            print("pred")
+            print(pred.size(dim=0))
+            print("x")
+            print(x.size(dim=0))
             
             if(x_dim != x.size(dim=0)):
                 tensors = list(torch.unbind(pred,axis=0))
