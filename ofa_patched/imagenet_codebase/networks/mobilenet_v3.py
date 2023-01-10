@@ -185,7 +185,7 @@ class EEMobileNetV3(MyNetwork):
                     mask = mask.cpu() #gpu>cpu memory
                     idxs = np.where(np.array(mask)==False) #idxs of non EE predictions
                     count = torch.sum(mask)
-                    x_dim = x.size(dim=0).item() - count.item()
+                    x_dim = x.size(dim=0) - count.item()
                     if (x_dim == 0): # if no samples left
                         del mask 
                         del conf
@@ -204,7 +204,7 @@ class EEMobileNetV3(MyNetwork):
             x = torch.squeeze(x)
             x = self.classifier(x)
             
-            if(x_dim != x.size(dim=0).item()):
+            if(x_dim != x.size(dim=0)):
                 tensors = list(torch.unbind(pred,axis=0))
                 for i,idx in enumerate(idxs[0]):
                     tensors.insert(idx,x[i])
