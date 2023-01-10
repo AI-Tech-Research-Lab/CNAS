@@ -206,7 +206,7 @@ class EEMobileNetV3(MyNetwork):
             x = torch.squeeze(x)
             x = self.classifier(x)
             
-            if(x_dim == x.size(dim=0).item()):
+            if(x_dim != x.size(dim=0).item()):
                 tensors = list(torch.unbind(pred,axis=0))
                 for i,idx in enumerate(idxs[0]):
                     tensors.insert(idx,x[i])
