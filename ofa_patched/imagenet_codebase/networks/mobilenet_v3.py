@@ -166,7 +166,6 @@ class EEMobileNetV3(MyNetwork):
         idxs = []
 
         if(self.training): #training 
-            print("TRAIN MODE")
             for idx,block in enumerate(self.blocks):
                 if (idx==self.idx_exit): #exit block
                     pred, _ = self.exit_block(x)
@@ -180,7 +179,6 @@ class EEMobileNetV3(MyNetwork):
             x = self.classifier(x)
             return x,pred
         else:
-            print("INFERENCE MODE")
             for idx,block in enumerate(self.blocks):
                 if (idx==self.idx_exit): #exit block
                     pred, conf = self.exit_block(x)
@@ -191,8 +189,6 @@ class EEMobileNetV3(MyNetwork):
                     idxs = np.where(np.array(mask)==False) #idxs of non EE predictions
                     count = torch.sum(mask)
                     x_dim = pred.size(dim=0).item() - count.item()
-                    print("X_DIM")
-                    print(x_dim)
                     if (x_dim == 0): # if no samples left
                         del mask 
                         del conf
