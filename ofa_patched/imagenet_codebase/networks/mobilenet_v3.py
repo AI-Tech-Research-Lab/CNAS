@@ -195,7 +195,8 @@ class EEMobileNetV3(MyNetwork):
                     print("RESULT MASK")
                     print(result)
                     x = x[mask==False,:,:,:]
-                    print("AFTER MASK")
+                    print("X")
+                    print(x)
                     pred = pred[mask==True,:]
                     count = torch.sum(mask)
                     del mask 
