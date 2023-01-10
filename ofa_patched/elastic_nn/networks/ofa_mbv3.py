@@ -715,6 +715,8 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         #the other blocks are controlled by the values d 
         final_expand_width = [self.base_stage_width[3]*6] #160*6=960
         last_channel = [make_divisible(self.base_stage_width[-1] * max(self.width_mult_list), 8) for _ in self.width_mult_list]
+        print("LAST CHANNEL")
+        print(last_channel)
         _subnet = EEMobileNetV3(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
         self.n_classes, final_expand_width, feature_dim, last_channel, self.dropout_rate, idx_exit)
         _subnet.set_bn_param(**self.get_bn_param())
