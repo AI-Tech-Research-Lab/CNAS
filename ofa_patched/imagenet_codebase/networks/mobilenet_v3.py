@@ -187,7 +187,7 @@ class EEMobileNetV3(MyNetwork):
                     mask = mask.cpu() #gpu>cpu memory
                     idxs = np.where(np.array(mask)==False) #idxs of non EE predictions
                     count = torch.sum(mask)
-                    x_dim = pred.size(dim=0).item() - count.item()
+                    x_dim = x.size(dim=0).item() - count.item()
                     print("X_DIM")
                     print(x_dim)
                     if (x_dim == 0): # if no samples left
