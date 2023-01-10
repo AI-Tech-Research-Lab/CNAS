@@ -162,6 +162,7 @@ class EEMobileNetV3(MyNetwork):
 
         pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
         idxs = []
+        x_dim = 0
 
         if(self.training): #training 
             for idx,block in enumerate(self.blocks):
@@ -189,9 +190,11 @@ class EEMobileNetV3(MyNetwork):
                         del mask 
                         del conf
                         return pred,count
-                    x = x[mask==False,:,:,:]
-                    pred = pred[mask==True,:]
-                    count = torch.sum(mask)
+                    if(count.item() != 0): # if no early samples
+                        x = x[mask==False,:,:,:]
+                        pred = pred[mask==True,:]
+                    else:
+                        del pred
                     del mask 
                     del conf
                     #print("Early Exit samples:")
@@ -203,11 +206,12 @@ class EEMobileNetV3(MyNetwork):
             x = torch.squeeze(x)
             x = self.classifier(x)
             
-            tensors = list(torch.unbind(pred,axis=0))
-            for i,idx in enumerate(idxs[0]):
-                tensors.insert(idx,x[i])
-            x = torch.stack(tensors,axis=0)
-            del pred
+            if(x_dim == x.size(dim=0).item()):
+                tensors = list(torch.unbind(pred,axis=0))
+                for i,idx in enumerate(idxs[0]):
+                    tensors.insert(idx,x[i])
+                x = torch.stack(tensors,axis=0)
+                del pred
             return x,count
 
     @property
