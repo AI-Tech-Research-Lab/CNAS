@@ -338,13 +338,14 @@ def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_inf
 
     net = copy.deepcopy(net)
 
+    net.eval()
+
     # macs final exit
     net_info['macs_final_exit'] = int(profile_macs(net, inputs))
 
     print("COMPUTE MACS FIRST EXIT")
     # macs first exit
     net.threshold = 0
-    net.eval()
     net_info['macs_first_exit'] = int(profile_macs(net, inputs))
    
     # activation_size

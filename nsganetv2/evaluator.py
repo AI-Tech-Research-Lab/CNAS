@@ -316,7 +316,9 @@ class OFAEvaluator:
 
         loss, top1, top5, util = run_manager.adaptive_validate(net=subnet, is_test=is_test, no_logs=no_logs)
 
-        info['loss'], info['top1'], info['top5'], info['util'] = loss, top1, top5, util
+        macs_avg = info['macs_final_exit']*(1-util) + info['macs_first_exit']*util
+
+        info['loss'], info['top1'], info['top5'], info['util'], info['macs_avg'] = loss, top1, top5, util, macs_avg
 
         save_path = os.path.join(log_dir, 'net.stats') if cfgs.save is None else cfgs.save
         if cfgs.save_config:

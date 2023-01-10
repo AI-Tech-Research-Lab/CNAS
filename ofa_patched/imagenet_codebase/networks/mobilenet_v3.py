@@ -159,8 +159,6 @@ class EEMobileNetV3(MyNetwork):
     def forward(self, x):
 
         x = self.first_conv(x)
-        #print("OUTPUT SHAPE")
-        #print(x.shape)
 
         pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
         idxs = []
@@ -170,8 +168,6 @@ class EEMobileNetV3(MyNetwork):
                 if (idx==self.idx_exit): #exit block
                     pred, _ = self.exit_block(x)
                 x = block(x)
-                #if (idx<=self.idx_exit):
-                #  print(x.shape)
             x = self.final_expand_layer(x)
             x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
             x = self.feature_mix_layer(x)
@@ -180,6 +176,7 @@ class EEMobileNetV3(MyNetwork):
             return x,pred
         else:
             for idx,block in enumerate(self.blocks):
+                #FIX: not working for batch size 1
                 if (idx==self.idx_exit): #exit block
                     pred, conf = self.exit_block(x)
                     conf = torch.squeeze(conf)
@@ -188,8 +185,6 @@ class EEMobileNetV3(MyNetwork):
                     idxs = np.where(np.array(mask)==False) #idxs of non EE predictions
                     count = torch.sum(mask)
                     x_dim = x.size(dim=0).item() - count.item()
-                    print("X_DIM")
-                    print(x_dim)
                     if (x_dim == 0): # if no samples left
                         del mask 
                         del conf
