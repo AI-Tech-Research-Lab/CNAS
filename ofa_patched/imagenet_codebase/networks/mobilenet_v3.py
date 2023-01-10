@@ -193,8 +193,6 @@ class EEMobileNetV3(MyNetwork):
                     if(count.item() != 0): # if no early samples
                         x = x[mask==False,:,:,:]
                         pred = pred[mask==True,:]
-                    else:
-                        del pred
                     del mask 
                     del conf
                     #print("Early Exit samples:")
@@ -211,7 +209,9 @@ class EEMobileNetV3(MyNetwork):
                 for i,idx in enumerate(idxs[0]):
                     tensors.insert(idx,x[i])
                 x = torch.stack(tensors,axis=0)
-                del pred
+
+            del pred
+            
             return x,count
 
     @property
