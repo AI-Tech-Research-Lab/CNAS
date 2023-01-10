@@ -160,9 +160,6 @@ class EEMobileNetV3(MyNetwork):
 
         x = self.first_conv(x)
 
-        print("x")
-        print(x.size(dim=0))
-
         pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
         idxs = []
         x_dim = 0
@@ -179,6 +176,8 @@ class EEMobileNetV3(MyNetwork):
             x = self.classifier(x)
             return x,pred
         else:
+            print("x")
+            print(x.size(dim=0))
             for idx,block in enumerate(self.blocks):
                 #FIX: not working for batch size 1
                 if (idx==self.idx_exit): #exit block
