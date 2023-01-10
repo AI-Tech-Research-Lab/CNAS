@@ -163,6 +163,7 @@ class EEMobileNetV3(MyNetwork):
         pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
         idxs = []
         x_dim = 0
+        dim = x.shape[0]
 
         if(self.training): #training 
             for idx,block in enumerate(self.blocks):
@@ -176,8 +177,7 @@ class EEMobileNetV3(MyNetwork):
             x = self.classifier(x)
             return x,pred
         else:
-            print("x")
-            print(x.size(dim=0))
+
             for idx,block in enumerate(self.blocks):
                 #FIX: not working for batch size 1
                 if (idx==self.idx_exit): #exit block
@@ -206,23 +206,13 @@ class EEMobileNetV3(MyNetwork):
             x = torch.squeeze(x)
             x = self.classifier(x)
 
-            print("COUNT ITEM")
-            print(count.item())
-            print("pred")
-            print(pred.size(dim=0))
-            print("x")
-            print(x.size(dim=0))
-            
-            if(x_dim != x.size(dim=0)):
+            if(x_dim != dim): # if at least one early sample
                 tensors = list(torch.unbind(pred,axis=0))
                 for i,idx in enumerate(idxs[0]):
                     tensors.insert(idx,x[i])
                 x = torch.stack(tensors,axis=0)
 
             del pred
-
-            print("x")
-            print(x.size(dim=0))
             
             return x,count
 
