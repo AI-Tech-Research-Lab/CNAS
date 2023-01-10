@@ -197,7 +197,7 @@ class EEMobileNetV3(MyNetwork):
                     x = x[mask==False,:,:,:]
                     print("X")
                     print(x)
-                    print(x.size(dim=0))
+                    print(x.size(dim=0).item())
                     pred = pred[mask==True,:]
                     count = torch.sum(mask)
                     del mask 
