@@ -208,9 +208,9 @@ class EEMobileNetV3(MyNetwork):
                         del conf
                         return pred,count
                     '''
-                    if(counts[i]!= 0): # if at least one early sample classified by this exit
-                        x = x[mask==False,:,:,:]
-                        pred = pred[mask==True,:]
+                    # if at least one early sample classified by this exit
+                    x = x[mask==False,:,:,:]
+                    pred = pred[mask==True,:]
                     del mask 
                     del conf
                     preds.append(pred)
