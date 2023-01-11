@@ -136,10 +136,11 @@ class MobileNetV3(MyNetwork):
                 cfg[stage_id] = new_block_config_list
         return cfg
 
+
 class EEMobileNetV3(MyNetwork):
 
     def __init__(self, first_conv, blocks, final_expand_layer, feature_mix_layer, classifier, 
-    n_classes, final_expand_width, feature_dim, last_channel, dropout_rate, idx_exit):
+    n_classes, feature_dim_list, dropout_rate, n_exit):
 
         from ofa.elastic_nn.modules.dynamic_layers import ExitBlock
 
@@ -150,10 +151,14 @@ class EEMobileNetV3(MyNetwork):
         self.final_expand_layer = final_expand_layer
         self.feature_mix_layer = feature_mix_layer
         self.classifier = classifier
-        self.idx_exit = idx_exit #exit is placed after the 4rd group
         self.threshold = 0 #default value
+        self.exit_list = []
 
-        self.exit_block = ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate)
+        for i in range(1,n_exit,1):
+            feature_dim = feature_dim_list[i-1]
+            final_expand_width = feature_dim * 6
+            last_channel = feature_dim * 8
+            self.exit_list.append(ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate))
 
 
     def forward(self, x):
