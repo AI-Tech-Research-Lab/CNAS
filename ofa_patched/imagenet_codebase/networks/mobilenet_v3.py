@@ -215,8 +215,8 @@ class EEMobileNetV3(MyNetwork):
                     del conf
                     preds.append(pred)
                     idxs.append(p)
-                    if(iter<(self.n_exit-1)):
-                        iter+=1
+                    if(i<(self.n_exit-1)):
+                        i+=1
                     #print("Early Exit samples:")
                     #print(count)
                 x = block(x)
