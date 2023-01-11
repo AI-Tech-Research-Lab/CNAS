@@ -171,14 +171,10 @@ class EEMobileNetV3(MyNetwork):
         idxs = []
         x_dim = 0
         dim = x.shape[0]
-        print("N_EXIT")
-        print(self.n_exit) 
 
         if(self.training): #training 
             iter = 0
             for idx,block in enumerate(self.blocks):
-                print("ITER")
-                print(iter)
                 if (idx==self.exit_idxs[iter]): #exit block
                     exit_block = self.exit_list[iter]
                     pred, _ = exit_block(x)
@@ -194,27 +190,32 @@ class EEMobileNetV3(MyNetwork):
             preds.append(x)
             return preds
         else:
-
+            iter = 0
             for idx,block in enumerate(self.blocks):
-                #FIX: not working for batch size 1
-                if (idx==self.get_active_exit()): #exit block
+                if (idx==self.exit_idxs[iter]): #exit block
+                    exit_block = self.exit_list[iter]
                     pred, conf = self.exit_block(x)
                     conf = torch.squeeze(conf)
-                    mask = conf >= self.threshold 
+                    mask = conf >= self.threshold[iter]
                     mask = mask.cpu() #gpu>cpu memory
-                    idxs = np.where(np.array(mask)==False) #idxs of non EE predictions
+                    p = np.where(np.array(mask)==False) #idxs of non EE predictions
                     count = torch.sum(mask)
+                    '''
                     x_dim = x.size(dim=0) - count.item()
                     if (x_dim == 0): # if no samples left
                         del mask 
                         del conf
                         return pred,count
+                    '''
                     if(count.item() != 0): # if at least one early sample
                         x = x[mask==False,:,:,:]
                         pred = pred[mask==True,:]
                     del mask 
                     del conf
-                    self.set_active_exit()
+                    preds.append(pred)
+                    idxs.append(p)
+                    if(iter<(self.n_exit-1)):
+                        iter+=1
                     #print("Early Exit samples:")
                     #print(count)
                 x = block(x)
@@ -223,17 +224,28 @@ class EEMobileNetV3(MyNetwork):
             x = self.feature_mix_layer(x)
             x = torch.squeeze(x)
             x = self.classifier(x)
+            preds.append(x)
 
-            if(x_dim != dim): # if at least one early sample
-                tensors = list(torch.unbind(pred,axis=0))
-                for i,idx in enumerate(idxs[0]):
-                    tensors.insert(idx,x[i])
-                x = torch.stack(tensors,axis=0)
+            #if(x_dim != dim): # if at least one early sample
 
+            #mix predictions of all exits
+            tensors = []
+            for i in range(len(preds)-1,0,-1): #mix predictions of all exits
+                tensors = list(torch.unbind(preds[i-1],axis=0))
+                iter = idxs[i-1]
+                pred = preds[i]
+                for j,idx in enumerate(iter):
+                    tensors.insert(idx,pred[j])
+                preds[i-1] = torch.stack(tensors,axis=0)
+                del preds[i]
+            
+            x = preds[0]
+            del preds[0]
             del pred
             
             return x,count
     
+    '''
     def set_active_exit(self):
 
         if (self.active_idx != (len(self.exit_list)) ): #if there is some exit available
@@ -250,7 +262,7 @@ class EEMobileNetV3(MyNetwork):
             return self.exit_idxs[self.active_idx]
         else: # no exit available
             return -1
-           
+    '''     
 
     @property
     def module_str(self):
