@@ -194,7 +194,7 @@ class EEMobileNetV3(MyNetwork):
             for idx,block in enumerate(self.blocks):
                 if (idx==self.exit_idxs[iter]): #exit block
                     exit_block = self.exit_list[iter]
-                    pred, conf = self.exit_block(x)
+                    pred, conf = exit_block(x)
                     conf = torch.squeeze(conf)
                     mask = conf >= self.threshold[iter]
                     mask = mask.cpu() #gpu>cpu memory
