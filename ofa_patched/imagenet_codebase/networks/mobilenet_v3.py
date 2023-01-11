@@ -238,6 +238,9 @@ class EEMobileNetV3(MyNetwork):
             #mix predictions of all exits
             tensors = []
             for i in range(len(preds)-1,0,-1): #mix predictions of all exits
+                if (counts[i]==0): #if no predictions go ahead
+                    del preds[i]
+                    continue
                 tensors = list(torch.unbind(preds[i-1],axis=0))
                 iter = idxs[i-1]
                 pred = preds[i]
