@@ -222,9 +222,6 @@ class EEMobileNetV3(MyNetwork):
                 x = block(x)
 
             counts[i+1] = x.shape[0] #n samples classified normally by the last exit
-            print("N SAMPLES") 
-            print(x.shape[0])
-            print(counts[-1])
             x = self.final_expand_layer(x)
             x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
             x = self.feature_mix_layer(x)
@@ -232,6 +229,10 @@ class EEMobileNetV3(MyNetwork):
             x = self.classifier(x)
             preds.append(x)
 
+            print("PREDS")
+            print(preds)
+            print("IDXS")
+            print(idxs)
             #if(x_dim != dim): # if at least one early sample
 
             #mix predictions of all exits
