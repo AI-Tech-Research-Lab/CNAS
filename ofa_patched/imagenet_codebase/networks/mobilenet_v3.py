@@ -150,13 +150,13 @@ class EEMobileNetV3(MyNetwork):
         self.final_expand_layer = final_expand_layer
         self.feature_mix_layer = feature_mix_layer
         self.classifier = classifier
-        self.threshold = [1,1,1,1] #default value
+        self.threshold = [0.1,1,1,1] #default value
         self.exit_idxs = exit_idxs
         self.exit_list = []
         self.active_idx = 0
-
-        n_exit = len(exit_idxs)
-        for i in range(1,n_exit,1):
+        self.n_exit = len(exit_idxs)
+    
+        for i in range(1,self.n_exit,1):
             feature_dim = [feature_dim_list[i-1]]
             final_expand_width = [feature_dim[0] * 6]
             last_channel = [feature_dim[0] * 8]
@@ -173,12 +173,14 @@ class EEMobileNetV3(MyNetwork):
         dim = x.shape[0] 
 
         if(self.training): #training 
+            iter = 0
             for idx,block in enumerate(self.blocks):
-                if (idx==self.get_active_exit()): #exit block
-                    exit_block = self.exit_list[self.active_idx]
+                if (idx==self.exit_idxs[iter]): #exit block
+                    exit_block = self.exit_list[iter]
                     pred, _ = exit_block(x)
                     preds.append(pred)
-                    self.set_active_exit()
+                    if(iter<(self.n_exit-1)):
+                      iter+=1
                 else:
                     x = block(x)
             x = self.final_expand_layer(x)
@@ -190,11 +192,10 @@ class EEMobileNetV3(MyNetwork):
             return preds
         else:
 
-            for block in self.blocks:
+            for idx,block in enumerate(self.blocks):
                 #FIX: not working for batch size 1
-                if isinstance(block, ExitBlock): #exit block
+                if (idx==self.get_active_exit()): #exit block
                     pred, conf = self.exit_block(x)
-                    
                     conf = torch.squeeze(conf)
                     mask = conf >= self.threshold 
                     mask = mask.cpu() #gpu>cpu memory
@@ -210,6 +211,7 @@ class EEMobileNetV3(MyNetwork):
                         pred = pred[mask==True,:]
                     del mask 
                     del conf
+                    self.set_active_exit()
                     #print("Early Exit samples:")
                     #print(count)
                 x = block(x)
