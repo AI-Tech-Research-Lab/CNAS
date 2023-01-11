@@ -20,8 +20,9 @@ m2 = ofa_ee.get_active_subnet(preserve_weight=True)
 m2.eval()
 m2.threshold = [0.1,0.1,0.1,0.1]
 input = torch.randn(10, 3, 40, 40)
-x = m2(input)
+x,counts = m2(input)
 print(x)
+print(counts)
 
 #These two conditions are equals to force to classify all samples with exit gate:
 #m2.eval()

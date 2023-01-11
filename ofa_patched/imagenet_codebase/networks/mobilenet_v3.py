@@ -173,14 +173,14 @@ class EEMobileNetV3(MyNetwork):
         dim = x.shape[0]
 
         if(self.training): #training 
-            iter = 0
+            i = 0
             for idx,block in enumerate(self.blocks):
-                if (idx==self.exit_idxs[iter]): #exit block
-                    exit_block = self.exit_list[iter]
+                if (idx==self.exit_idxs[i]): #exit block
+                    exit_block = self.exit_list[i]
                     pred, _ = exit_block(x)
                     preds.append(pred)
-                    if(iter<(self.n_exit-1)):
-                        iter+=1
+                    if(i<(self.n_exit-1)):
+                        i+=1
                 x = block(x)
             x = self.final_expand_layer(x)
             x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
@@ -190,18 +190,17 @@ class EEMobileNetV3(MyNetwork):
             preds.append(x)
             return preds
         else:
-            iter = 0
+            i = 0
+            counts = [0,0,0,0,0]
             for idx,block in enumerate(self.blocks):
-                if (idx==self.exit_idxs[iter]): #exit block
-                    exit_block = self.exit_list[iter]
+                if (idx==self.exit_idxs[i]): #exit block
+                    exit_block = self.exit_list[i]
                     pred, conf = exit_block(x)
                     conf = torch.squeeze(conf)
-                    mask = conf >= self.threshold[iter]
+                    mask = conf >= self.threshold[i]
                     mask = mask.cpu() #gpu>cpu memory
-                    p = np.where(np.array(mask)==False) #idxs of non EE predictions
-                    print("P")
-                    print(p)
-                    count = torch.sum(mask)
+                    p = np.where(np.array(mask)==False)[0] #idxs of non EE predictions
+                    counts[i] = torch.sum(mask).item()
                     '''
                     x_dim = x.size(dim=0) - count.item()
                     if (x_dim == 0): # if no samples left
@@ -209,13 +208,13 @@ class EEMobileNetV3(MyNetwork):
                         del conf
                         return pred,count
                     '''
-                    if(count.item() != 0): # if at least one early sample
+                    if(counts[i]!= 0): # if at least one early sample classified by this exit
                         x = x[mask==False,:,:,:]
                         pred = pred[mask==True,:]
                     del mask 
                     del conf
                     preds.append(pred)
-                    idxs.append(p[0])
+                    idxs.append(p)
                     if(iter<(self.n_exit-1)):
                         iter+=1
                     #print("Early Exit samples:")
@@ -245,7 +244,7 @@ class EEMobileNetV3(MyNetwork):
             del preds[0]
             del pred
             
-            return x,count
+            return x,counts
     
     '''
     def set_active_exit(self):
