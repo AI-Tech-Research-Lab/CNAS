@@ -220,6 +220,11 @@ class EEMobileNetV3(MyNetwork):
                     #print("Early Exit samples:")
                     #print(count)
                 x = block(x)
+
+            counts[i+1] = x.shape[0] #n samples classified normally by the last exit
+            print("N SAMPLES") 
+            print(x.shape[0])
+            print(counts[-1])
             x = self.final_expand_layer(x)
             x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
             x = self.feature_mix_layer(x)
