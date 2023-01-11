@@ -619,10 +619,15 @@ class RunManager:
                     loss2 = self.train_criterion(aux_outputs, labels)
                     loss = loss1 + 0.4 * loss2
                 else:
-                    output, exit_output = self.net(images)
-                    loss1 = self.train_criterion(output, labels)
-                    loss2 = self.train_criterion(exit_output, labels)
-                    loss = 0.4 * loss1 + loss2
+                    #weighted loss 
+                    preds = self.net(images)
+                    weights = [1,1,1,1,1]
+                    loss = 0
+                    for p,w in zip(preds,weights):
+                        t_loss = self.train_criterion(p, labels) 
+                        loss += t_loss * w
+                    output = preds[-1] #final exit
+                    exit_output = preds[0] #first exit
 
                 if args.teacher_model is None:
                     loss_type = 'ce'
@@ -648,6 +653,7 @@ class RunManager:
                 self.optimizer.step()
 
                 # measure accuracy and record loss
+
                 acc1, acc5 = accuracy(output, target, topk=(1, 5))
                 acc1_exit, acc5_exit = accuracy(exit_output, target, topk=(1, 5))
                 losses.update(loss.item(), images.size(0))

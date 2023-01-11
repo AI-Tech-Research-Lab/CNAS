@@ -165,28 +165,33 @@ class EEMobileNetV3(MyNetwork):
 
         x = self.first_conv(x)
 
-        pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
+        preds = [] #torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
         idxs = []
         x_dim = 0
         dim = x.shape[0]
 
         if(self.training): #training 
-            for idx,block in enumerate(self.blocks):
-                if (idx==self.idx_exit): #exit block
-                    pred, _ = self.exit_block(x)
-                x = block(x)
+            for block in self.blocks:
+                #if (idx==self.idx_exit): #exit block
+                #    pred, _ = self.exit_block(x)
+                if isinstance(block, ExitBlock):
+                    preds.append(self.block(x))
+                else:
+                    x = block(x)
             x = self.final_expand_layer(x)
             x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
             x = self.feature_mix_layer(x)
             x = torch.squeeze(x)
             x = self.classifier(x)
-            return x,pred
+            preds.append(x)
+            return preds
         else:
 
-            for idx,block in enumerate(self.blocks):
+            for block in self.blocks:
                 #FIX: not working for batch size 1
-                if (idx==self.idx_exit): #exit block
+                if isinstance(block, ExitBlock): #exit block
                     pred, conf = self.exit_block(x)
+                    
                     conf = torch.squeeze(conf)
                     mask = conf >= self.threshold 
                     mask = mask.cpu() #gpu>cpu memory

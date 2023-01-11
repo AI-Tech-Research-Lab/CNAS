@@ -17,6 +17,9 @@ ofa.set_active_subnet(ks=7, e=6, d=d)
 m1 = ofa.get_active_subnet(preserve_weight=True)
 ofa_ee.set_active_subnet(ks=7, e=6, d=d)
 m2 = ofa_ee.get_active_subnet(preserve_weight=True)
+m2.train()
+input = torch.randn(96, 3, 40, 40)
+x = m2(input)
 
 #These two conditions are equals to force to classify all samples with exit gate:
 #m2.eval()
