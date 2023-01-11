@@ -231,7 +231,7 @@ class EEMobileNetV3(MyNetwork):
     
     def set_active_exit(self):
 
-        if self.active_idx != len(self.exit_list-1): #if not the last exit
+        if (self.active_idx != (len(self.exit_list)-1) ): #if not the last exit
             self.active_idx +=1
             if(self.threshold[self.active_idx]==1): #if the exit is switched off go ahead
                 self.set_active_idx()
