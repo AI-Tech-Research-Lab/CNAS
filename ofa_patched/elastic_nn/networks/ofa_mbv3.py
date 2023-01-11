@@ -706,8 +706,9 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         feature_dim_list = []
         for i in range(1,n,1):
             feature_dim_list.append(self.base_stage_width[i]) #[blocks[idx_exit+1].mobile_inverted_conv.active_out_channel]
+        n_exit = n - 1
         _subnet = EEMobileNetV3(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
-        self.n_classes, feature_dim_list, self.dropout_rate)
+        self.n_classes, feature_dim_list, self.dropout_rate, n_exit)
         _subnet.set_bn_param(**self.get_bn_param())
         return _subnet
 
