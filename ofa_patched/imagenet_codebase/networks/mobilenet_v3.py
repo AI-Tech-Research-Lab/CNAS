@@ -181,8 +181,7 @@ class EEMobileNetV3(MyNetwork):
                     preds.append(pred)
                     if(iter<(self.n_exit-1)):
                       iter+=1
-                else:
-                    x = block(x)
+                x = block(x)
             x = self.final_expand_layer(x)
             x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
             x = self.feature_mix_layer(x)
