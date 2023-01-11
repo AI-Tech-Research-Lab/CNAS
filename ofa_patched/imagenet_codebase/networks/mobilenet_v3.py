@@ -237,7 +237,11 @@ class EEMobileNetV3(MyNetwork):
                 self.set_active_exit()
     
     def get_active_exit(self):
-        return self.exit_idxs[self.active_idx]
+
+        if (self.threshold[self.active_idx] == 1): #exit switched off
+            return -1
+        else:
+            return self.exit_idxs[self.active_idx]
            
 
     @property
