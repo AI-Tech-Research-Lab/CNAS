@@ -175,12 +175,14 @@ class EEMobileNetV3(MyNetwork):
         if(self.training): #training 
             iter = 0
             for idx,block in enumerate(self.blocks):
+                print("ITER")
+                print(iter)
                 if (idx==self.exit_idxs[iter]): #exit block
                     exit_block = self.exit_list[iter]
                     pred, _ = exit_block(x)
                     preds.append(pred)
                     if(iter<(self.n_exit-1)):
-                      iter+=1
+                        iter+=1
                 x = block(x)
             x = self.final_expand_layer(x)
             x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
