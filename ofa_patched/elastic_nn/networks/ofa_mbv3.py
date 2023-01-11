@@ -499,13 +499,16 @@ class OFAEEMobileNetV3(EEMobileNetV3):
 
         # runtime_depth
         d = [len(block_idx) for block_idx in self.block_group_info]
-        n = len(self.depth_list) #num_blocks
+        n = len(d) #num_blocks
+        exit_idxs =[]
         feature_dim_list = []
+        idx = 1
         for i in range(1,n,1):
+            idx += d[i-1]
+            exit_idxs.append(idx)
             feature_dim_list.append(self.base_stage_width[i]) #[blocks[idx_exit+1].mobile_inverted_conv.active_out_channel]
-        n_exit = n - 1
         super(OFAEEMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
-        self.n_classes, feature_dim_list, self.dropout_rate, n_exit)
+        self.n_classes, feature_dim_list, self.dropout_rate, exit_idxs)
 
         # set bn param
         self.set_bn_param(momentum=bn_param[0], eps=bn_param[1])
@@ -703,12 +706,17 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         d = self.runtime_depth
 
         n = len(d) #num_blocks
+        exit_idxs =[]
         feature_dim_list = []
+        idx = 1
         for i in range(1,n,1):
+            idx += d[i-1]
+            exit_idxs.append(idx)
             feature_dim_list.append(self.base_stage_width[i]) #[blocks[idx_exit+1].mobile_inverted_conv.active_out_channel]
-        n_exit = n - 1
+        #n_exit = n - 1
+
         _subnet = EEMobileNetV3(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
-        self.n_classes, feature_dim_list, self.dropout_rate, n_exit)
+        self.n_classes, feature_dim_list, self.dropout_rate, exit_idxs)
         _subnet.set_bn_param(**self.get_bn_param())
         return _subnet
 

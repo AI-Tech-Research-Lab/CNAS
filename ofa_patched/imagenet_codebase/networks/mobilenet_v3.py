@@ -141,7 +141,7 @@ from ofa.elastic_nn.modules.dynamic_layers import ExitBlock
 class EEMobileNetV3(MyNetwork):
 
     def __init__(self, first_conv, blocks, final_expand_layer, feature_mix_layer, classifier, 
-    n_classes, feature_dim_list, dropout_rate, n_exit):
+    n_classes, feature_dim_list, dropout_rate, exit_idxs):
 
         super(EEMobileNetV3, self).__init__()
 
@@ -150,9 +150,12 @@ class EEMobileNetV3(MyNetwork):
         self.final_expand_layer = final_expand_layer
         self.feature_mix_layer = feature_mix_layer
         self.classifier = classifier
-        self.threshold = 0 #default value
+        self.threshold = [1,1,1,1] #default value
+        self.exit_idxs = exit_idxs
         self.exit_list = []
+        self.active_idx = 0
 
+        n_exit = len(exit_idxs)
         for i in range(1,n_exit,1):
             feature_dim = [feature_dim_list[i-1]]
             final_expand_width = [feature_dim[0] * 6]
@@ -167,15 +170,15 @@ class EEMobileNetV3(MyNetwork):
         preds = [] #torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
         idxs = []
         x_dim = 0
-        dim = x.shape[0]
+        dim = x.shape[0] 
 
         if(self.training): #training 
-            for block in self.blocks:
-                #if (idx==self.idx_exit): #exit block
-                #    pred, _ = self.exit_block(x)
-                if isinstance(block, ExitBlock):
-                    print("EXIT BLOCK DETECTED")
-                    preds.append(self.block(x))
+            for idx,block in enumerate(self.blocks):
+                if (idx==self.get_active_exit()): #exit block
+                    exit_block = self.exit_list[self.active_idx]
+                    pred, _ = exit_block(x)
+                    preds.append(pred)
+                    self.set_active_exit()
                 else:
                     x = block(x)
             x = self.final_expand_layer(x)
@@ -225,6 +228,17 @@ class EEMobileNetV3(MyNetwork):
             del pred
             
             return x,count
+    
+    def set_active_exit(self):
+
+        if self.active_idx != len(self.exit_list-1): #if not the last exit
+            self.active_idx +=1
+            if(self.threshold[self.active_idx]==1): #if the exit is switched off go ahead
+                self.set_active_idx()
+    
+    def get_active_exit(self):
+        return self.exit_idxs[self.active_idx]
+           
 
     @property
     def module_str(self):
