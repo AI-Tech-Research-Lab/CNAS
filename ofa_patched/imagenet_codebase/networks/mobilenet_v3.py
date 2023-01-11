@@ -174,6 +174,7 @@ class EEMobileNetV3(MyNetwork):
                 #if (idx==self.idx_exit): #exit block
                 #    pred, _ = self.exit_block(x)
                 if isinstance(block, ExitBlock):
+                    print("EXIT BLOCK DETECTED")
                     preds.append(self.block(x))
                 else:
                     x = block(x)
