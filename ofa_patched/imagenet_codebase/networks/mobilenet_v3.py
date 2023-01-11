@@ -170,7 +170,9 @@ class EEMobileNetV3(MyNetwork):
         preds = [] #torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
         idxs = []
         x_dim = 0
-        dim = x.shape[0] 
+        dim = x.shape[0]
+        print("N_EXIT")
+        print(self.n_exit) 
 
         if(self.training): #training 
             iter = 0
