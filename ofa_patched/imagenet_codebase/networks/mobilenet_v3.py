@@ -136,13 +136,12 @@ class MobileNetV3(MyNetwork):
                 cfg[stage_id] = new_block_config_list
         return cfg
 
+from ofa.elastic_nn.modules.dynamic_layers import ExitBlock
 
 class EEMobileNetV3(MyNetwork):
 
     def __init__(self, first_conv, blocks, final_expand_layer, feature_mix_layer, classifier, 
     n_classes, feature_dim_list, dropout_rate, n_exit):
-
-        from ofa.elastic_nn.modules.dynamic_layers import ExitBlock
 
         super(EEMobileNetV3, self).__init__()
 
