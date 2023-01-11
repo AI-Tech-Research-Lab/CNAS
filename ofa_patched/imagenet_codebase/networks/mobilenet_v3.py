@@ -172,6 +172,8 @@ class EEMobileNetV3(MyNetwork):
         x_dim = 0
         dim = x.shape[0] 
 
+        
+
         if(self.training): #training 
             for idx,block in enumerate(self.blocks):
                 if (idx==self.get_active_exit()): #exit block
@@ -238,10 +240,9 @@ class EEMobileNetV3(MyNetwork):
     
     def get_active_exit(self):
 
-        if (self.threshold[self.active_idx] == 1): #exit switched off
-            return -1
-        else:
-            return self.exit_idxs[self.active_idx]
+        if(self.threshold[self.active_idx]==1):
+            self.set_active_exit()
+        return self.exit_idxs[self.active_idx]
            
 
     @property
