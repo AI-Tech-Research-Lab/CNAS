@@ -199,6 +199,8 @@ class EEMobileNetV3(MyNetwork):
                     mask = conf >= self.threshold[iter]
                     mask = mask.cpu() #gpu>cpu memory
                     p = np.where(np.array(mask)==False) #idxs of non EE predictions
+                    print("P")
+                    print(p)
                     count = torch.sum(mask)
                     '''
                     x_dim = x.size(dim=0) - count.item()
@@ -213,7 +215,7 @@ class EEMobileNetV3(MyNetwork):
                     del mask 
                     del conf
                     preds.append(pred)
-                    idxs.append(p)
+                    idxs.append(p[0])
                     if(iter<(self.n_exit-1)):
                         iter+=1
                     #print("Early Exit samples:")
