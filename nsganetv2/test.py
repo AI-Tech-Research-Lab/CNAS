@@ -18,7 +18,7 @@ m1 = ofa.get_active_subnet(preserve_weight=True)
 ofa_ee.set_active_subnet(ks=7, e=6, d=d)
 m2 = ofa_ee.get_active_subnet(preserve_weight=True)
 m2.eval()
-m2.threshold = [1,1,0,0.4]
+m2.threshold = [0,1,1,1]
 input = torch.randn(10, 3, 40, 40)
 x,counts = m2(input)
 print(x.shape[0])
@@ -30,10 +30,10 @@ print(counts)
 #Check that computation skips the final layers..
 
 #info1 = get_net_info(m1,input_shape)
-info2 = get_net_info(m2,input_shape)
+#info2 = get_net_info(m2,input_shape)
 
 #print(info1)
-print(info2)
+#print(info2)
 
 
 
