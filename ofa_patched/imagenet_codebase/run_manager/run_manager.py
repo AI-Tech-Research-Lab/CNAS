@@ -473,7 +473,7 @@ class RunManager:
                     t.update(1)
         
         avg_utils = []
-        for i,u in enumerate(utils):
+        for u in utils:
             avg_utils.append(u.avg)
 
         return losses.avg, top1.avg, top5.avg, utils

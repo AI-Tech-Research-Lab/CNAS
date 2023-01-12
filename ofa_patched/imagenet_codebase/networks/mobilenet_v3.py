@@ -196,30 +196,34 @@ class EEMobileNetV3(MyNetwork):
 
             for idx,block in enumerate(self.blocks):
                 if (idx==self.exit_idxs[i]): #exit block
-                    exit_block = self.exit_list[i]
-                    pred, conf = exit_block(x)
-                    conf = torch.squeeze(conf)
-                    mask = conf >= self.threshold[i]
-                    mask = mask.cpu() #gpu>cpu memory
-                    p = np.where(np.array(mask)==False)[0] #idxs of non EE predictions
-                    counts[i] = torch.sum(mask).item()
-                    x = x[mask==False,:,:,:]
-                    pred = pred[mask==True,:]
-                    del mask 
-                    del conf
-                    preds.append(pred)
-                    idxs.append(p)
+                    if(self.threshold[iter]!=1):
+                        exit_block = self.exit_list[i]
+                        pred, conf = exit_block(x)
+                        conf = torch.squeeze(conf)
+                        mask = conf >= self.threshold[i]
+                        mask = mask.cpu() #gpu>cpu memory
+                        p = np.where(np.array(mask)==False)[0] #idxs of non EE predictions
+                        counts[i] = torch.sum(mask).item()
+                        x = x[mask==False,:,:,:]
+                        pred = pred[mask==True,:]
+                        del mask 
+                        del conf
+                        preds.append(pred)
+                        idxs.append(p)
+                    else: 
+                        counts[i]=0
                     if(i<(self.n_exit-1)):
                         i+=1
                 x = block(x)
 
             counts[i+1] = x.shape[0] #n samples classified normally by the last exit
-            x = self.final_expand_layer(x)
-            x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
-            x = self.feature_mix_layer(x)
-            x = torch.squeeze(x)
-            x = self.classifier(x)
-            preds.append(x)
+            if(x.shape[0]!=0):
+                x = self.final_expand_layer(x)
+                x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
+                x = self.feature_mix_layer(x)
+                x = torch.squeeze(x)
+                x = self.classifier(x)
+                preds.append(x)
 
             #mix predictions of all exits
             tensors = []
