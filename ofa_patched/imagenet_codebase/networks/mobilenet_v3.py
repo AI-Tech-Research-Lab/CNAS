@@ -216,6 +216,8 @@ class EEMobileNetV3(MyNetwork):
                         counts[i]=0
                     if(i<(self.n_exit-1)):
                         i+=1
+                print("X")
+                print(x)
                 x = block(x)
 
             counts[i+1] = x.shape[0] #n samples classified normally by the last exit
