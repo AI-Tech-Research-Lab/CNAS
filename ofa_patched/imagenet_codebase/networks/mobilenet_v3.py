@@ -214,8 +214,10 @@ class EEMobileNetV3(MyNetwork):
                         counts[i]=0
                     if(i<(self.n_exit-1)):
                         i+=1
-                if (x.shape[0]==0):
+                # FIX bug that for one sample x.shape = (0,1,,,,) when empty
+                if (x.shape[0]==0): 
                     x = torch.squeeze(x)
+                ###
                 x = block(x)
 
             counts[i+1] = x.shape[0] #n samples classified normally by the last exit
