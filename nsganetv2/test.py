@@ -30,10 +30,10 @@ print(counts)
 #Check that computation skips the final layers..
 
 #info1 = get_net_info(m1,input_shape)
-info2 = get_net_info(m2,input_shape)
+#info2 = get_net_info(m2,input_shape)
 
 #print(info1)
-print(info2)
+#print(info2)
 
 
 
