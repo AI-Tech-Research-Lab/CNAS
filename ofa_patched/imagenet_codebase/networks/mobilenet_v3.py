@@ -203,10 +203,16 @@ class EEMobileNetV3(MyNetwork):
                         pred, conf = exit_block(x)
                         conf = torch.squeeze(conf)
                         mask = conf >= self.threshold[i]
+                        print("MASK")
+                        print(mask)
                         mask = mask.cpu() #gpu>cpu memory
                         p = np.where(np.array(mask)==False)[0] #idxs of non EE predictions
                         counts[i] = torch.sum(mask).item()
+                        print("X BEFORE MASK")
+                        print(x)
                         x = x[mask==False,:,:,:]
+                        print("X AFTER MASK")
+                        print(x)
                         pred = pred[mask==True,:]
                         del mask 
                         del conf
