@@ -224,6 +224,8 @@ class EEMobileNetV3(MyNetwork):
                         i+=1
                 print("X")
                 print(x)
+                if (x.shape[0]==0):
+                    x = torch.squeeze(x)
                 x = block(x)
 
             counts[i+1] = x.shape[0] #n samples classified normally by the last exit
