@@ -5,6 +5,7 @@ import torch
 from ofa.model_zoo import ofa_net
 import numpy as np
 from utils import get_net_info
+from torchprofile import profile_macs
 
 #Compute MACS of the exit gate (< MACs of the whole net)
 
@@ -30,10 +31,21 @@ print(counts)
 #Check that computation skips the final layers..
 
 #info1 = get_net_info(m1,input_shape)
-info2 = get_net_info(m2,input_shape)
+
+from torchprofile import profile_macs
+import copy
+
+net = copy.deepcopy(m2)
+
+net.eval()
+
+net.threshold = [0,1,1,1]
+macs = []
+# macs exit 1
+macs.append(int(profile_macs(net, input)))
 
 #print(info1)
-print(info2)
+print(macs)
 
 
 
