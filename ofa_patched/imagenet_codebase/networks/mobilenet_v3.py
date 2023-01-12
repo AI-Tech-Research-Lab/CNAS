@@ -190,8 +190,10 @@ class EEMobileNetV3(MyNetwork):
             preds.append(x)
             return preds
         else:
+
             i = 0
             counts = [0,0,0,0,0]
+
             for idx,block in enumerate(self.blocks):
                 if (idx==self.exit_idxs[i]): #exit block
                     exit_block = self.exit_list[i]
@@ -201,14 +203,6 @@ class EEMobileNetV3(MyNetwork):
                     mask = mask.cpu() #gpu>cpu memory
                     p = np.where(np.array(mask)==False)[0] #idxs of non EE predictions
                     counts[i] = torch.sum(mask).item()
-                    '''
-                    x_dim = x.size(dim=0) - count.item()
-                    if (x_dim == 0): # if no samples left
-                        del mask 
-                        del conf
-                        return pred,count
-                    '''
-                    # if at least one early sample classified by this exit
                     x = x[mask==False,:,:,:]
                     pred = pred[mask==True,:]
                     del mask 
@@ -217,8 +211,6 @@ class EEMobileNetV3(MyNetwork):
                     idxs.append(p)
                     if(i<(self.n_exit-1)):
                         i+=1
-                    #print("Early Exit samples:")
-                    #print(count)
                 x = block(x)
 
             counts[i+1] = x.shape[0] #n samples classified normally by the last exit
@@ -228,12 +220,6 @@ class EEMobileNetV3(MyNetwork):
             x = torch.squeeze(x)
             x = self.classifier(x)
             preds.append(x)
-
-            print("PREDS")
-            print(preds)
-            print("IDXS")
-            print(idxs)
-            #if(x_dim != dim): # if at least one early sample
 
             #mix predictions of all exits
             tensors = []
@@ -254,25 +240,6 @@ class EEMobileNetV3(MyNetwork):
             del pred
             
             return x,counts
-    
-    '''
-    def set_active_exit(self):
-
-        if (self.active_idx != (len(self.exit_list)) ): #if there is some exit available
-            self.active_idx +=1
-            if(self.threshold[self.active_idx]==1): #if the exit is switched off go ahead
-                self.set_active_exit()
-            
-    
-    def get_active_exit(self):
-        
-        if (self.active_idx != (len(self.exit_list))):
-            if(self.threshold[self.active_idx]==1):
-                self.set_active_exit()
-            return self.exit_idxs[self.active_idx]
-        else: # no exit available
-            return -1
-    '''     
 
     @property
     def module_str(self):

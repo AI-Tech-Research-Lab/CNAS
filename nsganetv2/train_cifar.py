@@ -214,7 +214,6 @@ def main():
     return
 
 def save_net(path, net, model_name, optimizer):
-        print("SAVE NET!!")
         """ dump net weight as checkpoint """
         if isinstance(net, torch.nn.DataParallel):
             checkpoint = {'state_dict': net.module.state_dict(),
