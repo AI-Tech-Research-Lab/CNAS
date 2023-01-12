@@ -195,24 +195,16 @@ class EEMobileNetV3(MyNetwork):
             counts = [0,0,0,0,0]
 
             for idx,block in enumerate(self.blocks):
-                print("BLOCK")
-                print(idx)
                 if (idx==self.exit_idxs[i]): #exit block
                     if(self.threshold[i]!=1):
                         exit_block = self.exit_list[i]
                         pred, conf = exit_block(x)
                         conf = torch.squeeze(conf)
                         mask = conf >= self.threshold[i]
-                        print("MASK")
-                        print(mask)
                         mask = mask.cpu() #gpu>cpu memory
                         p = np.where(np.array(mask)==False)[0] #idxs of non EE predictions
                         counts[i] = torch.sum(mask).item()
-                        print("X BEFORE MASK")
-                        print(x)
                         x = x[mask==0,:,:,:]
-                        print("X AFTER MASK")
-                        print(x)
                         pred = pred[mask==1,:]
                         del mask 
                         del conf
@@ -222,8 +214,6 @@ class EEMobileNetV3(MyNetwork):
                         counts[i]=0
                     if(i<(self.n_exit-1)):
                         i+=1
-                print("X")
-                print(x)
                 if (x.shape[0]==0):
                     x = torch.squeeze(x)
                 x = block(x)
