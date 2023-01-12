@@ -345,6 +345,11 @@ def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_inf
     # macs exit 1
     macs.append(int(profile_macs(net, inputs)))
 
+    print("MACS")
+    print(macs[0])
+    
+    '''
+
     net.threshold = [1,0,1,1]
     # macs exit 2
     macs.append(int(profile_macs(net, inputs)))
@@ -360,6 +365,7 @@ def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_inf
     # macs whole network
     net.threshold = [1,1,1,1]
     macs.append(int(profile_macs(net, inputs)))
+    '''
 
     net_info['macs'] = macs
    
@@ -388,7 +394,7 @@ def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_inf
         print('Total training params: %.2fM' % (net_info['params'] / 1e6))
         for macs in net_info['macs']:
           print('Total MACs final exit: %.2fM' % (macs / 1e6))
-        print('Total MACs first exit: %.2fM' % (net_info['macs_first_exit'] / 1e6))
+        #print('Total MACs first exit: %.2fM' % (net_info['macs_first_exit'] / 1e6))
         print('Total activations: %.2fM' % (net_info['activations'] / 1e6))
         for l_type in latency_types:
             print('Estimated %s latency: %.3fms' % (l_type, net_info['%s latency' % l_type]['val']))
