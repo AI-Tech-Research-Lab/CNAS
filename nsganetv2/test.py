@@ -18,12 +18,12 @@ ofa.set_active_subnet(ks=7, e=6, d=d)
 m1 = ofa.get_active_subnet(preserve_weight=True)
 ofa_ee.set_active_subnet(ks=7, e=6, d=d)
 m2 = ofa_ee.get_active_subnet(preserve_weight=True)
-m2.eval()
-m2.threshold = [1,1,0,1]
+#m2.eval()
+#m2.threshold = [1,1,0,1]
 input = torch.randn(1, 3, 40, 40)
-x,counts = m2(input)
-print(x.shape[0])
-print(counts)
+#x,counts = m2(input)
+#print(x.shape[0])
+#print(counts)
 
 #These two conditions are equals to force to classify all samples with exit gate:
 #m2.eval()
