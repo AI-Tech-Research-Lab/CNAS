@@ -195,6 +195,8 @@ class EEMobileNetV3(MyNetwork):
             counts = [0,0,0,0,0]
 
             for idx,block in enumerate(self.blocks):
+                print("BLOCK")
+                print(idx)
                 if (idx==self.exit_idxs[i]): #exit block
                     if(self.threshold[i]!=1):
                         exit_block = self.exit_list[i]
