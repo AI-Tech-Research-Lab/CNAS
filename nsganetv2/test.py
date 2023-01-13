@@ -26,7 +26,7 @@ input = torch.randn(10, 3, 40, 40)
 #print(counts)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # PyTorch v0.4.0
-m2 = m2.to(device)
+m2 = m2.to(('cuda:0'))
 from torchsummary import summary
 summary(m2, (input.shape[-3], input.shape[-2], input.shape[-1]) )
 
