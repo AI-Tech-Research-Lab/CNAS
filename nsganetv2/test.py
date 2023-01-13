@@ -42,7 +42,7 @@ net.eval()
 net.threshold = [0,1,1,1]
 macs = []
 # macs exit 1
-macs.append(int(profile_macs(net)))
+macs.append(int(profile_macs(net,input)))
 
 #print(info1)
 print(macs)
