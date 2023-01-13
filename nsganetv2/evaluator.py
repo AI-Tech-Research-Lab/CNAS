@@ -284,7 +284,7 @@ class OFAEvaluator:
              reset_running_statistics=True, pmax = 2, fmax = 100, amax = 5, wp = 1, wf = 1/40, wa = 1, penalty = 10**10):
 
         lut = {'cpu': 'data/i7-8700K_lut.yaml'}
-
+        
         info = get_net_info(
               subnet, (3, resolution, resolution), measure_latency=measure_latency,
               print_info=False, clean=True, lut=lut, pmax = pmax, fmax = fmax, amax = amax, wp = wp, wf = wf, wa = wa, penalty = penalty)
