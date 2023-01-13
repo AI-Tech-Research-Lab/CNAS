@@ -25,8 +25,9 @@ input = torch.randn(10, 3, 40, 40)
 #print(x.shape[0])
 #print(counts)
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # PyTorch v0.4.0
 from torchsummary import summary
-summary(m2, input_size=(input[-3], input[-2], input[-1]))
+summary(m2.to(device), input_size=(input[-3], input[-2], input[-1]))
 
 #These two conditions are equals to force to classify all samples with exit gate:
 #m2.eval()
