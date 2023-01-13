@@ -21,9 +21,9 @@ m2 = ofa_ee.get_active_subnet(preserve_weight=True)
 #m2.eval()
 #m2.threshold = [1,1,0,1]
 input = torch.randn(1, 3, 40, 40)
-#x,counts = m2(input)
-#print(x.shape[0])
-#print(counts)
+x,counts = m2(input)
+print(x.shape[0])
+print(counts)
 
 #These two conditions are equals to force to classify all samples with exit gate:
 #m2.eval()
@@ -32,6 +32,7 @@ input = torch.randn(1, 3, 40, 40)
 
 #info1 = get_net_info(m1,input_shape)
 
+'''
 from torchprofile import profile_macs
 import copy
 
@@ -46,6 +47,7 @@ macs.append(int(profile_macs(net,input)))
 
 #print(info1)
 print(macs)
+'''
 
 
 

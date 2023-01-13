@@ -194,6 +194,9 @@ class EEMobileNetV3(MyNetwork):
             i = 0
             counts = [0,0,0,0,0]
 
+            print("X SHAPE")
+            print(x.shape)
+
             for idx,block in enumerate(self.blocks):
                 if (idx==self.exit_idxs[i]): #exit block
 
@@ -204,6 +207,8 @@ class EEMobileNetV3(MyNetwork):
                         preds.append(x)
                         counts[i] = x.shape[0]
                     '''
+                    print("EXIT IDX")
+                    print(idx)
 
                     if(self.threshold[i]!=1):
                         exit_block = self.exit_list[i]
@@ -231,6 +236,7 @@ class EEMobileNetV3(MyNetwork):
                 x = block(x)
 
             if(x.shape[0]!=0):
+                print("FINAL GATE")
                 counts[i+1] = x.shape[0] #n samples classified normally by the last exit
                 x = self.final_expand_layer(x)
                 x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
@@ -238,6 +244,11 @@ class EEMobileNetV3(MyNetwork):
                 x = torch.squeeze(x)
                 x = self.classifier(x)
                 preds.append(x)
+
+            print("PREDS")
+            print(preds)
+            print("IDXS")
+            print(idxs)
 
             #mix predictions of all exits
             tensors = []
