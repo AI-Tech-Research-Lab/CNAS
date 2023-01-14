@@ -718,7 +718,9 @@ class OFAEEMobileNetV3(EEMobileNetV3):
 
         print("RUNTIME DEPTH")
         print(d)
-
+        print("RUNTIME THRESHOLD")
+        print(t)
+        
         n = len(d) #num_blocks
         exit_idxs =[]
         feature_dim_list = []
