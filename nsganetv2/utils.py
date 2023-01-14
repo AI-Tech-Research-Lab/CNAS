@@ -338,8 +338,6 @@ def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_inf
 
     net = copy.deepcopy(net)
 
-    net.eval()
-
     net_info['macs'] = int(profile_macs(net, inputs))
    
     # activation_size
