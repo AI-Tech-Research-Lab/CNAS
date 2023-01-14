@@ -324,6 +324,9 @@ class OFAEvaluator:
 
         info['loss'], info['top1'], info['top5'], info['util'] = loss, top1, top5, utils
 
+        print("INFO")
+        print(info)
+
         save_path = os.path.join(log_dir, 'net.stats') if cfgs.save is None else cfgs.save
         if cfgs.save_config:
             OFAEvaluator.save_net_config(log_dir, subnet, "net.config")
