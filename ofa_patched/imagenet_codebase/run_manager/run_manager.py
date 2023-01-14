@@ -597,7 +597,7 @@ class RunManager:
 
         losses = AverageMeter()
         top1 = AverageMeter()
-        top1_exit = AverageMeter()
+        #top1_exit = AverageMeter()
         data_time = AverageMeter()
 
         with tqdm(total=nBatch,
@@ -631,13 +631,22 @@ class RunManager:
                 else:
                     #weighted loss 
                     preds = self.net(images)
-                    weights = [1,1,1,1,1]
+                    weights = np.ones(len(preds)) #all weigths are set to 1
                     loss = 0
+                    acc = 0
+                    w_tot = 0
+
                     for p,w in zip(preds,weights):
+                        w_tot += w
                         t_loss = self.train_criterion(p, labels) 
                         loss += t_loss * w
-                    output = preds[-1] #final exit
-                    exit_output = preds[0] #first exit
+                        acc1_exit, acc5_exit = accuracy(p, target, topk=(1, 5))
+                        acc += acc1_exit[0].item() * w
+                    
+                    acc1 = acc / w_tot #average acc of all the exits
+
+                    #output = preds[-1] #final exit
+                    #exit_output = preds[0] #first exit
 
                 if args.teacher_model is None:
                     loss_type = 'ce'
@@ -663,17 +672,19 @@ class RunManager:
                 self.optimizer.step()
 
                 # measure accuracy and record loss
-
-                acc1, acc5 = accuracy(output, target, topk=(1, 5))
-                acc1_exit, acc5_exit = accuracy(exit_output, target, topk=(1, 5))
+                
+               
+                #acc1, acc5 = accuracy(output, target, topk=(1, 5))
+                #acc1_exit, acc5_exit = accuracy(exit_output, target, topk=(1, 5))
                 losses.update(loss.item(), images.size(0))
-                top1.update(acc1[0].item(), images.size(0))
-                top1_exit.update(acc1_exit[0].item(), images.size(0))
+                top1.update(acc1, images.size(0))
+                #top1.update(acc1[0].item(), images.size(0))
+                #top1_exit.update(acc1_exit[0].item(), images.size(0))
 
                 t.set_postfix({
                     'loss': losses.avg,
                     'top1': top1.avg,
-                    'top1_exit': top1_exit.avg,
+                    #'top1_exit': top1_exit.avg,
                     #'top5': top5.avg,
                     'img_size': images.size(2),
                     'lr': new_lr,
@@ -682,12 +693,12 @@ class RunManager:
                 })
                 t.update(1)
                 end = time.time()
-        return losses.avg, top1.avg, top1_exit.avg
+        return losses.avg, top1.avg
 
     def train(self, args, warmup_epoch=0, warmup_lr=0):
         
         for epoch in range(self.start_epoch, self.run_config.n_epochs + warmup_epoch):
-            train_loss, train_top1, train_top1_exit = self.adaptive_train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
+            train_loss, train_top1 = self.adaptive_train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
 
             if (epoch + 1) % self.run_config.validation_frequency == 0:
                 img_size, val_loss, val_acc, val_acc5 = self.validate_all_resolution(epoch=epoch, is_test=False)
