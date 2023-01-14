@@ -14,20 +14,16 @@ input_shape = (3,40,40)
 ofa_ee = ofa_net(n_classes,'ofa_eembv3_d234_e346_k357_w1.0', pretrained=False)
 ofa = ofa_net(n_classes,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=False)
 d = [2,2,2,2,2]
-t = [1,1,1,1]
+t = [0.1,0.1,0.1,0.1]
 ofa_ee.set_active_subnet(ks=7, e=6, d=d, t=t)
 m2 = ofa_ee.get_active_subnet(preserve_weight=True)
-print(m2.threshold)
-print(m2.n_exit)
-print(m2.exit_idxs)
 m2.eval()
-#m2.threshold = [0,1,1,1]
+m2.threshold = [0,1,1,1]
 input = torch.randn(10, 3, 40, 40)
 x,counts = m2(input)
-print("X SHAPE")
-print(x.shape[0])
-print("COUNTS")
-print(counts)
+#info = get_net_info(m2,input_shape)
+#print(info)
+
 
 
 #These two conditions are equals to force to classify all samples with exit gate:
