@@ -23,9 +23,11 @@ print(m2.exit_idxs)
 #m2.eval()
 #m2.threshold = [0,1,1,1]
 input = torch.randn(10, 3, 40, 40)
-#x,counts = m2(input)
-#print(x.shape[0])
-#print(counts)
+x,counts = m2(input)
+print("X SHAPE")
+print(x.shape[0])
+print("COUNTS")
+print(counts)
 
 
 #These two conditions are equals to force to classify all samples with exit gate:

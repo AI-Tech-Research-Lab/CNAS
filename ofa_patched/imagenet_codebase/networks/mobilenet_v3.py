@@ -190,27 +190,10 @@ class EEMobileNetV3(MyNetwork):
             preds.append(x)
             return preds
         else:
-
             i = 0
-            counts = [0,0,0,0,0]
-
-            print("X SHAPE")
-            print(x.shape)
-
+            counts = np.zeros(self.n_exit+1)
             for idx,block in enumerate(self.blocks):
                 if (idx==self.exit_idxs[i]): #exit block
-
-                    '''
-                    if(self.threshold[i]==0):
-                        exit_block = self.exit_list[i]
-                        x, _ = exit_block(x)
-                        preds.append(x)
-                        counts[i] = x.shape[0]
-                    '''
-                    print("EXIT IDX")
-                    print(idx)
-
-                    if(self.threshold[i]!=1):
                         exit_block = self.exit_list[i]
                         pred, conf = exit_block(x)
                         conf = torch.squeeze(conf)
@@ -225,30 +208,20 @@ class EEMobileNetV3(MyNetwork):
                         preds.append(pred)
                         idxs.append(p)
                         # FIX bug that for one sample x.shape = (0,1,,,,) when empty
-                        if (x.shape[0]==0): # no more samples 
-                            x = torch.squeeze(x)
-                            break
-                    else: 
-                        counts[i]=0
-                    if(i<(self.n_exit-1)):
-                        i+=1
-                    
+                        #if (x.shape[0]==0): # no more samples 
+                        #    x = torch.squeeze(x)
+                        #    break
+                        if(i<(self.n_exit-1)):
+                            i+=1
                 x = block(x)
 
-            if(x.shape[0]!=0):
-                print("FINAL GATE")
-                counts[i+1] = x.shape[0] #n samples classified normally by the last exit
-                x = self.final_expand_layer(x)
-                x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
-                x = self.feature_mix_layer(x)
-                x = torch.squeeze(x)
-                x = self.classifier(x)
-                preds.append(x)
-
-            print("PREDS")
-            print(preds)
-            print("IDXS")
-            print(idxs)
+            counts[i+1] = x.shape[0] #n samples classified normally by the last exit
+            x = self.final_expand_layer(x)
+            x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
+            x = self.feature_mix_layer(x)
+            x = torch.squeeze(x)
+            x = self.classifier(x)
+            preds.append(x)
 
             #mix predictions of all exits
             tensors = []
