@@ -14,9 +14,8 @@ input_shape = (3,40,40)
 ofa_ee = ofa_net(n_classes,'ofa_eembv3_d234_e346_k357_w1.0', pretrained=False)
 ofa = ofa_net(n_classes,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=False)
 d = [2,2,2,2,2]
-ofa.set_active_subnet(ks=7, e=6, d=d)
-m1 = ofa.get_active_subnet(preserve_weight=True)
-ofa_ee.set_active_subnet(ks=7, e=6, d=d)
+t = [1,0.1,1,1]
+ofa_ee.set_active_subnet(ks=7, e=6, d=d, t=t)
 m2 = ofa_ee.get_active_subnet(preserve_weight=True)
 #m2.eval()
 m2.threshold = [0,1,1,1]
@@ -25,10 +24,6 @@ input = torch.randn(10, 3, 40, 40)
 #print(x.shape[0])
 #print(counts)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # PyTorch v0.4.0
-m2 = m2.to(('cuda:0'))
-from torchsummary import summary
-summary(m2, (input.shape[-3], input.shape[-2], input.shape[-1]) )
 
 #These two conditions are equals to force to classify all samples with exit gate:
 #m2.eval()

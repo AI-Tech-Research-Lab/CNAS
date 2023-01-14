@@ -388,12 +388,13 @@ class OFAMobileNetV3(MobileNetV3):
 class OFAEEMobileNetV3(EEMobileNetV3):
 
     def __init__(self, n_classes=1000, bn_param=(0.1, 1e-5), dropout_rate=0.1, base_stage_width=None,
-                 width_mult_list=1.0, ks_list=3, expand_ratio_list=6, depth_list=4):
+                 width_mult_list=1.0, ks_list=3, expand_ratio_list=6, depth_list=4, t_list = 1):
 
         self.width_mult_list = int2list(width_mult_list, 1)
         self.ks_list = int2list(ks_list, 1)
         self.expand_ratio_list = int2list(expand_ratio_list, 1)
         self.depth_list = int2list(depth_list, 1)
+        self.t_list = int2list(t_list,1)
         self.base_stage_width = base_stage_width
 
         self.width_mult_list.sort()
@@ -505,14 +506,16 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         idx = 1
         for i in range(1,n,1):
             idx += d[i-1]
-            exit_idxs.append(idx)
-            feature_dim_list.append(self.base_stage_width[i]) #[blocks[idx_exit+1].mobile_inverted_conv.active_out_channel]
+            if (self.t_list[i]!=1): #place a exit only if threshold is different from 1
+              exit_idxs.append(idx)
+              feature_dim_list.append(self.base_stage_width[i]) 
         super(OFAEEMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
         self.n_classes, feature_dim_list, self.dropout_rate, exit_idxs)
 
         # set bn param
         self.set_bn_param(momentum=bn_param[0], eps=bn_param[1])
         self.runtime_depth = d
+        self.runtime_threshold = self.t_list
 
     """ MyNetwork required methods """
 
@@ -601,11 +604,12 @@ class OFAEEMobileNetV3(EEMobileNetV3):
 
     """ set, sample and get active sub-networks """
 
-    def set_active_subnet(self, wid=None, ks=None, e=None, d=None):
+    def set_active_subnet(self, wid=None, ks=None, e=None, d=None, t=None):
         width_mult_id = int2list(wid, 4 + len(self.block_group_info))
         ks = int2list(ks, len(self.blocks) - 1)
         expand_ratio = int2list(e, len(self.blocks) - 1)
         depth = int2list(d, len(self.block_group_info))
+        threshold = int2list(t, len(self.block_group_info) - 1)
 
         for block, k, e in zip(self.blocks[1:], ks, expand_ratio):
             if k is not None:
@@ -616,6 +620,11 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         for i, d in enumerate(depth):
             if d is not None:
                 self.runtime_depth[i] = min(len(self.block_group_info[i]), d)
+
+        for i, t in enumerate(threshold):
+            if t is not None:
+                self.runtime_threshold[i] = t
+
 
     def set_constraint(self, include_list, constraint_type='depth'):
         if constraint_type == 'depth':
@@ -704,6 +713,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
             blocks += stage_blocks
 
         d = self.runtime_depth
+        t = self.runtime_threshold
 
         n = len(d) #num_blocks
         exit_idxs =[]
@@ -711,9 +721,9 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         idx = 1
         for i in range(1,n,1):
             idx += d[i-1]
-            exit_idxs.append(idx)
-            feature_dim_list.append(self.base_stage_width[i]) #[blocks[idx_exit+1].mobile_inverted_conv.active_out_channel]
-        #n_exit = n - 1
+            if (t[i]!=1):
+                exit_idxs.append(idx)
+                feature_dim_list.append(self.base_stage_width[i]) 
 
         _subnet = EEMobileNetV3(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
         self.n_classes, feature_dim_list, self.dropout_rate, exit_idxs)
