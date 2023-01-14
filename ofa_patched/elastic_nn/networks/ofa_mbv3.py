@@ -722,7 +722,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         idx = 1
         for i in range(1,n,1):
             idx += d[i-1]
-            if (t[i]!=1):
+            if (t[i-1]!=1):
                 exit_idxs.append(idx)
                 feature_dim_list.append(self.base_stage_width[i]) 
 
