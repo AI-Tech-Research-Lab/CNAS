@@ -141,7 +141,7 @@ from ofa.elastic_nn.modules.dynamic_layers import ExitBlock
 class EEMobileNetV3(MyNetwork):
 
     def __init__(self, first_conv, blocks, final_expand_layer, feature_mix_layer, classifier, 
-    n_classes, feature_dim_list, dropout_rate, exit_idxs):
+    n_classes, feature_dim_list, dropout_rate, exit_idxs, t_list):
 
         super(EEMobileNetV3, self).__init__()
 
@@ -150,10 +150,9 @@ class EEMobileNetV3(MyNetwork):
         self.final_expand_layer = final_expand_layer
         self.feature_mix_layer = feature_mix_layer
         self.classifier = classifier
-        self.threshold = [0.1,1,1,1] #default value
+        self.threshold = t_list
         self.exit_idxs = exit_idxs
         self.exit_list = []
-        self.active_idx = 0
         self.n_exit = len(exit_idxs)
     
         for i in range(0,self.n_exit,1):

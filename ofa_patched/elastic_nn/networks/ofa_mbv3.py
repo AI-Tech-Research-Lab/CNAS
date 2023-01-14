@@ -511,7 +511,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
               exit_idxs.append(idx)
               feature_dim_list.append(self.base_stage_width[i]) 
         super(OFAEEMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
-        self.n_classes, feature_dim_list, self.dropout_rate, exit_idxs)
+        self.n_classes, feature_dim_list, self.dropout_rate, exit_idxs,self.t_list)
 
         # set bn param
         self.set_bn_param(momentum=bn_param[0], eps=bn_param[1])
@@ -727,7 +727,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
                 feature_dim_list.append(self.base_stage_width[i]) 
 
         _subnet = EEMobileNetV3(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
-        self.n_classes, feature_dim_list, self.dropout_rate, exit_idxs)
+        self.n_classes, feature_dim_list, self.dropout_rate, exit_idxs, t)
         _subnet.set_bn_param(**self.get_bn_param())
         return _subnet
 
