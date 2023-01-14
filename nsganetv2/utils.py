@@ -340,6 +340,66 @@ def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_inf
 
     net.eval()
 
+    net_info['macs'] = int(profile_macs(net, inputs))
+   
+    # activation_size
+    net_info['activations'] = 0#int(profile_activation_size(net, inputs))
+
+    # latencies
+    latency_types = [] if measure_latency is None else measure_latency.split('#')
+
+    # print(latency_types)
+    for l_type in latency_types:
+        if lut is not None and l_type in lut:
+            latency_estimator = LatencyEstimator(lut[l_type])
+            latency = look_up_latency(net, latency_estimator, input_shape[2])
+            measured_latency = None
+        else:
+            latency, measured_latency = measure_net_latency(
+                net, l_type, fast=False, input_shape=input_shape, clean=clean)
+        net_info['%s latency' % l_type] = {
+            'val': latency,
+            'hist': measured_latency
+        }
+
+    if print_info:
+        # print(net)
+        print('Total training params: %.2fM' % (net_info['params'] / 1e6))
+        print('Total MACs: %.2fM' % ( net_info['macs'] / 1e6))
+        print('Total activations: %.2fM' % (net_info['activations'] / 1e6))
+        for l_type in latency_types:
+            print('Estimated %s latency: %.3fms' % (l_type, net_info['%s latency' % l_type]['val']))
+
+    return net_info
+
+def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_info=True, clean=False, lut=None):
+    """
+    Modified from https://github.com/mit-han-lab/once-for-all/blob/
+    35ddcb9ca30905829480770a6a282d49685aa282/ofa/imagenet_codebase/utils/pytorch_utils.py#L139
+    """
+    from ofa.imagenet_codebase.utils.pytorch_utils import count_parameters, measure_net_latency
+
+    # artificial input data
+    inputs = torch.randn(1, 3, input_shape[-2], input_shape[-1])
+
+    # move network to GPU if available
+    if torch.cuda.is_available():
+        device = torch.device('cuda:0')
+        net = net.to(device)
+        cudnn.benchmark = True
+        inputs = inputs.to(device)
+
+    net_info = {}
+    if isinstance(net, nn.DataParallel):
+        net = net.module
+
+    # parameters
+    net_info['params'] = count_parameters(net)
+
+    net = copy.deepcopy(net)
+
+    net.eval()
+
     net.threshold = [0,1,1,1]
     macs = []
     # macs exit 1
