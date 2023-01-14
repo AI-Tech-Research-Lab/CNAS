@@ -17,8 +17,11 @@ d = [2,2,2,2,2]
 t = [1,0.1,1,1]
 ofa_ee.set_active_subnet(ks=7, e=6, d=d, t=t)
 m2 = ofa_ee.get_active_subnet(preserve_weight=True)
+print(m2.threshold)
+print(m2.n_exit)
+print(m2.exit_idxs)
 #m2.eval()
-m2.threshold = [0,1,1,1]
+#m2.threshold = [0,1,1,1]
 input = torch.randn(10, 3, 40, 40)
 #x,counts = m2(input)
 #print(x.shape[0])
