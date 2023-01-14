@@ -507,7 +507,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         idx = 1
         for i in range(1,n,1):
             idx += d[i-1]
-            if (self.t_list[i]!=1): #place a exit only if threshold is different from 1
+            if (self.t_list[i-1]!=1): #place a exit only if threshold is different from 1
               exit_idxs.append(idx)
               feature_dim_list.append(self.base_stage_width[i]) 
         super(OFAEEMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
