@@ -476,7 +476,7 @@ class RunManager:
         for u in utils:
             avg_utils.append(u.avg)
 
-        return losses.avg, top1.avg, top5.avg, utils
+        return losses.avg, top1.avg, top5.avg, avg_utils
 
     # Compute score margin
     def get_score_margin(outputs):
@@ -597,7 +597,7 @@ class RunManager:
 
         losses = AverageMeter()
         top1 = AverageMeter()
-        #top1_exit = AverageMeter()
+        top5 = AverageMeter()
         data_time = AverageMeter()
 
         with tqdm(total=nBatch,
@@ -633,7 +633,8 @@ class RunManager:
                     preds = self.net(images)
                     weights = np.ones(len(preds)) #all weigths are set to 1
                     loss = 0
-                    acc = 0
+                    acc1 = 0
+                    acc5 = 0
                     w_tot = 0
 
                     for p,w in zip(preds,weights):
@@ -641,12 +642,11 @@ class RunManager:
                         t_loss = self.train_criterion(p, labels) 
                         loss += t_loss * w
                         acc1_exit, acc5_exit = accuracy(p, target, topk=(1, 5))
-                        acc += acc1_exit[0].item() * w
+                        acc1 += acc1_exit[0].item() * w
+                        acc5 += acc5_exit[0].item() * w
                     
-                    acc1 = acc / w_tot #average acc of all the exits
-
-                    #output = preds[-1] #final exit
-                    #exit_output = preds[0] #first exit
+                    acc1 = acc1 / w_tot #average acc of all the exits
+                    acc5 = acc5 / w_tot
 
                 if args.teacher_model is None:
                     loss_type = 'ce'
@@ -673,19 +673,14 @@ class RunManager:
 
                 # measure accuracy and record loss
                 
-               
-                #acc1, acc5 = accuracy(output, target, topk=(1, 5))
-                #acc1_exit, acc5_exit = accuracy(exit_output, target, topk=(1, 5))
                 losses.update(loss.item(), images.size(0))
                 top1.update(acc1, images.size(0))
-                #top1.update(acc1[0].item(), images.size(0))
-                #top1_exit.update(acc1_exit[0].item(), images.size(0))
+                top5.update(acc5, images.size(0))
 
                 t.set_postfix({
                     'loss': losses.avg,
                     'top1': top1.avg,
-                    #'top1_exit': top1_exit.avg,
-                    #'top5': top5.avg,
+                    'top5': top5.avg,
                     'img_size': images.size(2),
                     'lr': new_lr,
                     'loss_type': loss_type,
