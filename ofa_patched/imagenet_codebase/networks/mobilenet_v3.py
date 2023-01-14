@@ -165,7 +165,7 @@ class EEMobileNetV3(MyNetwork):
     def forward(self, x):
 
         x = self.first_conv(x)
-        
+
         preds = [] 
         idxs = []
 
@@ -220,25 +220,26 @@ class EEMobileNetV3(MyNetwork):
             x = self.feature_mix_layer(x)
             x = torch.squeeze(x)
             x = self.classifier(x)
-            preds.append(x)
 
-            #mix predictions of all exits
-            tensors = []
-            for i in range(len(preds)-1,0,-1): #mix predictions of all exits
-                if (counts[i]==0): #if no predictions go ahead
+            if(self.n_exit!=0):
+                preds.append(x)
+                #mix predictions of all exits
+                tensors = []
+                for i in range(len(preds)-1,0,-1): #mix predictions of all exits
+                    if (counts[i]==0): #if no predictions go ahead
+                        del preds[i]
+                        continue
+                    tensors = list(torch.unbind(preds[i-1],axis=0))
+                    iter = idxs[i-1]
+                    pred = preds[i]
+                    for j,idx in enumerate(iter):
+                        tensors.insert(idx,pred[j])
+                    preds[i-1] = torch.stack(tensors,axis=0)
                     del preds[i]
-                    continue
-                tensors = list(torch.unbind(preds[i-1],axis=0))
-                iter = idxs[i-1]
-                pred = preds[i]
-                for j,idx in enumerate(iter):
-                    tensors.insert(idx,pred[j])
-                preds[i-1] = torch.stack(tensors,axis=0)
-                del preds[i]
-            
-            x = preds[0]
-            del preds[0]
-            del pred
+                
+                x = preds[0]
+                del preds[0]
+                del pred
             
             return x,counts
 
