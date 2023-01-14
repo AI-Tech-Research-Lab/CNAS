@@ -165,21 +165,20 @@ class EEMobileNetV3(MyNetwork):
     def forward(self, x):
 
         x = self.first_conv(x)
-
-        preds = [] #torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
+        
+        preds = [] 
         idxs = []
-        x_dim = 0
-        dim = x.shape[0]
 
         if(self.training): #training 
             i = 0
             for idx,block in enumerate(self.blocks):
-                if (idx==self.exit_idxs[i]): #exit block
-                    exit_block = self.exit_list[i]
-                    pred, _ = exit_block(x)
-                    preds.append(pred)
-                    if(i<(self.n_exit-1)):
-                        i+=1
+                if(self.n_exit!=0):
+                    if (idx==self.exit_idxs[i]): #exit block
+                        exit_block = self.exit_list[i]
+                        pred, _ = exit_block(x)
+                        preds.append(pred)
+                        if(i<(self.n_exit-1)):
+                            i+=1
                 x = block(x)
             x = self.final_expand_layer(x)
             x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
@@ -192,29 +191,30 @@ class EEMobileNetV3(MyNetwork):
             i = 0
             counts = np.zeros(self.n_exit+1)
             for idx,block in enumerate(self.blocks):
-                if (idx==self.exit_idxs[i]): #exit block
-                        exit_block = self.exit_list[i]
-                        pred, conf = exit_block(x)
-                        conf = torch.squeeze(conf)
-                        mask = conf >= self.threshold[i]
-                        mask = mask.cpu() #gpu>cpu memory
-                        p = np.where(np.array(mask)==False)[0] #idxs of non EE predictions
-                        counts[i] = torch.sum(mask).item()
-                        x = x[mask==0,:,:,:]
-                        pred = pred[mask==1,:]
-                        del mask 
-                        del conf
-                        preds.append(pred)
-                        idxs.append(p)
-                        # FIX bug that for one sample x.shape = (0,1,,,,) when empty
-                        #if (x.shape[0]==0): # no more samples 
-                        #    x = torch.squeeze(x)
-                        #    break
-                        if(i<(self.n_exit-1)):
-                            i+=1
+                if(self.n_exit!=0):
+                    if (idx==self.exit_idxs[i]): #exit block
+                            exit_block = self.exit_list[i]
+                            pred, conf = exit_block(x)
+                            conf = torch.squeeze(conf)
+                            mask = conf >= self.threshold[i]
+                            mask = mask.cpu() #gpu>cpu memory
+                            p = np.where(np.array(mask)==False)[0] #idxs of non EE predictions
+                            counts[i] = torch.sum(mask).item()
+                            x = x[mask==0,:,:,:]
+                            pred = pred[mask==1,:]
+                            del mask 
+                            del conf
+                            preds.append(pred)
+                            idxs.append(p)
+                            # FIX bug that for one sample x.shape = (0,1,,,,) when empty
+                            #if (x.shape[0]==0): # no more samples 
+                            #    x = torch.squeeze(x)
+                            #    break
+                            if(i<(self.n_exit-1)):
+                                i+=1
                 x = block(x)
 
-            counts[i+1] = x.shape[0] #n samples classified normally by the last exit
+            counts[-1] = x.shape[0] #n samples classified normally by the last exit
             x = self.final_expand_layer(x)
             x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
             x = self.feature_mix_layer(x)
