@@ -388,19 +388,20 @@ class OFAMobileNetV3(MobileNetV3):
 class OFAEEMobileNetV3(EEMobileNetV3):
 
     def __init__(self, n_classes=1000, bn_param=(0.1, 1e-5), dropout_rate=0.1, base_stage_width=None,
-                 width_mult_list=1.0, ks_list=3, expand_ratio_list=6, depth_list=4, t_list = 1):
+                 width_mult_list=1.0, ks_list=3, expand_ratio_list=6, depth_list=4, t_list = [1,1,1,1]):
 
         self.width_mult_list = int2list(width_mult_list, 1)
         self.ks_list = int2list(ks_list, 1)
         self.expand_ratio_list = int2list(expand_ratio_list, 1)
         self.depth_list = int2list(depth_list, 1)
-        self.t_list = int2list(t_list,1)
+        self.t_list = t_list
         self.base_stage_width = base_stage_width
 
         self.width_mult_list.sort()
         self.ks_list.sort()
         self.expand_ratio_list.sort()
         self.depth_list.sort()
+        self.t_list.sort()
 
         self.n_classes = n_classes
         self.dropout_rate = dropout_rate
