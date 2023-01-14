@@ -21,6 +21,7 @@ m2.eval()
 m2.threshold = [0,1,1,1]
 input = torch.randn(10, 3, 40, 40)
 x,counts = m2(input)
+print(counts)
 #info = get_net_info(m2,input_shape)
 #print(info)
 
