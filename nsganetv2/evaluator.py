@@ -285,10 +285,11 @@ class OFAEvaluator:
 
         lut = {'cpu': 'data/i7-8700K_lut.yaml'}
         
+        '''
         info = get_net_info(
               subnet, (3, resolution, resolution), measure_latency=measure_latency,
               print_info=False, clean=True, lut=lut, pmax = pmax, fmax = fmax, amax = amax, wp = wp, wf = wf, wa = wa, penalty = penalty)
-
+        '''
         run_config = get_run_config(
             dataset=dataset, data_path=data_path, image_size=resolution, n_epochs=n_epochs,
             train_batch_size=trn_batch_size, test_batch_size=vld_batch_size,
@@ -317,9 +318,11 @@ class OFAEvaluator:
             subnet = run_manager.train(cfgs)
 
         loss, top1, top5, utils = run_manager.adaptive_validate(net=subnet, is_test=is_test, no_logs=no_logs)
-        macs_avg = info['macs_final_exit']*(1-util) + info['macs_first_exit']*util
+        #macs_avg = info['macs_final_exit']*(1-util) + info['macs_first_exit']*util
 
-        info['loss'], info['top1'], info['top5'], info['util'], info['macs_avg'] = loss, top1, top5, util, macs_avg
+        info ={}
+
+        info['loss'], info['top1'], info['top5'], info['util'] = loss, top1, top5, utils
 
         save_path = os.path.join(log_dir, 'net.stats') if cfgs.save is None else cfgs.save
         if cfgs.save_config:
