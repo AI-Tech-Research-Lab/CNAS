@@ -227,7 +227,7 @@ class OFAEvaluator:
         """ randomly sample a sub-network """
         if config is not None:
             #config = validate_config(config)
-            self.engine.set_active_subnet(ks=config['ks'], e=config['e'], d=config['d'])#, t=config['t'])
+            self.engine.set_active_subnet(ks=config['ks'], e=config['e'], d=config['d'], t=config['t'])
         else:
             config = self.engine.sample_active_subnet()
 
@@ -459,9 +459,9 @@ def main(args):
     elif mode == 'subnet':
         config = json.load(open(args.subnet))
         evaluator = OFAEvaluator(n_classes=args.n_classes, model_path=args.supernet, pretrained = args.pretrained)
-        subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})#, 't':config['t']})
-        threshold = config['t']
-        subnet.threshold = threshold
+        subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't':config['t']})
+        #threshold = config['t']
+        #subnet.threshold = threshold
         resolution = config['r']
         
 
