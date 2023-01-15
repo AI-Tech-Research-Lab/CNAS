@@ -425,9 +425,10 @@ class RunManager:
 
         if net is None:
             net = self.net
-
+        
+        n_exit = net.n_exit
+        
         if not isinstance(net, nn.DataParallel):
-            print("NOT INSTANCE DATAPARALLEL")
             net = nn.DataParallel(net)
 
         if data_loader is None:
