@@ -319,25 +319,26 @@ class OFAEvaluator:
             dataset=dataset, data_path=data_path, image_size=resolution, n_epochs=n_epochs,
             train_batch_size=trn_batch_size, test_batch_size=vld_batch_size,
             n_worker=num_workers, valid_size=valid_size)
-
+        '''
         # set the image size. You can set any image size from 192 to 256 here
         run_config.data_provider.assign_active_img_size(resolution)
 
         if n_epochs > 0:
             # for datasets other than the one supernet was trained on (ImageNet)
             # a few epochs of training need to be applied
+            '''
             ''' these lines are commented to avoid AttributeError: 'MobileNetV3' object has no attribute 'reset_classifier'
             subnet.reset_classifier(
                 last_channel=subnet.classifier.in_features,
                 n_classes=run_config.data_provider.n_classes, dropout_rate=cfgs.drop_rate)
             '''
-
+        '''
         run_manager = RunManager(log_dir, subnet, run_config, init=False)
         
         if reset_running_statistics:
             # run_manager.reset_running_statistics(net=subnet, batch_size=vld_batch_size)
             run_manager.reset_running_statistics(net=subnet)
-        '''
+        
         if n_epochs > 0:
             cfgs.subnet = subnet
             subnet = run_manager.train(cfgs)
@@ -476,7 +477,7 @@ def main(args):
         pmax = args.pmax, fmax = args.fmax, amax = args.amax, wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
     '''
     
-    '''
+    
     OFAEvaluator.adaptive_eval(
         subnet, log_dir=args.log_dir, data_path=args.data, dataset=args.dataset, n_epochs=args.n_epochs,
         resolution=resolution, trn_batch_size=args.trn_batch_size, vld_batch_size=args.vld_batch_size,
@@ -484,7 +485,7 @@ def main(args):
         no_logs=(not args.verbose), reset_running_statistics=args.reset_running_statistics, 
         pmax = args.pmax, fmax = args.fmax, amax = args.amax, wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty,
         )
-    '''
+    
     
     
     
