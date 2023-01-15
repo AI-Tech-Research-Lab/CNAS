@@ -697,10 +697,11 @@ class RunManager:
         return losses.avg, top1.avg
 
     def train(self, args, warmup_epoch=0, warmup_lr=0):
-        
+        print("TRAIN!")
+        '''
         for epoch in range(self.start_epoch, self.run_config.n_epochs + warmup_epoch):
             break
-        '''
+        
             train_loss, train_top1 = self.train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
         
 
