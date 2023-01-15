@@ -436,10 +436,15 @@ class RunManager:
         
         net.eval()
 
+        n_exit = net.n_exit 
+
         losses = AverageMeter()
         top1 = AverageMeter()
         top5 = AverageMeter()
-        utils = [AverageMeter(),AverageMeter(),AverageMeter(),AverageMeter(),AverageMeter()]
+        utils = []
+        for i in range(n_exit+1):
+            utils.append(AverageMeter())
+        
 
         with torch.no_grad():
             with tqdm(total=len(data_loader),
