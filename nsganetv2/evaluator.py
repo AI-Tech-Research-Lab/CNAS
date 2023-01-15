@@ -477,6 +477,7 @@ def main(args):
     '''
     input = torch.randn(10, 3, resolution, resolution)
     x = subnet(input)
+    print(x.shape)
 
     
     '''
