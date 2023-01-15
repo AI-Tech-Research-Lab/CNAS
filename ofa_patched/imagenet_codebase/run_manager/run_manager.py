@@ -511,88 +511,92 @@ class RunManager:
             return [self.run_config.data_provider.active_img_size], [loss], [top1], [top5]
 
     def train_one_epoch(self, args, epoch, warmup_epochs=0, warmup_lr=0):
-        # switch to train mode
-        self.net.train()
+        from torch import autograd
+        with autograd.detect_anomaly():
+            # switch to train mode
+            self.net.train()
 
-        nBatch = len(self.run_config.train_loader)
+            nBatch = len(self.run_config.train_loader)
 
-        losses = AverageMeter()
-        top1 = AverageMeter()
-        top5 = AverageMeter()
-        data_time = AverageMeter()
+            losses = AverageMeter()
+            top1 = AverageMeter()
+            top5 = AverageMeter()
+            data_time = AverageMeter()
 
-        with tqdm(total=nBatch,
-                  desc='Train Epoch #{}'.format(epoch + 1)) as t:
-            end = time.time()
-            for i, (images, labels) in enumerate(self.run_config.train_loader):
-                data_time.update(time.time() - end)
-                if epoch < warmup_epochs:
-                    new_lr = self.run_config.warmup_adjust_learning_rate(
-                        self.optimizer, warmup_epochs * nBatch, nBatch, epoch, i, warmup_lr,
-                    )
-                else:
-                    new_lr = self.run_config.adjust_learning_rate(self.optimizer, epoch - warmup_epochs, i, nBatch)
-
-                images, labels = images.to(self.device), labels.to(self.device)
-                target = labels
-
-                # soft target
-                if args.teacher_model is not None:
-                    args.teacher_model.train()
-                    with torch.no_grad():
-                        soft_logits = args.teacher_model(images).detach()
-                        soft_label = F.softmax(soft_logits, dim=1)
-
-                # compute output
-                if isinstance(self.network, torchvision.models.Inception3):
-                    output, aux_outputs = self.net(images)
-                    loss1 = self.train_criterion(output, labels)
-                    loss2 = self.train_criterion(aux_outputs, labels)
-                    loss = loss1 + 0.4 * loss2
-                else:
-                    output = self.net(images)
-                    loss = self.train_criterion(output, labels)
-
-                if args.teacher_model is None:
-                    loss_type = 'ce'
-                else:
-                    if args.kd_type == 'ce':
-                        kd_loss = cross_entropy_loss_with_soft_target(output, soft_label)
-                    else:
-                        kd_loss = F.mse_loss(output, soft_logits)
-                    loss = args.kd_ratio * kd_loss + loss
-                    loss_type = '%.1fkd-%s & ce' % (args.kd_ratio, args.kd_type)
-
-                # compute gradient and do SGD step
-                self.net.zero_grad()  # or self.optimizer.zero_grad()
-                if self.mix_prec is not None:
-                    from apex import amp
-                    with amp.scale_loss(loss, self.optimizer) as scaled_loss:
-                        scaled_loss.backward()
-                else:
-                    loss.backward()
-
-                torch.nn.utils.clip_grad_norm_(self.net.parameters(), 1)
-
-                self.optimizer.step()
-
-                # measure accuracy and record loss
-                acc1, acc5 = accuracy(output, target, topk=(1, 5))
-                losses.update(loss.item(), images.size(0))
-                top1.update(acc1[0].item(), images.size(0))
-                top5.update(acc5[0].item(), images.size(0))
-
-                t.set_postfix({
-                    'loss': losses.avg,
-                    'top1': top1.avg,
-                    'top5': top5.avg,
-                    'img_size': images.size(2),
-                    'lr': new_lr,
-                    'loss_type': loss_type,
-                    'data_time': data_time.avg,
-                })
-                t.update(1)
+            with tqdm(total=nBatch,
+                    desc='Train Epoch #{}'.format(epoch + 1)) as t:
                 end = time.time()
+                for i, (images, labels) in enumerate(self.run_config.train_loader):
+                    data_time.update(time.time() - end)
+                    if epoch < warmup_epochs:
+                        new_lr = self.run_config.warmup_adjust_learning_rate(
+                            self.optimizer, warmup_epochs * nBatch, nBatch, epoch, i, warmup_lr,
+                        )
+                    else:
+                        new_lr = self.run_config.adjust_learning_rate(self.optimizer, epoch - warmup_epochs, i, nBatch)
+
+                    images, labels = images.to(self.device), labels.to(self.device)
+                    target = labels
+
+                    # soft target
+                    if args.teacher_model is not None:
+                        args.teacher_model.train()
+                        with torch.no_grad():
+                            soft_logits = args.teacher_model(images).detach()
+                            soft_label = F.softmax(soft_logits, dim=1)
+
+                    # compute output
+                    if isinstance(self.network, torchvision.models.Inception3):
+                        output, aux_outputs = self.net(images)
+                        loss1 = self.train_criterion(output, labels)
+                        loss2 = self.train_criterion(aux_outputs, labels)
+                        loss = loss1 + 0.4 * loss2
+                    else:
+                        output = self.net(images)
+                        loss = self.train_criterion(output, labels)
+
+                    if args.teacher_model is None:
+                        loss_type = 'ce'
+                    else:
+                        if args.kd_type == 'ce':
+                            kd_loss = cross_entropy_loss_with_soft_target(output, soft_label)
+                        else:
+                            kd_loss = F.mse_loss(output, soft_logits)
+                        loss = args.kd_ratio * kd_loss + loss
+                        loss_type = '%.1fkd-%s & ce' % (args.kd_ratio, args.kd_type)
+
+                    # compute gradient and do SGD step
+                    self.net.zero_grad()  # or self.optimizer.zero_grad()
+                    if self.mix_prec is not None:
+                        from apex import amp
+                        with amp.scale_loss(loss, self.optimizer) as scaled_loss:
+                            scaled_loss.backward()
+                    else:
+                        loss.backward()
+
+                    torch.nn.utils.clip_grad_norm_(self.net.parameters(), 1)
+
+                    self.optimizer.step()
+
+                    # measure accuracy and record loss
+                    acc1, acc5 = accuracy(output, target, topk=(1, 5))
+                    losses.update(loss.item(), images.size(0))
+                    top1.update(acc1[0].item(), images.size(0))
+                    top5.update(acc5[0].item(), images.size(0))
+
+                    t.set_postfix({
+                        'loss': losses.avg,
+                        'top1': top1.avg,
+                        'top5': top5.avg,
+                        'img_size': images.size(2),
+                        'lr': new_lr,
+                        'loss_type': loss_type,
+                        'data_time': data_time.avg,
+                    })
+                    t.update(1)
+                    end = time.time()
+
+
         return losses.avg, top1.avg, top5.avg
 
     def adaptive_train_one_epoch(self, args, epoch, warmup_epochs=0, warmup_lr=0):
