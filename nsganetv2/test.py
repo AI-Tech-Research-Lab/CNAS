@@ -35,7 +35,6 @@ config['ks'] = [3, 3, 3, 5, 3, 3, 3, 3, 7, 3, 5, 3, 5, 3, 7, 3, 5, 5]
 config['e'] = [3, 3, 3, 4, 3, 3, 4, 3, 3, 4, 4, 4, 6, 4, 4, 4, 4, 6]
 config['d'] = [4, 3, 3, 4, 4]
 config['t'] = [0.1,1,0.1,1]
-
 m2, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't':config['t']})
 print(m2.threshold)
 
