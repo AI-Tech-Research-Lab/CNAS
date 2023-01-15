@@ -425,8 +425,7 @@ class RunManager:
 
         if net is None:
             net = self.net
-        
-        print(type(net))
+            
         n_exit = net.n_exit
 
         if not isinstance(net, nn.DataParallel):

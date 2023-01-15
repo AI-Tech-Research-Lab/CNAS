@@ -202,7 +202,7 @@ class OFAEvaluator:
         """ randomly sample a sub-network """
         if config is not None:
             #config = validate_config(config)
-            self.engine.set_active_subnet(ks=config['ks'], e=config['e'], d=config['d'])
+            self.engine.set_active_subnet(ks=config['ks'], e=config['e'], d=config['d'], t=config['t'])
         else:
             config = self.engine.sample_active_subnet()
 
@@ -436,6 +436,7 @@ def main(args):
         threshold = config['t']
         subnet.threshold = threshold
         resolution = config['r']
+        
 
     else:
         raise NotImplementedError
