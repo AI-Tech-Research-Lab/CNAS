@@ -15,8 +15,15 @@ ofa_ee = ofa_net(n_classes,'ofa_eembv3_d234_e346_k357_w1.0', pretrained=False)
 ofa = ofa_net(n_classes,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=False)
 d = [2,2,2,2,2]
 t = [0,1,1,1]
-ofa_ee.set_active_subnet(ks=7, e=6, d=d, t=t)
-m2 = ofa_ee.get_active_subnet(preserve_weight=True)
+config = {}
+config['ks'] = [3, 3, 3, 5, 3, 3, 3, 3, 7, 3, 5, 3, 5, 3, 7, 3, 5, 5]
+config['e'] = [3, 3, 3, 4, 3, 3, 4, 3, 3, 4, 4, 4, 6, 4, 4, 4, 4, 6]
+config['d'] = [4, 3, 3, 4, 4]
+config['t'] = [0.1,1,0.1,1]
+
+m2, _ = ofa_ee.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't':config['t']})
+#ofa_ee.set_active_subnet(ks=7, e=6, d=d, t=t)
+#m2 = ofa_ee.get_active_subnet(preserve_weight=True)
 m2.eval()
 #m2.threshold=[1,0,1,1]
 input = torch.randn(10, 3, 40, 40)
