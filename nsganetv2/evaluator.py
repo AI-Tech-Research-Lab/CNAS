@@ -319,13 +319,13 @@ class OFAEvaluator:
             dataset=dataset, data_path=data_path, image_size=resolution, n_epochs=n_epochs,
             train_batch_size=trn_batch_size, test_batch_size=vld_batch_size,
             n_worker=num_workers, valid_size=valid_size)
-        '''
+        
         # set the image size. You can set any image size from 192 to 256 here
         run_config.data_provider.assign_active_img_size(resolution)
 
         
         run_manager = RunManager(log_dir, subnet, run_config, init=False)
-        
+        '''
         if reset_running_statistics:
             # run_manager.reset_running_statistics(net=subnet, batch_size=vld_batch_size)
             run_manager.reset_running_statistics(net=subnet)
