@@ -717,6 +717,8 @@ class OFAEEMobileNetV3(EEMobileNetV3):
 
         d = self.runtime_depth
         t = self.runtime_threshold
+        print("RUNTIME THRESHOLD")
+        print(self.runtime_threshold)
 
         n = len(d) #num_blocks
         exit_idxs =[]
