@@ -37,7 +37,7 @@ config['d'] = [4, 3, 3, 4, 4]
 config['t'] = [0.1,1,0.1,1]
 
 m2, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't':config['t']})
-
+print(m2.threshold)
 
 
 #These two conditions are equals to force to classify all samples with exit gate:
