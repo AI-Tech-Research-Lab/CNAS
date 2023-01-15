@@ -95,7 +95,7 @@ class OFAEvaluator:
                  n_classes=1000,
                  model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0',
                  pretrained = False,
-                 kernel_size=None, exp_ratio=None, depth=None):
+                 kernel_size=None, exp_ratio=None, depth=None, threshold = None):
                  
         '''
         self.engine = ofa_net(n_classes,model_path,pretrained)
@@ -116,7 +116,32 @@ class OFAEvaluator:
         else:
             raise ValueError
 
-        if ('mbv3_d234_e346_k357_w1.0' in model_path) or ('mbv3_d234_e346_k357_w1.2' in model_path):
+        if ('ofa_mbv3_d234_e346_k357_w1.0' in model_path) or ('ofa_mbv3_d234_e346_k357_w1.2' in model_path):
+            self.engine = OFAMobileNetV3(
+                n_classes=n_classes,
+                dropout_rate=0, width_mult_list=self.width_mult, ks_list=self.kernel_size,
+                expand_ratio_list=self.exp_ratio, depth_list=self.depth)
+
+            if(pretrained):
+                init = torch.load(model_path, map_location='cpu')['state_dict']
+                '''
+                url_base = 'https://hanlab.mit.edu/files/OnceForAll/ofa_nets/'
+                init = torch.load(
+                    download_url(url_base + model_path, model_dir='./ofa_nets'),
+                    map_location='cpu')['state_dict']
+                '''
+
+                ##FIX size mismatch error#####
+                init['classifier.linear.weight'] = init['classifier.linear.weight'][:n_classes]
+                init['classifier.linear.bias'] = init['classifier.linear.bias'][:n_classes]
+                ##############################
+
+                self.engine.load_weights_from_net(init)
+        
+        elif ('ofa_eembv3_d234_e346_k357_w1.0' in model_path):
+
+            self.threshold = [0.1, 0.2, 1] if threshold is None else threshold  # number of MB block repetition
+
             self.engine = OFAEEMobileNetV3(
                 n_classes=n_classes,
                 dropout_rate=0, width_mult_list=self.width_mult, ks_list=self.kernel_size,
