@@ -323,16 +323,7 @@ class OFAEvaluator:
         # set the image size. You can set any image size from 192 to 256 here
         run_config.data_provider.assign_active_img_size(resolution)
 
-        if n_epochs > 0:
-            # for datasets other than the one supernet was trained on (ImageNet)
-            # a few epochs of training need to be applied
-            '''
-            ''' these lines are commented to avoid AttributeError: 'MobileNetV3' object has no attribute 'reset_classifier'
-            subnet.reset_classifier(
-                last_channel=subnet.classifier.in_features,
-                n_classes=run_config.data_provider.n_classes, dropout_rate=cfgs.drop_rate)
-            '''
-        '''
+        
         run_manager = RunManager(log_dir, subnet, run_config, init=False)
         
         if reset_running_statistics:
