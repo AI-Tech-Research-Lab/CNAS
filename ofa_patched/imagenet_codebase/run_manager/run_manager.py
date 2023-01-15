@@ -699,8 +699,9 @@ class RunManager:
     def train(self, args, warmup_epoch=0, warmup_lr=0):
         
         for epoch in range(self.start_epoch, self.run_config.n_epochs + warmup_epoch):
-            train_loss, train_top1 = self.train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
         '''
+            train_loss, train_top1 = self.train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
+        
 
             if (epoch + 1) % self.run_config.validation_frequency == 0:
                 img_size, val_loss, val_acc, val_acc5 = self.validate_all_resolution(epoch=epoch, is_test=False)
