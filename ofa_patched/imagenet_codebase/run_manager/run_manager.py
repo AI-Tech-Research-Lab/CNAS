@@ -425,6 +425,9 @@ class RunManager:
 
         if net is None:
             net = self.net
+        
+        n_exit = net.n_exit
+
         if not isinstance(net, nn.DataParallel):
             net = nn.DataParallel(net)
 
@@ -435,8 +438,6 @@ class RunManager:
                 data_loader = self.run_config.valid_loader
         
         net.eval()
-
-        n_exit = net.n_exit 
 
         losses = AverageMeter()
         top1 = AverageMeter()
