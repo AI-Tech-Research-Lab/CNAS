@@ -36,7 +36,9 @@ config['e'] = [3, 3, 3, 4, 3, 3, 4, 3, 3, 4, 4, 4, 6, 4, 4, 4, 4, 6]
 config['d'] = [4, 3, 3, 4, 4]
 config['t'] = [0.1,1,0.1,1]
 m2, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't':config['t']})
-print(m2.threshold)
+input = torch.randn(10, 3, 40, 40)
+x,counts = m2(input)
+print(counts)
 
 
 #These two conditions are equals to force to classify all samples with exit gate:
