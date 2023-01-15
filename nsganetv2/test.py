@@ -37,7 +37,7 @@ config['d'] = [4, 3, 3, 4, 4]
 config['t'] = [0.1,1,0.1,1]
 m2, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't':config['t']})
 input = torch.randn(10, 3, 40, 40)
-x,counts = m2(input)
+x = m2(input)
 print(counts)
 
 
