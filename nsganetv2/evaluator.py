@@ -325,7 +325,7 @@ class OFAEvaluator:
 
         
         run_manager = RunManager(log_dir, subnet, run_config, init=False) ##<-- HERE the bug!!!
-        '''
+        
         if reset_running_statistics:
             # run_manager.reset_running_statistics(net=subnet, batch_size=vld_batch_size)
             run_manager.reset_running_statistics(net=subnet)
@@ -334,7 +334,7 @@ class OFAEvaluator:
             cfgs.subnet = subnet
             subnet = run_manager.train(cfgs)
         
-        
+        '''
         loss, top1, top5, utils = run_manager.adaptive_validate(net=subnet, is_test=is_test, no_logs=no_logs)
         #macs_avg = info['macs_final_exit']*(1-util) + info['macs_first_exit']*util
 
