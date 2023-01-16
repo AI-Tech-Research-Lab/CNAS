@@ -253,12 +253,6 @@ class EEMobileNetV3(MyNetwork):
                 #print(x)
                 del preds[0]
                 del pred
-
-            print("X")
-            print(x)
-
-            print("COUNTS")
-            print(counts)
             
             return x,counts
 
