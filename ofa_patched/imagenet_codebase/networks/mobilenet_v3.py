@@ -227,10 +227,11 @@ class EEMobileNetV3(MyNetwork):
             print(len(idxs))
 
             if(self.n_exit!=0):
-                print("PREDS")
-                print(len(preds))
 
                 preds.append(x)
+
+                print("PREDS")
+                print(len(preds))
                 #mix predictions of all exits
                 tensors = []
                 for i in range(len(preds)-1,0,-1): #mix predictions of all exits
@@ -246,8 +247,13 @@ class EEMobileNetV3(MyNetwork):
                     del preds[i]
                 
                 x = preds[0]
+                print("X")
+                print(x)
                 del preds[0]
                 del pred
+
+            print("X")
+            print(x)
 
             print("COUNTS")
             print(counts)
