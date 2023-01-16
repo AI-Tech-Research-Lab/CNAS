@@ -638,8 +638,13 @@ class RunManager:
                     loss = loss1 + 0.4 * loss2
                 else:
                     #weighted loss 
-                    preds = self.net(images)
+                    output, aux_outputs = self.net(images)
+                    loss1 = self.train_criterion(output, labels)
+                    loss2 = self.train_criterion(aux_outputs, labels)
+                    loss = 0.4 * loss1 + loss2
+                    '''
                     weights = [1,0.4]#np.ones(len(preds)) #all weigths are set to 1
+
                     loss = 0
                     acc1 = 0
                     acc5 = 0
@@ -655,6 +660,7 @@ class RunManager:
                     
                     acc1 = acc1 / w_tot #average acc of all the exits
                     acc5 = acc5 / w_tot
+                    '''
 
                 if args.teacher_model is None:
                     loss_type = 'ce'
@@ -680,10 +686,12 @@ class RunManager:
                 self.optimizer.step()
 
                 # measure accuracy and record loss
+
+                acc1, acc5 = accuracy(output, target, topk=(1, 5))
                 
                 losses.update(loss.item(), images.size(0))
-                top1.update(acc1, images.size(0))
-                top5.update(acc5, images.size(0))
+                top1.update(acc1[0].item(), images.size(0))
+                top5.update(acc5[0].item(), images.size(0))
 
                 t.set_postfix({
                     'loss': losses.avg,
