@@ -186,7 +186,7 @@ class EEMobileNetV3(MyNetwork):
             x = torch.squeeze(x)
             x = self.classifier(x)
             #preds.append(x)
-            return x
+            return preds
         else:
             i = 0
             counts = np.zeros(self.n_exit+1)
