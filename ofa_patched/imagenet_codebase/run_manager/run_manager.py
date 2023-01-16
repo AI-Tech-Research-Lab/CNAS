@@ -639,7 +639,7 @@ class RunManager:
                 else:
                     #weighted loss 
                     preds = self.net(images)
-                    weights = [0.6,0.3,0.1]#np.ones(len(preds)) #all weigths are set to 1
+                    weights = [1,0.4]#np.ones(len(preds)) #all weigths are set to 1
                     loss = 0
                     acc1 = 0
                     acc5 = 0
@@ -650,8 +650,6 @@ class RunManager:
                         t_loss = self.train_criterion(p, labels) 
                         loss += t_loss * w
                         acc1_exit, acc5_exit = accuracy(p, target, topk=(1, 5))
-                        print("ACCURACY")
-                        print(acc1_exit[0].item())
                         acc1 += acc1_exit[0].item() * w
                         acc5 += acc5_exit[0].item() * w
                     
