@@ -195,6 +195,7 @@ class EEMobileNetV3(MyNetwork):
                 if(self.n_exit!=0):
                     if (idx==self.exit_idxs[i]): #exit block
                             exit_block = self.exit_list[i]
+                            exit_block.to(torch.device('cuda')) #param tensors to GPU
                             pred, conf = exit_block(x)
                             conf = torch.squeeze(conf)
                             mask = conf >= self.threshold[i]
@@ -241,6 +242,9 @@ class EEMobileNetV3(MyNetwork):
                 x = preds[0]
                 del preds[0]
                 del pred
+
+            print("COUNTS")
+            print(counts)
             
             return x,counts
 
