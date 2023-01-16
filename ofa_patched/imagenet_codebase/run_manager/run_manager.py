@@ -650,6 +650,8 @@ class RunManager:
                         t_loss = self.train_criterion(p, labels) 
                         loss += t_loss * w
                         acc1_exit, acc5_exit = accuracy(p, target, topk=(1, 5))
+                        print("ACCURACY")
+                        print(acc1_exit[0].item())
                         acc1 += acc1_exit[0].item() * w
                         acc5 += acc5_exit[0].item() * w
                     
