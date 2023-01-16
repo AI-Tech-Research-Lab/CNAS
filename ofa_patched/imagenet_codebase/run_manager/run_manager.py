@@ -687,7 +687,7 @@ class RunManager:
 
                 # measure accuracy and record loss
 
-                acc1, acc5 = accuracy(output, target, topk=(1, 5))
+                acc1, acc5 = accuracy(aux_outputs, target, topk=(1, 5))
                 
                 losses.update(loss.item(), images.size(0))
                 top1.update(acc1[0].item(), images.size(0))
