@@ -186,7 +186,7 @@ class EEMobileNetV3(MyNetwork):
             x = self.feature_mix_layer(x)
             x = torch.squeeze(x)
             x = self.classifier(x)
-            #preds.append(x)
+            preds.append(x)
             return preds
         else:
             i = 0
