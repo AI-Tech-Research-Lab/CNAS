@@ -702,7 +702,7 @@ class RunManager:
 
         for epoch in range(self.start_epoch, self.run_config.n_epochs + warmup_epoch):
         
-            train_loss, train_top1 = self.train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
+            train_loss, train_top1 = self.adaptive_train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
         
 
             if (epoch + 1) % self.run_config.validation_frequency == 0:
