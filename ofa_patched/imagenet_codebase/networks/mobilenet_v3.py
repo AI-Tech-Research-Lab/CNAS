@@ -223,7 +223,13 @@ class EEMobileNetV3(MyNetwork):
             x = torch.squeeze(x)
             x = self.classifier(x)
 
+            print("IDXS")
+            print(len(idxs))
+
             if(self.n_exit!=0):
+                print("PREDS")
+                print(len(preds))
+
                 preds.append(x)
                 #mix predictions of all exits
                 tensors = []
