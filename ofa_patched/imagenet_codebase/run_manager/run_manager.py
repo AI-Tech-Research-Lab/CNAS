@@ -641,7 +641,7 @@ class RunManager:
                     output, aux_outputs = self.net(images)
                     loss1 = self.train_criterion(output, labels)
                     loss2 = self.train_criterion(aux_outputs, labels)
-                    loss = 0.1 * loss1 + loss2
+                    loss = 0 * loss1 + loss2
                     '''
                     weights = [1,0.4]#np.ones(len(preds)) #all weigths are set to 1
 
