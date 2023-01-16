@@ -639,7 +639,7 @@ class RunManager:
                 else:
                     #weighted loss 
                     preds = self.net(images)
-                    weights = np.ones(len(preds)) #all weigths are set to 1
+                    weights = [0.6,0.3,0.1]#np.ones(len(preds)) #all weigths are set to 1
                     loss = 0
                     acc1 = 0
                     acc5 = 0
