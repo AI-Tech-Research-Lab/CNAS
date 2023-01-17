@@ -157,8 +157,8 @@ class EEMobileNetV3(MyNetwork):
     
         for i in range(0,self.n_exit,1):
             feature_dim = [feature_dim_list[i]]
-            final_expand_width = [feature_dim[0] * 6]
-            last_channel = [feature_dim[0] * 8]
+            final_expand_width = [960]#[feature_dim[0] * 6]
+            last_channel = [1280]#[feature_dim[0] * 8]
             self.exit_list.append(ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate))
 
 
