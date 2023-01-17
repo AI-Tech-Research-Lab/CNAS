@@ -11,13 +11,11 @@ from torchprofile import profile_macs
 
 n_classes = 10
 input_shape = (3,40,40)
-'''
+
 ofa_ee = ofa_net(n_classes,'ofa_eembv3_d234_e346_k357_w1.0', pretrained=False)
 ofa = ofa_net(n_classes,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=False)
 d = [2,2,2,2,2]
 t = [0,1,1,1]
-
-m2, _ = ofa_ee.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't':config['t']})
 ofa_ee.set_active_subnet(ks=7, e=6, d=d, t=t)
 m2 = ofa_ee.get_active_subnet(preserve_weight=True)
 m2.eval()
@@ -25,8 +23,7 @@ m2.eval()
 input = torch.randn(10, 3, 40, 40)
 x,counts = m2(input)
 print(counts)
-info = get_net_info(m2,input_shape)
-print(info)
+
 '''
 supernet ='./ofa_nets/ofa_eembv3_d234_e346_k357_w1.0'
 evaluator = OFAEvaluator(n_classes=n_classes, model_path=supernet, pretrained = True)
@@ -39,7 +36,7 @@ m2, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']
 input = torch.randn(10, 3, 40, 40)
 x = m2(input)
 #print(counts)
-
+'''
 
 #These two conditions are equals to force to classify all samples with exit gate:
 #m2.eval()

@@ -417,6 +417,12 @@ class OFAEEMobileNetV3(EEMobileNetV3):
             make_divisible(base_stage_width[-1] * max(self.width_mult_list), 8) for _ in self.width_mult_list
         ]
 
+        print('FINAL EXPAND WIDTH')
+        print(final_expand_width)
+
+        print('last_channel')
+        print(last_channel)
+
         stride_stages = [1, 2, 2, 2, 1, 2]
         act_stages = ['relu', 'relu', 'relu', 'h_swish', 'h_swish', 'h_swish']
         se_stages = [False, False, True, False, True, True]
