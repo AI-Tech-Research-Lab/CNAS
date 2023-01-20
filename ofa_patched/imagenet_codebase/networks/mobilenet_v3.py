@@ -177,10 +177,8 @@ class EEMobileNetV3(MyNetwork):
             for idx,block in enumerate(self.blocks):
                 if(self.n_exit!=0):
                     if (idx==self.exit_idxs[i]): #exit block
-                        exit_block = self.exit_list[i]
-                        #exit_block.to(torch.device('cuda')) #param tensors to GPU
-                        pred, _ = exit_block(x)
-                        self.exit_list[i] = exit_block
+                        #exit_block = self.exit_list[i]
+                        pred, _ = self.exit_list[i](x)
                         preds.append(pred)
                         if(i<(self.n_exit-1)):
                             i+=1
