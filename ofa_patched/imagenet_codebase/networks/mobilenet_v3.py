@@ -175,7 +175,6 @@ class EEMobileNetV3(MyNetwork):
                 if(self.n_exit!=0):
                     if (idx==self.exit_idxs[i]): #exit block
                         exit_block = self.exit_list[i]
-                        print(exit_block)
                         exit_block.to(torch.device('cuda')) #param tensors to GPU
                         pred, _ = exit_block(x)
                         self.exit_list[i] = exit_block #without this line exit is not learning
