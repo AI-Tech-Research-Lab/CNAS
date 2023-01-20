@@ -24,6 +24,8 @@ x,_= m2(input)
 print("EVAL")
 m2.eval()
 m2.set_threshold([1,0.1,1,1])
+input.to('cuda')
+m2.to('cuda')
 x,_= m2(input)
 
 
