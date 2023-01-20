@@ -33,6 +33,8 @@ m2 = m2.to(device)
 #m2.to('cuda')
 x,_= m2(input)
 '''
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+m2 = m2.to(device)
 info = get_adapt_net_info(m2,input_shape)
 
 
