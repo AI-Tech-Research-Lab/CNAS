@@ -53,16 +53,15 @@ def get_net_info(net, data_shape, measure_latency=None, print_info=True, clean=F
             cpu_latency = np.round(net_info[k]['val'], 2)
 
     params = np.round(net_info['params'] / 1e6, 2)
-    macs_first_exit = np.round(net_info['macs_first_exit'] / 1e6, 2)
-    macs_final_exit = np.round(net_info['macs_final_exit'] / 1e6, 2)
+    macs = np.round(net_info['macs'] / 1e6, 2)
+    #macs_final_exit = np.round(net_info['macs_final_exit'] / 1e6, 2)
     activations = np.round(net_info['activations'] / 1e6, 2)
 
     return {
         'params': params,
-        'macs_first_exit': macs_first_exit,
-        'macs_final_exit': macs_final_exit,
+        'macs': macs,
         'activations': activations,
-        'tiny_ml' : tiny_ml(params = params, flops = macs_final_exit , activations = activations, 
+        'tiny_ml' : tiny_ml(params = params, flops = macs , activations = activations, 
                             pmax = pmax, fmax = fmax, amax = amax,
                             wp = wp, wf = wf, wa = wa, penalty = penalty),
         'gpu': gpu_latency, 'cpu': cpu_latency
