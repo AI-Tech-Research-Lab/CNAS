@@ -165,6 +165,7 @@ class EEMobileNetV3(MyNetwork):
             self.exit_list.append(ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate))
         
         '''
+        print("Oh")
         if (self.n_exit!=0):
             print("Hi")
             feature_dim = [feature_dim_list[0]]
@@ -174,7 +175,7 @@ class EEMobileNetV3(MyNetwork):
             self.exit_block = self.exit_list[0]
 
         print(self.exit_list)
-        print(self.exit_block)
+        #print(self.exit_block)
         
 
     def forward(self, x):
