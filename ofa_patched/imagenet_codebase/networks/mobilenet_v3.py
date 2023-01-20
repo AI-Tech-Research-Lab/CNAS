@@ -166,6 +166,7 @@ class EEMobileNetV3(MyNetwork):
         
         '''
         if (self.n_exit!=0):
+            print("Hi")
             feature_dim = [feature_dim_list[0]]
             final_expand_width = [960]#[feature_dim[0] * 6]
             last_channel = [1280]#[feature_dim[0] * 8]
