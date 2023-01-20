@@ -4,7 +4,7 @@ from ofa.elastic_nn.modules.dynamic_layers import ExitBlock
 import torch
 from ofa.model_zoo import ofa_net
 import numpy as np
-from utils import get_net_info
+from utils import get_adapt_net_info
 from torchprofile import profile_macs
 
 #Compute MACS of the exit gate (< MACs of the whole net)
@@ -18,6 +18,7 @@ d = [2,2,2,2,2]
 t = [1,1,0.1,1]
 ofa_ee.set_active_subnet(ks=7, e=6, d=d, t=t)
 m2 = ofa_ee.get_active_subnet(preserve_weight=True)
+'''
 print("TRAIN")
 input = torch.randn(10, 3, 40, 40)
 x,_= m2(input)
@@ -31,6 +32,8 @@ m2 = m2.to(device)
 #input.to('cuda')
 #m2.to('cuda')
 x,_= m2(input)
+'''
+info = get_adapt_net_info(m2,input_shape)
 
 
 

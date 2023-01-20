@@ -394,35 +394,42 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
     # parameters
     net_info['params'] = count_parameters(net)
 
-    net = copy.deepcopy(net)
+    cp_net = copy.deepcopy(net)
 
     net.eval()
 
-    net.threshold = [0,1,1,1]
+    t_list = net.t_list
+
     macs = []
     # macs exit 1
-    macs.append(int(profile_macs(net, inputs)))
+    if (t_list[0]!=1):
+      cp_net.set_threshold([0,1,1,1])
+      macs.append(int(profile_macs(cp_net, inputs)))
 
-    net.threshold = [1,0,1,1]
     # macs exit 2
-    macs.append(int(profile_macs(net, inputs)))
+    if (t_list[1]!=1):
+        cp_net.set_threshold([1,0,1,1])
+        macs.append(int(profile_macs(cp_net, inputs)))
 
-    net.threshold = [1,1,0,1]
     # macs exit 3
-    macs.append(int(profile_macs(net, inputs)))
+    if (t_list[2]!=1):
+        cp_net.set_threshold([1,1,0,1])
+        macs.append(int(profile_macs(cp_net, inputs)))
 
-    net.threshold = [1,1,1,0]
     # macs exit 4
-    macs.append(int(profile_macs(net, inputs)))
+    if (t_list[2]!=1):
+        cp_net.set_threshold([1,1,1,0])
+        macs.append(int(profile_macs(cp_net, inputs)))
 
     # macs whole network
-    net.threshold = [1,1,1,1]
-    macs.append(int(profile_macs(net, inputs)))
+    cp_net.set_threshold([1,1,1,1])
+    macs.append(int(profile_macs(cp_net, inputs)))
 
     net_info['macs'] = macs
+
    
     # activation_size
-    net_info['activations'] = 0#int(profile_activation_size(net, inputs))
+    net_info['activations'] = 0#int(profile_activation_size(copy.deepcopy(net), inputs))
 
     # latencies
     latency_types = [] if measure_latency is None else measure_latency.split('#')
