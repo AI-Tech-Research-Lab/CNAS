@@ -174,7 +174,10 @@ class EEMobileNetV3(MyNetwork):
         self.exit_list = nn.ModuleList(exit_list)
 
     def forward(self, x):
-        #NOT WORKING
+        
+        print("RUNTIME THRESHOLD")
+        print(self.t_list)
+
         x = self.first_conv(x)
 
         preds = [] 
