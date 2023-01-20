@@ -141,27 +141,30 @@ from ofa.elastic_nn.modules.dynamic_layers import ExitBlock
 class EEMobileNetV3(MyNetwork):
 
     def __init__(self, first_conv, blocks, final_expand_layer, feature_mix_layer, classifier, 
-    n_classes, feature_dim_list, dropout_rate, exit_idxs, t_list):
+    n_classes, dropout_rate, d_list, t_list):
 
         super(EEMobileNetV3, self).__init__()
+
+        base_stage_width = [24, 40, 80, 112]
 
         self.first_conv = first_conv
         self.blocks = nn.ModuleList(blocks)
         self.final_expand_layer = final_expand_layer
         self.feature_mix_layer = feature_mix_layer
         self.classifier = classifier
-        self.threshold = t_list
-        self.exit_idxs = exit_idxs
+        self.t_list = t_list
         self.exit_list = []
-        self.n_exit = len(exit_idxs)
-    
-        
-        for i in range(0,self.n_exit,1):
-            feature_dim = [feature_dim_list[i]]
-            final_expand_width = [feature_dim[0] * 6] #960
-            last_channel = [feature_dim[0] * 8] #1280
-            self.exit_list.append(ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate))
-
+        n_blocks = len(base_stage_width)+1
+        idx = 1
+        for i in range(0,n_blocks,1):
+            idx += d_list[i-1]
+            if (t_list[i]!=1):
+                feature_dim = [base_stage_width[i]]
+                final_expand_width = [feature_dim * 6] #960
+                last_channel = [feature_dim * 8] #1280
+                self.exit_idxs.append(idx)
+                self.exit_list.append(ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate))
+        self.n_exit = len(self.exit_list)
         if (self.n_exit!=0):
             self.exit_list = nn.ModuleList(self.exit_list)
 
@@ -199,7 +202,7 @@ class EEMobileNetV3(MyNetwork):
                             exit_block.to(torch.device('cuda')) #param tensors to GPU
                             pred, conf = exit_block(x)
                             conf = torch.squeeze(conf)
-                            mask = conf >= self.threshold[i]
+                            mask = conf >= self.t_list[i]
                             mask = mask.cpu() #gpu>cpu memory
                             p = np.where(np.array(mask)==False)[0] #idxs of non EE predictions
                             counts[i] = torch.sum(mask).item()

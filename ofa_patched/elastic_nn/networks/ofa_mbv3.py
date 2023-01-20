@@ -502,36 +502,14 @@ class OFAEEMobileNetV3(EEMobileNetV3):
 
         
         # runtime_depth
-        d = [len(block_idx) for block_idx in self.block_group_info]
-        n = len(d) #num_blocks
-        exit_idxs =[]
-        exit_t = []
-        
-        feature_dim_list = []
-        idx = 1
-
-        for i in range(1,n,1):
-            idx += d[i-1]
-            if (self.t_list[i-1]!=1): #place a exit only if threshold is different from 1
-              exit_idxs.append(idx)
-              exit_t.append(self.t_list[i-1])
-              feature_dim_list.append(self.base_stage_width[i]) 
+        d_list = [len(block_idx) for block_idx in self.block_group_info]
         
         super(OFAEEMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
-        self.n_classes, feature_dim_list, self.dropout_rate, exit_idxs, exit_t)
-        
-        '''
-        # runtime_depth
-        d = [len(block_idx) for block_idx in self.block_group_info]
-        idx_exit = d[0]+d[1]+d[2]+1
-        feature_dim = [self.base_stage_width[3]] #[blocks[idx_exit+1].mobile_inverted_conv.active_out_channel]
-        super(OFAEEMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
-        self.n_classes, final_expand_width, feature_dim, last_channel, self.dropout_rate, idx_exit)
-        '''
+        self.n_classes, self.dropout_rate, d_list, t_list)
 
         # set bn param
         self.set_bn_param(momentum=bn_param[0], eps=bn_param[1])
-        self.runtime_depth = d
+        self.runtime_depth = d_list
         self.runtime_threshold = self.t_list
 
     """ MyNetwork required methods """
@@ -728,25 +706,13 @@ class OFAEEMobileNetV3(EEMobileNetV3):
 
             blocks += stage_blocks
 
-        d = self.runtime_depth
-        t = self.runtime_threshold
+        d_list = self.runtime_depth
+        t_list = self.runtime_threshold
         print("RUNTIME THRESHOLD")
         print(self.runtime_threshold)
 
-        n = len(d) #num_blocks
-        exit_idxs =[]
-        exit_t = []
-        feature_dim_list = []
-        idx = 1
-        for i in range(1,n,1):
-            idx += d[i-1]
-            if (t[i-1]!=1):
-                exit_idxs.append(idx)
-                exit_t.append(t[i-1])
-                feature_dim_list.append(self.base_stage_width[i]) 
-
         _subnet = EEMobileNetV3(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
-        self.n_classes, feature_dim_list, self.dropout_rate, exit_idxs, exit_t)
+        self.n_classes, self.dropout_rate, d_list, t_list)
         _subnet.set_bn_param(**self.get_bn_param())
         return _subnet
 
