@@ -161,20 +161,9 @@ class EEMobileNetV3(MyNetwork):
             final_expand_width = [960]#[feature_dim[0] * 6]
             last_channel = [1280]#[feature_dim[0] * 8]
             self.exit_list.append(ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate))
-            #self.exit_block = self.exit_list[i] # magic inside ? Understand why with this line is working :)
-            
-        if (self.n_exit!=0):
-            self.exit_list = nn.ModuleList(self.exit_list)
-        
-        '''
 
         if (self.n_exit!=0):
-            feature_dim = [feature_dim_list[0]]
-            final_expand_width = [960]#[feature_dim[0] * 6]
-            last_channel = [1280]#[feature_dim[0] * 8]
-            self.exit_list.append(ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate))
-            self.exit_block = self.exit_list[0]
-        '''
+            self.exit_list = nn.ModuleList(self.exit_list)
 
     def forward(self, x):
         #NOT WORKING
@@ -189,7 +178,7 @@ class EEMobileNetV3(MyNetwork):
                 if(self.n_exit!=0):
                     if (idx==self.exit_idxs[i]): #exit block
                         exit_block = self.exit_list[i]
-                        exit_block.to(torch.device('cuda')) #param tensors to GPU
+                        #exit_block.to(torch.device('cuda')) #param tensors to GPU
                         pred, _ = exit_block(x)
                         self.exit_list[i] = exit_block
                         preds.append(pred)
