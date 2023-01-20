@@ -153,6 +153,7 @@ class EEMobileNetV3(MyNetwork):
         self.feature_mix_layer = feature_mix_layer
         self.classifier = classifier
         self.t_list = t_list
+        self.exit_idxs = []
         self.exit_list = []
         n_blocks = len(base_stage_width)+1
         idx = 1
