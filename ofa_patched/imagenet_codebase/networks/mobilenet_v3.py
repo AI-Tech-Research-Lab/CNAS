@@ -161,7 +161,7 @@ class EEMobileNetV3(MyNetwork):
             final_expand_width = [960]#[feature_dim[0] * 6]
             last_channel = [1280]#[feature_dim[0] * 8]
             self.exit_list.append(ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate))
-            self.exit_block = self.exit_list[i]
+            self.exit_block = self.exit_list[i] # magic inside ?
         
         '''
 
