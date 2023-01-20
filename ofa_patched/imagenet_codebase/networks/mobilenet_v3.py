@@ -156,7 +156,7 @@ class EEMobileNetV3(MyNetwork):
         self.exit_list = []
         n_blocks = len(base_stage_width)+1
         idx = 1
-        for i in range(0,n_blocks,1):
+        for i in range(0,n_blocks-1,1):
             idx += d_list[i-1]
             if (t_list[i]!=1):
                 feature_dim = [base_stage_width[i]]
