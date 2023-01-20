@@ -334,11 +334,11 @@ def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_inf
         net = net.module
 
     # parameters
-    net_info['params'] = count_parameters(net)
+    net_info['params'] = 0#count_parameters(net)
 
     net = copy.deepcopy(net)
 
-    net_info['macs'] = int(profile_macs(net, inputs))
+    net_info['macs'] = 0#int(profile_macs(net, inputs))
    
     # activation_size
     net_info['activations'] = 0#int(profile_activation_size(net, inputs))
