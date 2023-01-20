@@ -145,29 +145,14 @@ class EEMobileNetV3(MyNetwork):
 
         super(EEMobileNetV3, self).__init__()
 
-        base_stage_width = [24, 40, 80, 112]
-
+        self.base_stage_width = [24, 40, 80, 112]
         self.first_conv = first_conv
         self.blocks = nn.ModuleList(blocks)
         self.final_expand_layer = final_expand_layer
         self.feature_mix_layer = feature_mix_layer
         self.classifier = classifier
-        self.t_list = t_list
-        self.exit_idxs = []
-        self.exit_list = []
-        n_blocks = len(base_stage_width)+1
-        idx = 1
-        for i in range(0,n_blocks-1,1):
-            idx += d_list[i]
-            if (t_list[i]!=1):
-                feature_dim = [base_stage_width[i]]
-                final_expand_width = [feature_dim[0] * 6] #960
-                last_channel = [feature_dim[0] * 8] #1280
-                self.exit_idxs.append(idx)
-                self.exit_list.append(ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate))
-        self.n_exit = len(self.exit_list)
-        if (self.n_exit!=0):
-            self.exit_list = nn.ModuleList(self.exit_list)
+        self.d_list = d_list
+        self.set_threshold(t_list)
 
     def forward(self, x):
         #NOT WORKING
@@ -248,6 +233,25 @@ class EEMobileNetV3(MyNetwork):
                 del pred
             
             return x,counts
+
+    @property
+    def set_threshold(self,t):
+        self.t_list = t
+        exit_idxs = []
+        exit_list = []
+        n_blocks = len(self.base_stage_width)+1
+        idx = 1
+        for i in range(0,n_blocks-1,1):
+            idx += self.d_list[i]
+            if (self.t_list[i]!=1):
+                feature_dim = [self.base_stage_width[i]]
+                final_expand_width = [feature_dim[0] * 6] #960
+                last_channel = [feature_dim[0] * 8] #1280
+                exit_idxs.append(idx)
+                exit_list.append(ExitBlock(self.n_classes,final_expand_width,feature_dim,last_channel,self.dropout_rate))
+        self.n_exit = len(exit_list)
+        self.exit_idxs = exit_idxs
+        self.exit_list = nn.ModuleList(exit_list)
         
 
     @property
