@@ -177,7 +177,6 @@ class EEMobileNetV3(MyNetwork):
             for idx,block in enumerate(self.blocks):
                 if(self.n_exit!=0):
                     if (idx==self.exit_idxs[i]): #exit block
-                        #exit_block = self.exit_list[i]
                         pred, _ = self.exit_list[i](x)
                         preds.append(pred)
                         if(i<(self.n_exit-1)):
@@ -188,8 +187,8 @@ class EEMobileNetV3(MyNetwork):
             x = self.feature_mix_layer(x)
             x = torch.squeeze(x)
             x = self.classifier(x)
-            #preds.append(x)
-            return x,pred
+            preds.append(x)
+            return preds
         else:
             i = 0
             counts = np.zeros(self.n_exit+1)
