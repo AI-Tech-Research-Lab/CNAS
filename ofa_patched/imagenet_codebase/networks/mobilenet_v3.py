@@ -170,9 +170,10 @@ class EEMobileNetV3(MyNetwork):
             final_expand_width = [960]#[feature_dim[0] * 6]
             last_channel = [1280]#[feature_dim[0] * 8]
             self.exit_list.append(ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate))
-            #self.idx_exit = exit_idxs[0]
             self.exit_block = self.exit_list[0]
-            #self.threshold = t_list[0]
+
+        print(self.exit_list)
+        print(self.exit_block)
         
 
     def forward(self, x):
