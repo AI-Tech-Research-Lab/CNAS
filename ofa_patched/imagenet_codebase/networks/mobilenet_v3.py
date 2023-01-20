@@ -158,8 +158,8 @@ class EEMobileNetV3(MyNetwork):
         
         for i in range(0,self.n_exit,1):
             feature_dim = [feature_dim_list[i]]
-            final_expand_width = [960]#[feature_dim[0] * 6]
-            last_channel = [1280]#[feature_dim[0] * 8]
+            final_expand_width = [feature_dim[0] * 6] #960
+            last_channel = [feature_dim[0] * 8] #1280
             self.exit_list.append(ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate))
 
         if (self.n_exit!=0):
@@ -224,15 +224,10 @@ class EEMobileNetV3(MyNetwork):
             x = torch.squeeze(x)
             x = self.classifier(x)
 
-            #print("IDXS")
-            #print(len(idxs))
-
             if(self.n_exit!=0):
 
                 preds.append(x)
 
-                #print("PREDS")
-                #print(len(preds))
                 #mix predictions of all exits
                 tensors = []
                 for i in range(len(preds)-1,0,-1): #mix predictions of all exits
@@ -245,64 +240,10 @@ class EEMobileNetV3(MyNetwork):
                     del preds[i]
                 
                 x = preds[0]
-                #print("X")
-                #print(x)
                 del preds[0]
                 del pred
             
             return x,counts
-        '''
-        #WORKING
-        x = self.first_conv(x)
-        #print("OUTPUT SHAPE")
-        #print(x.shape)
-
-        pred = torch.empty(x.shape[0],x.shape[1],x.shape[2],x.shape[3])
-        idxs = []
-
-        if(self.training): #training 
-            for idx,block in enumerate(self.blocks):
-                if (idx==self.idx_exit): #exit block
-                    pred, _ = self.exit_block(x)
-                x = block(x)
-                #if (idx<=self.idx_exit):
-                #  print(x.shape)
-            x = self.final_expand_layer(x)
-            x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
-            x = self.feature_mix_layer(x)
-            x = torch.squeeze(x)
-            x = self.classifier(x)
-            return x,pred
-        else:
-            for idx,block in enumerate(self.blocks):
-                if (idx==self.idx_exit): #exit block
-                    pred, conf = self.exit_block(x)
-                    conf = torch.squeeze(conf)
-                    mask = conf >= self.threshold 
-                    #print(torch.mean(conf))
-                    mask = mask.cpu() #gpu>cpu memory
-                    idxs = np.where(np.array(mask)==False) #idxs of non EE predictions
-                    x = x[mask==False,:,:,:]
-                    pred = pred[mask==True,:]
-                    count = torch.sum(mask)
-                    del mask 
-                    del conf
-                    #print("Early Exit samples:")
-                    #print(count)
-                x = block(x)
-            x = self.final_expand_layer(x)
-            x = x.mean(3, keepdim=True).mean(2, keepdim=True)  # global average pooling
-            x = self.feature_mix_layer(x)
-            x = torch.squeeze(x)
-            x = self.classifier(x)
-            
-            tensors = list(torch.unbind(pred,axis=0))
-            for i,idx in enumerate(idxs[0]):
-                tensors.insert(idx,x[i])
-            x = torch.stack(tensors,axis=0)
-            del pred
-            return x,count
-        '''
         
 
     @property
