@@ -230,6 +230,8 @@ class OFAMobileNetV3(MobileNetV3):
             if d is not None:
                 self.runtime_depth[i] = min(len(self.block_group_info[i]), d)
 
+        
+
     def set_constraint(self, include_list, constraint_type='depth'):
         if constraint_type == 'depth':
             self.__dict__['_depth_include_list'] = include_list.copy()
@@ -401,7 +403,6 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         self.ks_list.sort()
         self.expand_ratio_list.sort()
         self.depth_list.sort()
-        self.t_list.sort()
 
         self.n_classes = n_classes
         self.dropout_rate = dropout_rate
@@ -499,21 +500,34 @@ class OFAEEMobileNetV3(EEMobileNetV3):
                 in_features_list=last_channel, out_features=n_classes, bias=True, dropout_rate=dropout_rate
             )
 
+        
         # runtime_depth
         d = [len(block_idx) for block_idx in self.block_group_info]
         n = len(d) #num_blocks
         exit_idxs =[]
         exit_t = []
+        
         feature_dim_list = []
         idx = 1
+
         for i in range(1,n,1):
             idx += d[i-1]
             if (self.t_list[i-1]!=1): #place a exit only if threshold is different from 1
               exit_idxs.append(idx)
               exit_t.append(self.t_list[i-1])
               feature_dim_list.append(self.base_stage_width[i]) 
+        
         super(OFAEEMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
         self.n_classes, feature_dim_list, self.dropout_rate, exit_idxs, exit_t)
+        
+        '''
+        # runtime_depth
+        d = [len(block_idx) for block_idx in self.block_group_info]
+        idx_exit = d[0]+d[1]+d[2]+1
+        feature_dim = [self.base_stage_width[3]] #[blocks[idx_exit+1].mobile_inverted_conv.active_out_channel]
+        super(OFAEEMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
+        self.n_classes, final_expand_width, feature_dim, last_channel, self.dropout_rate, idx_exit)
+        '''
 
         # set bn param
         self.set_bn_param(momentum=bn_param[0], eps=bn_param[1])
@@ -627,7 +641,6 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         for i, t in enumerate(threshold):
             if t is not None:
                 self.runtime_threshold[i] = t
-
 
     def set_constraint(self, include_list, constraint_type='depth'):
         if constraint_type == 'depth':

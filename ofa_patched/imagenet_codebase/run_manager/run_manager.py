@@ -706,4 +706,3 @@ class RunManager:
             net = self.network
         sub_train_loader = self.run_config.random_sub_train_loader(2000, 100)
         set_running_statistics(net, sub_train_loader)
-

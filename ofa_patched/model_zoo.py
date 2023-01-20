@@ -229,6 +229,7 @@ def ofa_net(n_classes = 1000, net_id = 'ofa_mbv3_d234_e346_k357_w1.0', pretraine
     elif net_id == 'ofa_eembv3_d234_e346_k357_w1.0':
         net = OFAEEMobileNetV3(
             n_classes, dropout_rate=0, width_mult_list=1.0, ks_list=[3, 5, 7], expand_ratio_list=[3, 4, 6], depth_list=[2, 3, 4],
+            t_list = [1,1,1,1]
         )
     elif net_id == 'ofa_mbv3_d234_e346_k357_w1.2':
         net = OFAMobileNetV3(

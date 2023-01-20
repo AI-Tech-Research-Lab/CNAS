@@ -160,6 +160,7 @@ def measure_net_latency(net, l_type='gpu8', fast=True, input_shape=(3, 224, 224)
     
 
 def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_info=True):
+    
     net_info = {}
     if isinstance(net, nn.DataParallel):
         net = net.module
@@ -187,3 +188,4 @@ def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_inf
             print('Estimated %s latency: %.3fms' % (l_type, net_info['%s latency' % l_type]['val']))
     
     return net_info
+    
