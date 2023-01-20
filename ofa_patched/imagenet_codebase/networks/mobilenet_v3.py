@@ -155,12 +155,13 @@ class EEMobileNetV3(MyNetwork):
         self.exit_list = []
         self.n_exit = len(exit_idxs)
     
-        '''
+        
         for i in range(0,self.n_exit,1):
             feature_dim = [feature_dim_list[i]]
             final_expand_width = [960]#[feature_dim[0] * 6]
             last_channel = [1280]#[feature_dim[0] * 8]
             self.exit_list.append(ExitBlock(n_classes,final_expand_width,feature_dim,last_channel,dropout_rate))
+        
         '''
         if (self.n_exit!=0):
             feature_dim = [feature_dim_list[0]]
@@ -170,7 +171,7 @@ class EEMobileNetV3(MyNetwork):
             #self.idx_exit = exit_idxs[0]
             self.exit_block = self.exit_list[0]
             #self.threshold = t_list[0]
-
+        '''
 
     def forward(self, x):
         #NOT WORKING
