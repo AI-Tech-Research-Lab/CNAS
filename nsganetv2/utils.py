@@ -396,7 +396,12 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
 
     cp_net = copy.deepcopy(net)
 
-    net.eval()
+    cp_net.eval()
+
+    # move network to GPU if available
+    if torch.cuda.is_available():
+        device = torch.device('cuda:0')
+        cp_net = cp_net.to(device)
 
     t_list = net.t_list
 
