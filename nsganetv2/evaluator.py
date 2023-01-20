@@ -310,11 +310,11 @@ class OFAEvaluator:
 
         lut = {'cpu': 'data/i7-8700K_lut.yaml'}
         
-        '''
+        
         info = get_net_info(
               subnet, (3, resolution, resolution), measure_latency=measure_latency,
               print_info=False, clean=True, lut=lut, pmax = pmax, fmax = fmax, amax = amax, wp = wp, wf = wf, wa = wa, penalty = penalty)
-        '''
+        
         run_config = get_run_config(
             dataset=dataset, data_path=data_path, image_size=resolution, n_epochs=n_epochs,
             train_batch_size=trn_batch_size, test_batch_size=vld_batch_size,
@@ -333,16 +333,12 @@ class OFAEvaluator:
             cfgs.subnet = subnet
             subnet = run_manager.train(cfgs)
         
-        '''
+        
         loss, top1, top5, utils = run_manager.adaptive_validate(net=subnet, is_test=is_test, no_logs=no_logs)
         #macs_avg = info['macs_final_exit']*(1-util) + info['macs_first_exit']*util
 
-        info ={}
-
         info['loss'], info['top1'], info['top5'], info['util'] = loss, top1, top5, utils
 
-        print("INFO")
-        print(info)
 
         save_path = os.path.join(log_dir, 'net.stats') if cfgs.save is None else cfgs.save
         if cfgs.save_config:
@@ -352,7 +348,7 @@ class OFAEvaluator:
             json.dump(info, handle)
         
         print(info)
-        '''
+        
 
     '''
     def adaptive_eval(subnet, config, data_path, dataset='imagenet', n_epochs=0, resolution=(224,224), threshold=0.1,
