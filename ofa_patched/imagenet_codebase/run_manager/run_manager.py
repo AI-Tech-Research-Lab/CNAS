@@ -158,7 +158,6 @@ class RunManager:
             self.network.init_model(run_config.model_init)
 
         # net info
-        '''
         net_info = get_net_info(self.net, self.run_config.data_provider.data_shape, measure_latency, True)
         with open('%s/net_info.txt' % self.path, 'w') as fout:
             fout.write(json.dumps(net_info, indent=4) + '\n')
@@ -166,7 +165,6 @@ class RunManager:
                 fout.write(self.network.module_str)
             except Exception:
                 pass
-        '''
 
         # criterion
         if isinstance(self.run_config.mixup_alpha, float):
@@ -427,9 +425,6 @@ class RunManager:
 
         if net is None:
             net = self.net
-
-        n_exit = net.n_exit
-
         if not isinstance(net, nn.DataParallel):
             net = nn.DataParallel(net)
 
@@ -444,10 +439,7 @@ class RunManager:
         losses = AverageMeter()
         top1 = AverageMeter()
         top5 = AverageMeter()
-        utils = []
-        for i in range(n_exit+1):
-            utils.append(AverageMeter())
-        
+        util = AverageMeter()
 
         with torch.no_grad():
             with tqdm(total=len(data_loader),
@@ -455,36 +447,26 @@ class RunManager:
                 for i, (images, labels) in enumerate(data_loader):
                     images, labels = images.to(self.device), labels.to(self.device)
                     # compute output
-                    output, counts = net(images)
+                    output, count = net(images)
                     loss = self.test_criterion(output, labels)
                     # measure accuracy and record loss
                     acc1, acc5 = accuracy(output, labels, topk=(1, 5))
 
-                    for i,c in enumerate(counts):
-                       utils[i].update(c/images.size(0), images.size(0))
-
-                    avg_utils = []
-                    for i,u in enumerate(utils):
-                        avg_utils.append(u.avg)
-
                     losses.update(loss.item(), images.size(0))
                     top1.update(acc1[0].item(), images.size(0))
                     top5.update(acc5[0].item(), images.size(0))
+                    util.update(count.item()/images.size(0), images.size(0))
 
                     t.set_postfix({
                         'loss': losses.avg,
                         'top1': top1.avg,
                         'top5': top5.avg,
-                        'utils': avg_utils,
+                        'util': util.avg,
                         'img_size': images.size(2),
                     })
                     t.update(1)
-        
-        avg_utils = []
-        for u in utils:
-            avg_utils.append(u.avg)
 
-        return losses.avg, top1.avg, top5.avg, avg_utils
+        return losses.avg, top1.avg, top5.avg, util.avg
 
     # Compute score margin
     def get_score_margin(outputs):
@@ -605,7 +587,7 @@ class RunManager:
 
         losses = AverageMeter()
         top1 = AverageMeter()
-        top5 = AverageMeter()
+        top1_exit = AverageMeter()
         data_time = AverageMeter()
 
         with tqdm(total=nBatch,
@@ -637,30 +619,10 @@ class RunManager:
                     loss2 = self.train_criterion(aux_outputs, labels)
                     loss = loss1 + 0.4 * loss2
                 else:
-                    #weighted loss 
-                    output, aux_outputs = self.net(images)
+                    output, exit_output = self.net(images)
                     loss1 = self.train_criterion(output, labels)
-                    loss2 = self.train_criterion(aux_outputs, labels)
+                    loss2 = self.train_criterion(exit_output, labels)
                     loss = 0.4 * loss1 + loss2
-                    '''
-                    weights = [1,0.4]#np.ones(len(preds)) #all weigths are set to 1
-
-                    loss = 0
-                    acc1 = 0
-                    acc5 = 0
-                    w_tot = 0
-
-                    for p,w in zip(preds,weights):
-                        w_tot += w
-                        t_loss = self.train_criterion(p, labels) 
-                        loss += t_loss * w
-                        acc1_exit, acc5_exit = accuracy(p, target, topk=(1, 5))
-                        acc1 += acc1_exit[0].item() * w
-                        acc5 += acc5_exit[0].item() * w
-                    
-                    acc1 = acc1 / w_tot #average acc of all the exits
-                    acc5 = acc5 / w_tot
-                    '''
 
                 if args.teacher_model is None:
                     loss_type = 'ce'
@@ -686,17 +648,17 @@ class RunManager:
                 self.optimizer.step()
 
                 # measure accuracy and record loss
-
-                acc1, acc5 = accuracy(aux_outputs, target, topk=(1, 5))
-                
+                acc1, acc5 = accuracy(output, target, topk=(1, 5))
+                acc1_exit, acc5_exit = accuracy(exit_output, target, topk=(1, 5))
                 losses.update(loss.item(), images.size(0))
                 top1.update(acc1[0].item(), images.size(0))
-                top5.update(acc5[0].item(), images.size(0))
+                top1_exit.update(acc1_exit[0].item(), images.size(0))
 
                 t.set_postfix({
                     'loss': losses.avg,
                     'top1': top1.avg,
-                    'top5': top5.avg,
+                    'top1_exit': top1_exit.avg,
+                    #'top5': top5.avg,
                     'img_size': images.size(2),
                     'lr': new_lr,
                     'loss_type': loss_type,
@@ -704,14 +666,12 @@ class RunManager:
                 })
                 t.update(1)
                 end = time.time()
-        return losses.avg, top1.avg
+        return losses.avg, top1.avg, top1_exit.avg
 
     def train(self, args, warmup_epoch=0, warmup_lr=0):
-
+        
         for epoch in range(self.start_epoch, self.run_config.n_epochs + warmup_epoch):
-        
-            train_loss, train_top1 = self.adaptive_train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
-        
+            train_loss, train_top1, train_top1_exit = self.adaptive_train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
 
             if (epoch + 1) % self.run_config.validation_frequency == 0:
                 img_size, val_loss, val_acc, val_acc5 = self.validate_all_resolution(epoch=epoch, is_test=False)
@@ -737,7 +697,7 @@ class RunManager:
                 'optimizer': self.optimizer.state_dict(),
                 'state_dict': self.network.state_dict(),
             }, is_best=is_best)
-
+        
         return self.net
 
     def reset_running_statistics(self, net=None):
@@ -746,3 +706,4 @@ class RunManager:
             net = self.network
         sub_train_loader = self.run_config.random_sub_train_loader(2000, 100)
         set_running_statistics(net, sub_train_loader)
+
