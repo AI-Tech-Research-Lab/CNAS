@@ -394,39 +394,60 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
     # parameters
     net_info['params'] = count_parameters(net)
 
-    cp_net = copy.deepcopy(net)
-
-    cp_net.eval()
-
-    # move network to GPU if available
-    if torch.cuda.is_available():
-        device = torch.device('cuda:0')
-        cp_net = cp_net.to(device)
-
     t_list = net.t_list
 
     macs = []
     # macs exit 1
     if (t_list[0]!=1):
+      cp_net = copy.deepcopy(net)
+      cp_net.eval()
+      # move network to GPU if available
+      if torch.cuda.is_available():
+            device = torch.device('cuda:0')
+            cp_net = cp_net.to(device)
       cp_net.set_threshold([0,1,1,1])
       macs.append(int(profile_macs(cp_net, inputs)))
 
     # macs exit 2
     if (t_list[1]!=1):
+        cp_net = copy.deepcopy(net)
+        cp_net.eval()
+        # move network to GPU if available
+        if torch.cuda.is_available():
+                device = torch.device('cuda:0')
+                cp_net = cp_net.to(device)
         cp_net.set_threshold([1,0,1,1])
         macs.append(int(profile_macs(cp_net, inputs)))
 
     # macs exit 3
     if (t_list[2]!=1):
+        cp_net = copy.deepcopy(net)
+        cp_net.eval()
+        # move network to GPU if available
+        if torch.cuda.is_available():
+                device = torch.device('cuda:0')
+                cp_net = cp_net.to(device)
         cp_net.set_threshold([1,1,0,1])
         macs.append(int(profile_macs(cp_net, inputs)))
 
     # macs exit 4
     if (t_list[3]!=1):
+        cp_net = copy.deepcopy(net)
+        cp_net.eval()
+        # move network to GPU if available
+        if torch.cuda.is_available():
+                device = torch.device('cuda:0')
+                cp_net = cp_net.to(device)
         cp_net.set_threshold([1,1,1,0])
         macs.append(int(profile_macs(cp_net, inputs)))
 
     # macs whole network
+    cp_net = copy.deepcopy(net)
+    cp_net.eval()
+    # move network to GPU if available
+    if torch.cuda.is_available():
+            device = torch.device('cuda:0')
+            cp_net = cp_net.to(device)
     cp_net.set_threshold([1,1,1,1])
     macs.append(int(profile_macs(cp_net, inputs)))
 
