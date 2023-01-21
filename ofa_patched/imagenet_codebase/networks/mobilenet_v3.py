@@ -156,7 +156,7 @@ class EEMobileNetV3(MyNetwork):
         self.d_list = d_list
 
         #set_threshold t_list
-        self.mask = t != 1 ## mask with 1 for exit and 0 for non-exit
+        #self.mask = t != 1 ## mask with 1 for exit and 0 for non-exit
         exit_idxs = []
         exit_list = []
         t_list = []
@@ -177,9 +177,6 @@ class EEMobileNetV3(MyNetwork):
         self.exit_list = nn.ModuleList(exit_list)
 
     def forward(self, x):
-        
-        print("RUNTIME THRESHOLD")
-        print(self.t_list)
 
         x = self.first_conv(x)
 
@@ -236,10 +233,6 @@ class EEMobileNetV3(MyNetwork):
                             # FIX bug that for one sample x.shape = (0,1,,,,) when empty
                             if(i<(self.n_exit-1)):
                                 i+=1
-                if (x.shape[0]==0 and not alarm): 
-                    print("No more sample!")
-                    print(idx)
-                    alarm = True
                 x = block(x)
 
             counts[-1] = x.shape[0] #n samples classified normally by the last exit
@@ -315,11 +308,6 @@ class EEMobileNetV3(MyNetwork):
         return net
     
     def set_threshold(self,t):
-        print("t")
-        print(t)
-        self.mask = t != 1 ## mask with 1 for exit and 0 for non-exit
-        print("MASK")
-        print(self.mask)
         exit_idxs = []
         exit_list = []
         t_list = []
