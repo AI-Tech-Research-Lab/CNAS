@@ -15,7 +15,7 @@ input_shape = (3,40,40)
 ofa_ee = ofa_net(n_classes,'ofa_eembv3_d234_e346_k357_w1.0', pretrained=False)
 ofa = ofa_net(n_classes,'ofa_mbv3_d234_e346_k357_w1.0', pretrained=False)
 d = [2,2,2,2,2]
-t = [0.1,1,1,1]
+t = [0.1,0.1,0.1,0.1]
 ofa_ee.set_active_subnet(ks=7, e=6, d=d, t=t)
 m2 = ofa_ee.get_active_subnet(preserve_weight=True)
 '''
