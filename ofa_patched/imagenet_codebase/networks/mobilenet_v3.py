@@ -156,20 +156,23 @@ class EEMobileNetV3(MyNetwork):
         self.d_list = d_list
 
         #set_threshold t_list
-        self.t_list = t_list
+        self.mask = t_list != 1 ## mask with 1 for exit and 0 for non-exit
         exit_idxs = []
         exit_list = []
+        t_list = []
         n_blocks = len(self.base_stage_width)+1
         idx = 1
         for i in range(0,n_blocks-1,1):
             idx += self.d_list[i]
             if (self.t_list[i]!=1):
+                t_list.append(t_list[i])
                 feature_dim = [self.base_stage_width[i]]
                 final_expand_width = [feature_dim[0] * 6] #960
                 last_channel = [feature_dim[0] * 8] #1280
                 exit_idxs.append(idx)
                 exit_list.append(ExitBlock(self.n_classes,final_expand_width,feature_dim,last_channel,self.dropout_rate))
         self.n_exit = len(exit_list)
+        self.t_list = t_list
         self.exit_idxs = exit_idxs
         self.exit_list = nn.ModuleList(exit_list)
 
@@ -312,20 +315,23 @@ class EEMobileNetV3(MyNetwork):
         return net
     
     def set_threshold(self,t):
-        self.t_list = t
+        self.mask = t != 1 ## mask with 1 for exit and 0 for non-exit
         exit_idxs = []
         exit_list = []
+        t_list = []
         n_blocks = len(self.base_stage_width)+1
         idx = 1
         for i in range(0,n_blocks-1,1):
             idx += self.d_list[i]
-            if (self.t_list[i]!=1):
+            if (t[i]!=1):
+                t_list.append(t[i])
                 feature_dim = [self.base_stage_width[i]]
                 final_expand_width = [feature_dim[0] * 6] #960
                 last_channel = [feature_dim[0] * 8] #1280
                 exit_idxs.append(idx)
                 exit_list.append(ExitBlock(self.n_classes,final_expand_width,feature_dim,last_channel,self.dropout_rate))
         self.n_exit = len(exit_list)
+        self.t_list = t_list
         self.exit_idxs = exit_idxs
         self.exit_list = nn.ModuleList(exit_list)
 
