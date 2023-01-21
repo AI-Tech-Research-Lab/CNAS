@@ -202,6 +202,7 @@ class EEMobileNetV3(MyNetwork):
             return preds
         else:
             i = 0
+            alarm = False
             counts = np.zeros(self.n_exit+1)
             for idx,block in enumerate(self.blocks):
                 if(self.n_exit!=0):
@@ -229,12 +230,12 @@ class EEMobileNetV3(MyNetwork):
                             preds.append(pred)
                             idxs.append(p)
                             # FIX bug that for one sample x.shape = (0,1,,,,) when empty
-                            if (x.shape[0]==0): # no more samples 
-                                x = torch.squeeze(x)
-                                break
                             if(i<(self.n_exit-1)):
                                 i+=1
-                #if (idx > self.exit_idxs)
+                if (x.shape[0]==0 and not alarm): 
+                    print("No more sample!")
+                    print(idx)
+                    alarm = True
                 x = block(x)
 
             counts[-1] = x.shape[0] #n samples classified normally by the last exit
