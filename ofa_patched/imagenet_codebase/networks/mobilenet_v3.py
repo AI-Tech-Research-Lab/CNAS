@@ -141,7 +141,7 @@ from ofa.elastic_nn.modules.dynamic_layers import ExitBlock
 class EEMobileNetV3(MyNetwork):
 
     def __init__(self, first_conv, blocks, final_expand_layer, feature_mix_layer, classifier, 
-    n_classes, dropout_rate, d_list, t_list):
+    n_classes, dropout_rate, d_list, t):
 
         super(EEMobileNetV3, self).__init__()
 
@@ -156,7 +156,7 @@ class EEMobileNetV3(MyNetwork):
         self.d_list = d_list
 
         #set_threshold t_list
-        self.mask = t_list != 1 ## mask with 1 for exit and 0 for non-exit
+        self.mask = t != 1 ## mask with 1 for exit and 0 for non-exit
         exit_idxs = []
         exit_list = []
         t_list = []
@@ -164,8 +164,8 @@ class EEMobileNetV3(MyNetwork):
         idx = 1
         for i in range(0,n_blocks-1,1):
             idx += self.d_list[i]
-            if (self.t_list[i]!=1):
-                t_list.append(t_list[i])
+            if (t[i]!=1):
+                t_list.append(t[i])
                 feature_dim = [self.base_stage_width[i]]
                 final_expand_width = [feature_dim[0] * 6] #960
                 last_channel = [feature_dim[0] * 8] #1280
@@ -316,6 +316,8 @@ class EEMobileNetV3(MyNetwork):
     
     def set_threshold(self,t):
         self.mask = t != 1 ## mask with 1 for exit and 0 for non-exit
+        print("MASK")
+        print(self.mask)
         exit_idxs = []
         exit_list = []
         t_list = []
