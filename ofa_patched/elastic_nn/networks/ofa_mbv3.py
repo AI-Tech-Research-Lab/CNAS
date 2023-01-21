@@ -510,7 +510,7 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         # set bn param
         self.set_bn_param(momentum=bn_param[0], eps=bn_param[1])
         self.runtime_depth = d_list
-        self.runtime_threshold = self.t_list
+        self.runtime_threshold = t_list
 
     """ MyNetwork required methods """
 
