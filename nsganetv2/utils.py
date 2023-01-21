@@ -422,7 +422,7 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
         macs.append(int(profile_macs(cp_net, inputs)))
 
     # macs exit 4
-    if (t_list[2]!=1):
+    if (t_list[3]!=1):
         cp_net.set_threshold([1,1,1,0])
         macs.append(int(profile_macs(cp_net, inputs)))
 
