@@ -615,7 +615,10 @@ class OFAEEMobileNetV3(EEMobileNetV3):
         for i, d in enumerate(depth):
             if d is not None:
                 self.runtime_depth[i] = min(len(self.block_group_info[i]), d)
-
+        print("THRESHOLD")
+        print(threshold)
+        print("RUNTIME THRESHOLD")
+        print(self.runtime_threshold)
         for i, t in enumerate(threshold):
             if t is not None:
                 self.runtime_threshold[i] = t
