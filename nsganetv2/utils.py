@@ -398,7 +398,7 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
 
     macs = []
     # macs exit 1
-    if (t_list[0]!=1): #OK!
+    if (t_list[0]!=1):
       cp_net = copy.deepcopy(net)
       cp_net.eval()
       # move network to GPU if available
