@@ -159,18 +159,23 @@ class EEMobileNetV3(MyNetwork):
         self.t_list = t_list
         exit_idxs = []
         exit_list = []
+        active_idxs = []
         n_blocks = len(self.base_stage_width)+1
         idx = 1
         for i in range(0,n_blocks-1,1):
             idx += self.d_list[i]
+            exit_idxs.append(idx)
             if (self.t_list[i]!=1):
                 feature_dim = [self.base_stage_width[i]]
                 final_expand_width = [feature_dim[0] * 6] #960
                 last_channel = [feature_dim[0] * 8] #1280
-                exit_idxs.append(idx)
                 exit_list.append(ExitBlock(self.n_classes,final_expand_width,feature_dim,last_channel,self.dropout_rate))
+                active_idxs.append(idx)
+            else: 
+                exit_list.append([])
         self.n_exit = len(exit_list)
         self.exit_idxs = exit_idxs
+        self.active_idxs = active_idxs
         self.exit_list = nn.ModuleList(exit_list)
 
     def forward(self, x):
@@ -185,11 +190,15 @@ class EEMobileNetV3(MyNetwork):
 
         if(self.training): #training 
             i = 0
+            active_idx = 0 # SET this carefully since i is not the same for exit_list and exit_idxs. 
+            #Exit list contains only the active exits, whereas exit idxs contains all idxs 
             for idx,block in enumerate(self.blocks):
                 if(self.n_exit!=0):
                     if (idx==self.exit_idxs[i]): #exit block
-                        pred, _ = self.exit_list[i](x)
-                        preds.append(pred)
+                        if(self.t_list[i]!=1):
+                            pred, _ = self.exit_list[active_idx](x)
+                            active_idx +=1
+                            preds.append(pred)
                         if(i<(self.n_exit-1)):
                             i+=1
                 x = block(x)
@@ -202,34 +211,37 @@ class EEMobileNetV3(MyNetwork):
             return preds
         else:
             i = 0
+            active_idx = 0
             alarm = False
             counts = np.zeros(self.n_exit+1)
             for idx,block in enumerate(self.blocks):
                 if(self.n_exit!=0):
                     if (idx==self.exit_idxs[i]): #exit block
-                            exit_block = self.exit_list[i]
-                            exit_block.to(torch.device('cuda')) #param tensors to GPU
-                            pred, conf = exit_block(x)
-                            conf = torch.squeeze(conf)
-                            mask = conf >= self.t_list[i]
-                            mask = mask.cpu() #gpu>cpu memory
-                            p = np.where(np.array(mask)==False)[0] #idxs of non EE predictions
-                            counts[i] = torch.sum(mask).item()
-                            if (x.shape[0]==1):
-                                if mask.item()==1: 
-                                    print("Exit!")
-                                    x = torch.empty(0,x.shape[1],x.shape[2],x.shape[3])
-                                    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-                                    x = x.to(device)
+                            if(self.t_list[i]!=1):
+                                exit_block = self.exit_list[active_idx]
+                                active_idx +=1
+                                exit_block.to(torch.device('cuda')) #param tensors to GPU
+                                pred, conf = exit_block(x)
+                                conf = torch.squeeze(conf)
+                                mask = conf >= self.t_list[i]
+                                mask = mask.cpu() #gpu>cpu memory
+                                p = np.where(np.array(mask)==False)[0] #idxs of non EE predictions
+                                counts[i] = torch.sum(mask).item()
+                                if (x.shape[0]==1):
+                                    if mask.item()==1: 
+                                        print("Exit!")
+                                        x = torch.empty(0,x.shape[1],x.shape[2],x.shape[3])
+                                        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+                                        x = x.to(device)
+                                    else:
+                                        pred = torch.empty(0,pred.shape[0])
                                 else:
-                                    pred = torch.empty(0,pred.shape[0])
-                            else:
-                                x = x[mask==0,:,:,:]
-                                pred = pred[mask==1,:]
-                            del mask 
-                            del conf
-                            preds.append(pred)
-                            idxs.append(p)
+                                    x = x[mask==0,:,:,:]
+                                    pred = pred[mask==1,:]
+                                del mask 
+                                del conf
+                                preds.append(pred)
+                                idxs.append(p)
                             # FIX bug that for one sample x.shape = (0,1,,,,) when empty
                             if(i<(self.n_exit-1)):
                                 i+=1
@@ -312,21 +324,27 @@ class EEMobileNetV3(MyNetwork):
         return net
     
     def set_threshold(self,t):
+        #set_threshold t_list
         self.t_list = t
         exit_idxs = []
         exit_list = []
+        active_idxs = []
         n_blocks = len(self.base_stage_width)+1
         idx = 1
         for i in range(0,n_blocks-1,1):
             idx += self.d_list[i]
+            exit_idxs.append(idx)
             if (self.t_list[i]!=1):
                 feature_dim = [self.base_stage_width[i]]
                 final_expand_width = [feature_dim[0] * 6] #960
                 last_channel = [feature_dim[0] * 8] #1280
-                exit_idxs.append(idx)
                 exit_list.append(ExitBlock(self.n_classes,final_expand_width,feature_dim,last_channel,self.dropout_rate))
+                active_idxs.append(idx)
+            else: 
+                exit_list.append([])
         self.n_exit = len(exit_list)
         self.exit_idxs = exit_idxs
+        self.active_idxs = active_idxs
         self.exit_list = nn.ModuleList(exit_list)
 
     def zero_last_gamma(self):
