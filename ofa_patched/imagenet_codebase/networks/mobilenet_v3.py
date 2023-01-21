@@ -315,6 +315,8 @@ class EEMobileNetV3(MyNetwork):
         return net
     
     def set_threshold(self,t):
+        print("t")
+        print(t)
         self.mask = t != 1 ## mask with 1 for exit and 0 for non-exit
         print("MASK")
         print(self.mask)
