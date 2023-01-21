@@ -711,8 +711,6 @@ class OFAEEMobileNetV3(EEMobileNetV3):
 
         d_list = self.runtime_depth
         t_list = self.runtime_threshold
-        print("RUNTIME THRESHOLD")
-        print(self.runtime_threshold)
 
         _subnet = EEMobileNetV3(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier,
         self.n_classes, self.dropout_rate, d_list, t_list)
