@@ -171,6 +171,8 @@ class EEMobileNetV3(MyNetwork):
                 last_channel = [feature_dim[0] * 8] #1280
                 exit_list.append(ExitBlock(self.n_classes,final_expand_width,feature_dim,last_channel,self.dropout_rate))
                 active_idxs.append(idx)
+            else: 
+                exit_list.append([])
         self.n_exit = len(exit_list)
         self.exit_idxs = exit_idxs
         self.active_idxs = active_idxs
@@ -338,6 +340,8 @@ class EEMobileNetV3(MyNetwork):
                 last_channel = [feature_dim[0] * 8] #1280
                 exit_list.append(ExitBlock(self.n_classes,final_expand_width,feature_dim,last_channel,self.dropout_rate))
                 active_idxs.append(idx)
+            else: 
+                exit_list.append([])
         self.n_exit = len(exit_list)
         self.exit_idxs = exit_idxs
         self.active_idxs = active_idxs
