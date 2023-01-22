@@ -396,9 +396,6 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
 
     t_list = net.threshold
 
-    print("T LIST")
-    print(t_list)
-
     macs = []
     t_config = [[0,1,1,1],[1,0,1,1],[1,1,0,1],[1,1,1,0]]
     
@@ -429,7 +426,7 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
     net_info['macs'] = macs
    
     # activation_size
-    net_info['activations'] = 0#int(profile_activation_size(copy.deepcopy(net), inputs))
+    net_info['activations'] = int(profile_activation_size(copy.deepcopy(net), inputs))
 
     # latencies
     latency_types = [] if measure_latency is None else measure_latency.split('#')
