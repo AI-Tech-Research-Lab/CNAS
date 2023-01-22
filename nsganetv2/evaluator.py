@@ -336,6 +336,10 @@ class OFAEvaluator:
         info['loss'], info['top1'], info['top5'], info['util'] = loss, top1, top5, utils
 
         macs = 0
+        print("UTILS")
+        print(utils)
+        print("MACS")
+        print(info['macs'])
         for u,m in zip(utils,info['macs']):
           macs += u*m
         info['macs']=macs #average number of macs
