@@ -428,8 +428,6 @@ class RunManager:
         if net is None:
             net = self.net
 
-        n_exit = net.n_exit
-
         if not isinstance(net, nn.DataParallel):
             net = nn.DataParallel(net)
 
@@ -445,18 +443,23 @@ class RunManager:
         top1 = AverageMeter()
         top5 = AverageMeter()
         utils = []
-        for i in range(n_exit+1):
-            utils.append(AverageMeter())
-        
 
         with torch.no_grad():
             with tqdm(total=len(data_loader),
                       desc='Validate Epoch #{} {}'.format(epoch + 1, run_str), disable=no_logs) as t:
                 for i, (images, labels) in enumerate(data_loader):
                     images, labels = images.to(self.device), labels.to(self.device)
+
                     # compute output
                     output, counts = net(images)
                     loss = self.test_criterion(output, labels)
+
+                    # utils preparation
+                    if len(utils==0):
+                        n_exit = len(counts)
+                        for i in range(n_exit+1):
+                          utils.append(AverageMeter())
+
                     # measure accuracy and record loss
                     acc1, acc5 = accuracy(output, labels, topk=(1, 5))
 

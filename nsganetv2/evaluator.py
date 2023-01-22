@@ -331,7 +331,6 @@ class OFAEvaluator:
             cfgs.subnet = subnet
             subnet = run_manager.train(cfgs)
         
-        
         loss, top1, top5, utils = run_manager.adaptive_validate(net=subnet, is_test=is_test, no_logs=no_logs)
 
         info['loss'], info['top1'], info['top5'], info['util'] = loss, top1, top5, utils
