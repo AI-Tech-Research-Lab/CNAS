@@ -62,7 +62,7 @@ def get_net_info(net, data_shape, measure_latency=None, print_info=True, clean=F
         'params': params,
         'macs': macs,
         'activations': activations,
-        'tiny_ml' : tiny_ml(params = params, flops = macs , activations = activations, 
+        'tiny_ml' : tiny_ml(params = params, flops = macs[-1] , activations = activations, 
                             pmax = pmax, fmax = fmax, amax = amax,
                             wp = wp, wf = wf, wa = wa, penalty = penalty),
         'gpu': gpu_latency, 'cpu': cpu_latency
