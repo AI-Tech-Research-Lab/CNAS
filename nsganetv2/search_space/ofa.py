@@ -59,7 +59,7 @@ class OFASearchSpace:
             resolution = int(np.random.choice(r))
 
             if (self.supernet == 'eemobilenetv3'):
-                threshold = float(np.random.choice(t))
+                threshold = np.random.choice(t, size=(len(depth)-1), replace=True).tolist()
                 data.append({'ks': kernel_size, 'e': exp_ratio, 'd': depth, 't': threshold, 'r': resolution})
             else:
                 data.append({'ks': kernel_size, 'e': exp_ratio, 'd': depth, 'r': resolution})
@@ -73,7 +73,7 @@ class OFASearchSpace:
                 self.sample(1, ks=[min(self.kernel_size)], e=[min(self.exp_ratio)],
                             d=[min(self.depth)], t = [min(self.threshold)], r=[min(self.resolution)])[0],
                 self.sample(1, ks=[max(self.kernel_size)], e=[max(self.exp_ratio)],
-                            d=[max(self.depth)], t = [min(self.threshold)], r=[max(self.resolution)])[0]
+                            d=[max(self.depth)], t = [max(self.threshold)], r=[max(self.resolution)])[0]
             ]
         else:
             data = [
@@ -113,8 +113,9 @@ class OFASearchSpace:
         else:
             for i in range(len(depth)):
                 x = x + [depth[i]] + [kernel_size[i]] + [exp_ratio[i]]
-          
-        x.append(np.argwhere(config['t'] == np.array(self.threshold))[0, 0]) 
+        
+        if (self.supernet == 'eemobilenetv3'):
+            x.append(np.argwhere(_x == np.array(self.threshold))[0, 0] for _x in config['t']) 
 
         x.append(np.argwhere(config['r'] == np.array(self.resolution))[0, 0])
 
@@ -139,8 +140,12 @@ class OFASearchSpace:
               depth.append(self.depth[x[i]])
               kernel_size.append(self.kernel_size[x[i+1]])
               exp_rate.append(self.exp_ratio[x[i+2]])
-              
-        return {'ks': kernel_size, 'e': exp_rate, 'd': depth, 
-        't': self.threshold[x[-2]], 'r': self.resolution[x[-1]]}
+        
+        if (self.supernet == 'eemobilenetv3'):    
+            return {'ks': kernel_size, 'e': exp_rate, 'd': depth, 
+            't': self.threshold[x[-2]], 'r': self.resolution[x[-1]]}
+        else:
+            return {'ks': kernel_size, 'e': exp_rate, 'd': depth, 
+            'r': self.resolution[x[-1]]}
 
 
