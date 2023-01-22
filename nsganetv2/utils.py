@@ -394,7 +394,7 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
     # parameters
     net_info['params'] = count_parameters(net)
 
-    t_list = net.t_list
+    t_list = net.config
 
     print("T LIST")
     print(net.t_list)
