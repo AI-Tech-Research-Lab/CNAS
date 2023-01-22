@@ -455,7 +455,7 @@ class RunManager:
                     loss = self.test_criterion(output, labels)
 
                     # utils preparation
-                    if len(utils==0):
+                    if len(utils)==0:
                         n_exit = len(counts)
                         for i in range(n_exit+1):
                           utils.append(AverageMeter())
