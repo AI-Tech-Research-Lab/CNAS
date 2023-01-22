@@ -24,7 +24,7 @@ m1_encode = ss.encode(m1_config)
 m1_config = ss.decode(m1_encode)
 print(m1_config)
 
-print(ss.threshold)
+print(ss.initialize(n_doe))
 '''
 #Compute MACS of the exit gate (< MACs of the whole net)
 

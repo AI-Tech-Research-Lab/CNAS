@@ -24,7 +24,7 @@ class OFASearchSpace:
             self.exp_ratio = [1]  # expansion rate
             self.depth = [2,3,4,5,6,7]  # number of BasicBlock layers repetition          
            
-        self.threshold = [0.1,0.2] # threshold for selection model   
+        #self.threshold = [0.1,0.2] # threshold for selection model   
 
         #STANDARD is lr = 192 and ur= 256
         min = lr
