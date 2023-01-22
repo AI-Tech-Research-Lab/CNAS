@@ -396,6 +396,9 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
 
     t_list = net.t_list
 
+    print("T LIST")
+    print(net.t_list)
+
     macs = []
     t_config = [[0,1,1,1],[1,0,1,1],[1,1,0,1],[1,1,1,0]]
     

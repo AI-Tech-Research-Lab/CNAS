@@ -217,7 +217,6 @@ class EEMobileNetV3(MyNetwork):
                             counts[i] = torch.sum(mask).item()
                             if (x.shape[0]==1):
                                 if mask.item()==1: 
-                                    print("Exit!")
                                     x = torch.empty(0,x.shape[1],x.shape[2],x.shape[3])
                                     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
                                     x = x.to(device)
