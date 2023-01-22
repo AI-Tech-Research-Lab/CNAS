@@ -457,7 +457,7 @@ class RunManager:
                     # utils preparation
                     if len(utils)==0:
                         n_exit = len(counts)
-                        for i in range(n_exit+1):
+                        for i in range(n_exit):
                           utils.append(AverageMeter())
 
                     # measure accuracy and record loss
