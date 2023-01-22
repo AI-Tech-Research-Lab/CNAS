@@ -394,10 +394,10 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
     # parameters
     net_info['params'] = count_parameters(net)
 
-    t_list = net.config
+    t_list = net.threshold
 
     print("T LIST")
-    print(net.t_list)
+    print(t_list)
 
     macs = []
     t_config = [[0,1,1,1],[1,0,1,1],[1,1,0,1],[1,1,1,0]]

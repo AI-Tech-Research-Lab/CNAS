@@ -154,7 +154,7 @@ class EEMobileNetV3(MyNetwork):
         self.n_classes = n_classes
         self.dropout_rate = dropout_rate
         self.d_list = d_list
-        self.config = t
+        self.threshold = t
 
         #set_threshold t_list
         #self.mask = t != 1 ## mask with 1 for exit and 0 for non-exit
