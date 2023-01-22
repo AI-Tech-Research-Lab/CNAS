@@ -141,9 +141,13 @@ class OFASearchSpace:
               kernel_size.append(self.kernel_size[x[i+1]])
               exp_rate.append(self.exp_ratio[x[i+2]])
         
-        if (self.supernet == 'eemobilenetv3'):    
+        if (self.supernet == 'eemobilenetv3'): 
+            t_config = x[-2]
+            t = []
+            for c in t_config:
+              t.append(self.threshold[c])   
             return {'ks': kernel_size, 'e': exp_rate, 'd': depth, 
-            't': self.threshold[x[-2]], 'r': self.resolution[x[-1]]}
+            't': t, 'r': self.resolution[x[-1]]}
         else:
             return {'ks': kernel_size, 'e': exp_rate, 'd': depth, 
             'r': self.resolution[x[-1]]}
