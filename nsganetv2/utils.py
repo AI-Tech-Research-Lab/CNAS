@@ -397,49 +397,21 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
     t_list = net.t_list
 
     macs = []
-    # macs exit 1
-    if (t_list[0]!=1):
-      cp_net = copy.deepcopy(net)
-      cp_net.eval()
-      # move network to GPU if available
-      if torch.cuda.is_available():
-            device = torch.device('cuda:0')
-            cp_net = cp_net.to(device)
-      cp_net.set_threshold([0,1,1,1])
-      macs.append(int(profile_macs(cp_net, inputs)))
+    t_config = [[0,1,1,1],[1,0,1,1],[1,1,0,1],[1,1,1,0]]
+    
+    for i,c in enumerate(t_config):
+        if (t_list[i]!=1):
 
-    # macs exit 2
-    if (t_list[1]!=1):
-        cp_net = copy.deepcopy(net)
-        cp_net.eval()
-        # move network to GPU if available
-        if torch.cuda.is_available():
-                device = torch.device('cuda:0')
-                cp_net = cp_net.to(device)
-        cp_net.set_threshold([1,0,1,1])
-        macs.append(int(profile_macs(cp_net, inputs)))
+            cp_net = copy.deepcopy(net)
+            cp_net.eval()
 
-    # macs exit 3
-    if (t_list[2]!=1):
-        cp_net = copy.deepcopy(net)
-        cp_net.eval()
-        # move network to GPU if available
-        if torch.cuda.is_available():
-                device = torch.device('cuda:0')
-                cp_net = cp_net.to(device)
-        cp_net.set_threshold([1,1,0,1])
-        macs.append(int(profile_macs(cp_net, inputs)))
+            # move network to GPU if available
+            if torch.cuda.is_available():
+                    device = torch.device('cuda:0')
+                    cp_net = cp_net.to(device)
 
-    # macs exit 4
-    if (t_list[3]!=1):
-        cp_net = copy.deepcopy(net)
-        cp_net.eval()
-        # move network to GPU if available
-        if torch.cuda.is_available():
-                device = torch.device('cuda:0')
-                cp_net = cp_net.to(device)
-        cp_net.set_threshold([1,1,1,0])
-        macs.append(int(profile_macs(cp_net, inputs)))
+            cp_net.set_threshold(c)
+            macs.append(int(profile_macs(cp_net, inputs)))
 
     # macs whole network
     cp_net = copy.deepcopy(net)
@@ -452,7 +424,6 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
     macs.append(int(profile_macs(cp_net, inputs)))
 
     net_info['macs'] = macs
-
    
     # activation_size
     net_info['activations'] = 0#int(profile_activation_size(copy.deepcopy(net), inputs))
@@ -477,8 +448,7 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
     if print_info:
         # print(net)
         print('Total training params: %.2fM' % (net_info['params'] / 1e6))
-        for macs in net_info['macs']:
-          print('Total MACs: %.2fM' % (macs / 1e6))
+        print('Total MACs: %.2fM' % (macs[-1] / 1e6))
         print('Total activations: %.2fM' % (net_info['activations'] / 1e6))
         for l_type in latency_types:
             print('Estimated %s latency: %.3fms' % (l_type, net_info['%s latency' % l_type]['val']))

@@ -54,7 +54,6 @@ def get_net_info(net, data_shape, measure_latency=None, print_info=True, clean=F
 
     params = np.round(net_info['params'] / 1e6, 2)
     macs = np.round(net_info['macs'] / 1e6, 2)
-    #macs_final_exit = np.round(net_info['macs_final_exit'] / 1e6, 2)
     activations = np.round(net_info['activations'] / 1e6, 2)
 
     return {
@@ -334,10 +333,13 @@ class OFAEvaluator:
         
         
         loss, top1, top5, utils = run_manager.adaptive_validate(net=subnet, is_test=is_test, no_logs=no_logs)
-        #macs_avg = info['macs_final_exit']*(1-util) + info['macs_first_exit']*util
 
         info['loss'], info['top1'], info['top5'], info['util'] = loss, top1, top5, utils
 
+        macs = 0
+        for u,m in zip(utils,info['macs']):
+          macs += u*m
+        info['macs']=macs #average number of macs
 
         save_path = os.path.join(log_dir, 'net.stats') if cfgs.save is None else cfgs.save
         if cfgs.save_config:
