@@ -1,6 +1,5 @@
 import numpy as np
 
-
 class OFASearchSpace:
     def __init__(self,supernet,lr,ur):
         self.num_blocks = 5  # number of blocks, default 5
@@ -14,7 +13,7 @@ class OFASearchSpace:
             self.kernel_size = [3, 5, 7]  # depth-wise conv kernel size
             self.exp_ratio = [3, 4, 6]  # expansion rate
             self.depth = [2, 3, 4]  # number of Inverted Residual Bottleneck layers repetition
-            self.threshold = [0.1, 0.2] #threshold value for selection scheme
+            self.threshold = [0.1, 0.2, 1] #threshold value for selection scheme
         elif(supernet == 'resnet50'):
             self.kernel_size = [3]  # depth-wise conv kernel size
             self.exp_ratio = [0.2,0.25,0.35]  # expansion rate
@@ -57,22 +56,33 @@ class OFASearchSpace:
               kernel_size = np.random.choice(ks, size=int(np.sum(depth)), replace=True).tolist()
               exp_ratio = np.random.choice(e, size=int(np.sum(depth)), replace=True).tolist()
 
-            threshold = float(np.random.choice(t))
-
             resolution = int(np.random.choice(r))
-            
-            data.append({'ks': kernel_size, 'e': exp_ratio, 'd': depth, 't': threshold, 'r': resolution})
+
+            if (self.supernet == 'eemobilenetv3'):
+                threshold = float(np.random.choice(t))
+                data.append({'ks': kernel_size, 'e': exp_ratio, 'd': depth, 't': threshold, 'r': resolution})
+            else:
+                data.append({'ks': kernel_size, 'e': exp_ratio, 'd': depth, 'r': resolution})
 
         return data
 
     def initialize(self, n_doe):
         # sample one arch with least (lb of hyperparameters) and most complexity (ub of hyperparameters)
-        data = [
-            self.sample(1, ks=[min(self.kernel_size)], e=[min(self.exp_ratio)],
-                        d=[min(self.depth)], t = [min(self.threshold)], r=[min(self.resolution)])[0],
-            self.sample(1, ks=[max(self.kernel_size)], e=[max(self.exp_ratio)],
-                        d=[max(self.depth)], t = [min(self.threshold)], r=[max(self.resolution)])[0]
-        ]
+        if (self.supernet == 'eemobilenetv3'):
+            data = [
+                self.sample(1, ks=[min(self.kernel_size)], e=[min(self.exp_ratio)],
+                            d=[min(self.depth)], t = [min(self.threshold)], r=[min(self.resolution)])[0],
+                self.sample(1, ks=[max(self.kernel_size)], e=[max(self.exp_ratio)],
+                            d=[max(self.depth)], t = [min(self.threshold)], r=[max(self.resolution)])[0]
+            ]
+        else:
+            data = [
+                self.sample(1, ks=[min(self.kernel_size)], e=[min(self.exp_ratio)],
+                            d=[min(self.depth)], r=[min(self.resolution)])[0],
+                self.sample(1, ks=[max(self.kernel_size)], e=[max(self.exp_ratio)],
+                            d=[max(self.depth)], r=[max(self.resolution)])[0]
+            ]
+
         data.extend(self.sample(n_samples=n_doe - 2))
         return data
 
@@ -132,33 +142,5 @@ class OFASearchSpace:
               
         return {'ks': kernel_size, 'e': exp_rate, 'd': depth, 
         't': self.threshold[x[-2]], 'r': self.resolution[x[-1]]}
-
-    '''
-    def increase_config(self, config): #increase d for every block and adds maximum ks and e for each d
-        m2_config = {}
-        new_ks = [] 
-        new_e = [] 
-        new_d = []
-
-        l = len(config['d'])
-        idx = 0
-        for i in range(l):
-            d = config['d'][i]
-            new_ks.extend(config["ks"][idx:idx+d])
-            new_e.extend(config["e"][idx:idx+d])
-            idx = idx + d
-            new_ks.append(max(self.kernel_size))
-            new_e.append(max(self.exp_ratio))
-            item = d + 1
-            new_d.append(item)
-        
-        m2_config["ks"] = new_ks
-        m2_config["e"] = new_e
-        m2_config['d'] = new_d
-        m2_config['t'] = config['t']
-        m2_config['r'] = config['r']
-
-        return m2_config
-    '''
 
 

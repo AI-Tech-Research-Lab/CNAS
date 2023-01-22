@@ -7,6 +7,24 @@ import numpy as np
 from utils import get_adapt_net_info
 from torchprofile import profile_macs
 
+lr = 40
+ur = 40
+n_doe = 1
+ss = OFASearchSpace('eemobilenetv3',lr,ur)
+eval = OFAEvaluator(n_classes=1000,
+model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0',
+pretrained = True)
+m1_config = ss.sample(n_samples = n_doe, d = [2,3])[0]
+print(m1_config)
+# encode m1,m2
+m1_encode = ss.encode(m1_config)
+
+# decode
+
+m1_config = ss.decode(m1_encode)
+print(m1_config)
+
+'''
 #Compute MACS of the exit gate (< MACs of the whole net)
 
 n_classes = 10
@@ -18,25 +36,11 @@ d = [2,2,2,2,2]
 t = [0.1,0.1,0.1,0.1]
 ofa_ee.set_active_subnet(ks=7, e=6, d=d, t=t)
 m2 = ofa_ee.get_active_subnet(preserve_weight=True)
-'''
-print("TRAIN")
-input = torch.randn(10, 3, 40, 40)
-x,_= m2(input)
-print("EVAL")
-m2.eval()
-m2.set_threshold([1,0.1,1,1])
-print(m2.t_list)
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-input = input.to(device)
-m2 = m2.to(device)
-#input.to('cuda')
-#m2.to('cuda')
-x,_= m2(input)
-'''
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 m2 = m2.to(device)
 info = get_adapt_net_info(m2,input_shape)
-
+'''
 
 
 
