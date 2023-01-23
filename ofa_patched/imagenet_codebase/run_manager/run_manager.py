@@ -703,13 +703,13 @@ class RunManager:
                 })
                 t.update(1)
                 end = time.time()
-        return losses.avg, top1.avg
+        return losses.avg, top1.avg, top5.avg
     
     def adaptive_train(self, args, warmup_epoch=0, warmup_lr=0):
 
         for epoch in range(self.start_epoch, self.run_config.n_epochs + warmup_epoch):
         
-            train_loss, train_top1 = self.adaptive_train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
+            train_loss, train_top1, train_top5 = self.adaptive_train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
         
 
             if (epoch + 1) % self.run_config.validation_frequency == 0:
@@ -743,7 +743,7 @@ class RunManager:
 
         for epoch in range(self.start_epoch, self.run_config.n_epochs + warmup_epoch):
         
-            train_loss, train_top1 = self.train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
+            train_loss, train_top1, train_top5 = self.train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
         
 
             if (epoch + 1) % self.run_config.validation_frequency == 0:
