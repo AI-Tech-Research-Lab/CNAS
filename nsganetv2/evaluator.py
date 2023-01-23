@@ -172,7 +172,7 @@ class OFAEvaluator:
             self.engine = OFAEEMobileNetV3(
                 n_classes=n_classes,
                 dropout_rate=0, width_mult_list=self.width_mult, ks_list=self.kernel_size,
-                expand_ratio_list=self.exp_ratio, depth_list=self.depth, t_list = self.threshold)
+                expand_ratio_list=self.exp_ratio, depth_list=self.depth)
 
             if(pretrained):
                 init = torch.load(model_path, map_location='cpu')['state_dict']
