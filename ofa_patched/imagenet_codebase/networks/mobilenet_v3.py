@@ -209,7 +209,12 @@ class EEMobileNetV3(MyNetwork):
                 if(self.n_exit!=0):
                     if (idx==self.exit_idxs[i]): #exit block
                             exit_block = self.exit_list[i]
-                            exit_block.to(torch.device('cuda')) #param tensors to GPU
+                            # move network to GPU if available
+                            if torch.cuda.is_available():
+                                device = torch.device('cuda:0')
+                            else:
+                                device = 'cpu'
+                            exit_block.to(device) #param tensors to GPU
                             pred, conf = exit_block(x)
                             conf = torch.squeeze(conf)
                             mask = conf >= self.t_list[i]
