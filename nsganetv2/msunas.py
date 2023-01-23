@@ -72,7 +72,8 @@ class MSuNAS:
         elif 'resnet50_d' in self.supernet_path:
           self.search_space = OFASearchSpace('resnet50',self.lr,self.ur)
         else:
-          raise NotImplementedError
+          #raise NotImplementedError
+          self.search_space= OFASearchSpace('mobilenetv3',self.lr,self.ur)
   
     def search(self):
 
