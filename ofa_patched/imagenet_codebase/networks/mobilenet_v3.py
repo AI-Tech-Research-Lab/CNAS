@@ -163,8 +163,6 @@ class EEMobileNetV3(MyNetwork):
         t_list = []
         n_blocks = len(self.base_stage_width)+1
         idx = 1
-        print("t")
-        print(t)
         for i in range(0,n_blocks-1,1):
             idx += self.d_list[i]
             if (t[i]!=1):
