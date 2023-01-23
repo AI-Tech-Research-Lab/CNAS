@@ -138,6 +138,8 @@ class OFAEvaluator:
             self.width_mult = 1.0
         elif 'w1.2' in model_path:
             self.width_mult = 1.2
+        elif 'eembv3' in model_path:
+            self.width_mult = 1.0
         else:
             raise ValueError
 
