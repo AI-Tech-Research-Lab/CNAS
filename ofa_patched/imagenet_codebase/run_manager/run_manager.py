@@ -513,9 +513,9 @@ class RunManager:
             return img_size_list, loss_list, top1_list, top5_list
         else:
             if(is_adaptive):
-                loss, top1, top5, util = self.validate(epoch, is_test, net=net)
-            else:
                 loss, top1, top5, util = self.adaptive_validate(epoch, is_test, net=net)
+            else:
+                loss, top1, top5, util = self.validate(epoch, is_test, net=net)
             return [self.run_config.data_provider.active_img_size], [loss], [top1], [top5]
 
     def train_one_epoch(self, args, epoch, warmup_epochs=0, warmup_lr=0):
