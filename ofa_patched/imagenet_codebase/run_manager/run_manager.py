@@ -497,7 +497,7 @@ class RunManager:
         return score_margin
     
 
-    def validate_all_resolution(self, epoch=0, is_test=True, net=None):
+    def validate_all_resolution(self, epoch=0, is_test=True, is_adaptive = False, net=None):
         if net is None:
             net = self.network
         if isinstance(self.run_config.data_provider.image_size, list):
@@ -512,7 +512,10 @@ class RunManager:
                 top5_list.append(top5)
             return img_size_list, loss_list, top1_list, top5_list
         else:
-            loss, top1, top5, util = self.adaptive_validate(epoch, is_test, net=net)
+            if(is_adaptive):
+                loss, top1, top5, util = self.validate(epoch, is_test, net=net)
+            else:
+                loss, top1, top5, util = self.adaptive_validate(epoch, is_test, net=net)
             return [self.run_config.data_provider.active_img_size], [loss], [top1], [top5]
 
     def train_one_epoch(self, args, epoch, warmup_epochs=0, warmup_lr=0):
@@ -713,7 +716,7 @@ class RunManager:
         
 
             if (epoch + 1) % self.run_config.validation_frequency == 0:
-                img_size, val_loss, val_acc, val_acc5 = self.validate_all_resolution(epoch=epoch, is_test=False)
+                img_size, val_loss, val_acc, val_acc5 = self.validate_all_resolution(epoch=epoch, is_test=False, is_adaptive = True)
 
                 is_best = np.mean(val_acc) > self.best_acc
                 self.best_acc = max(self.best_acc, np.mean(val_acc))
@@ -747,7 +750,7 @@ class RunManager:
         
 
             if (epoch + 1) % self.run_config.validation_frequency == 0:
-                img_size, val_loss, val_acc, val_acc5 = self.validate_all_resolution(epoch=epoch, is_test=False)
+                img_size, val_loss, val_acc, val_acc5 = self.validate_all_resolution(epoch=epoch, is_test=False, is_adaptive = False)
 
                 is_best = np.mean(val_acc) > self.best_acc
                 self.best_acc = max(self.best_acc, np.mean(val_acc))
