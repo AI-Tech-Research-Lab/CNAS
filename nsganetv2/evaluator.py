@@ -41,7 +41,7 @@ def tiny_ml(params,flops,activations,pmax,fmax,amax,wp,wf,wa,penalty):
   output = wp*(params + penalty*max(0,params-pmax)) + wf*(flops + penalty*max(0,flops-fmax)) + wa*(activations + penalty*max(0,activations-amax))
   return output
 
-def get_net_info(net, data_shape, measure_latency=None, print_info=True, clean=False, lut=None, 
+def get_adapt_net_info(net, data_shape, measure_latency=None, print_info=True, clean=False, lut=None, 
                  pmax = 2, fmax = 100, amax = 5, wp = 1, wf = 1/40, wa = 1, penalty = 10**10):
     
     net_info = utils.get_adapt_net_info(net, data_shape, measure_latency, print_info=print_info, clean=clean, lut=lut)
@@ -63,6 +63,31 @@ def get_net_info(net, data_shape, measure_latency=None, print_info=True, clean=F
         'macs': macs,
         'activations': activations,
         'tiny_ml' : tiny_ml(params = params, flops = macs[-1] , activations = activations, 
+                            pmax = pmax, fmax = fmax, amax = amax,
+                            wp = wp, wf = wf, wa = wa, penalty = penalty),
+        'gpu': gpu_latency, 'cpu': cpu_latency
+    }
+
+def get_net_info(net, data_shape, measure_latency=None, print_info=True, clean=False, lut=None, 
+                 pmax = 2, fmax = 100, amax = 5, wp = 1, wf = 1/40, wa = 1, penalty = 10**10):
+    
+    net_info = utils.get_net_info(net, data_shape, measure_latency, print_info=print_info, clean=clean, lut=lut)
+    gpu_latency, cpu_latency = None, None
+    for k in net_info.keys():
+        if 'gpu' in k:
+            gpu_latency = np.round(net_info[k]['val'], 2)
+        if 'cpu' in k:
+            cpu_latency = np.round(net_info[k]['val'], 2)
+
+    params = np.round(net_info['params'] / 1e6, 2)
+    macs = np.round(net_info['macs'] / 1e6, 2)
+    activations = np.round(net_info['activations'] / 1e6, 2)
+
+    return {
+        'params': params,
+        'macs': macs,
+        'activations': activations,
+        'tiny_ml' : tiny_ml(params = params, flops = macs, activations = activations, 
                             pmax = pmax, fmax = fmax, amax = amax,
                             wp = wp, wf = wf, wa = wa, penalty = penalty),
         'gpu': gpu_latency, 'cpu': cpu_latency
@@ -311,7 +336,7 @@ class OFAEvaluator:
         lut = {'cpu': 'data/i7-8700K_lut.yaml'}
         
         
-        info = get_net_info(
+        info = get_adapt_net_info(
               subnet, (3, resolution, resolution), measure_latency=measure_latency,
               print_info=False, clean=True, lut=lut, pmax = pmax, fmax = fmax, amax = amax, wp = wp, wf = wf, wa = wa, penalty = penalty)
         
@@ -352,77 +377,6 @@ class OFAEvaluator:
         print(info)
         
 
-    '''
-    def adaptive_eval(subnet, config, data_path, dataset='imagenet', n_epochs=0, resolution=(224,224), threshold=0.1,
-             trn_batch_size=128, vld_batch_size=250, num_workers=4, valid_size=None, is_test=True, log_dir='.tmp/eval', measure_latency=None, no_logs=False,
-             reset_running_statistics=True, pmax = 2, fmax = 100, amax = 5, wp = 1, wf = 1/40, wa = 1, penalty = 10**10):
-
-        lut = {'cpu': 'data/i7-8700K_lut.yaml'}
-
-        
-        ss = OFASearchSpace('mobilenetv3',config['r'],config['r']) #works for squared images
-        eval = OFAEvaluator(n_classes=10, model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0', pretrained = True)
-
-        configB = ss.increase_config(config)
-
-        netB,_ = eval.sample(configB)
-
-        info = get_net_info(
-              subnet, (3, resolution, resolution), measure_latency=measure_latency,
-              print_info=False, clean=True, lut=lut, pmax = pmax, fmax = fmax, amax = amax, wp = wp, wf = wf, wa = wa, penalty = penalty)
-
-        infoB = get_net_info(
-              netB, (3, resolution, resolution), measure_latency=measure_latency,
-              print_info=False, clean=True, lut=lut, pmax = pmax, fmax = fmax, amax = amax, wp = wp, wf = wf, wa = wa, penalty = penalty)     
-
-        run_config = get_run_config(
-            dataset=dataset, data_path=data_path, image_size=resolution, n_epochs=n_epochs,
-            train_batch_size=trn_batch_size, test_batch_size=vld_batch_size,
-            n_worker=num_workers, valid_size=valid_size)
-
-        # set the image size. You can set any image size from 192 to 256 here
-        run_config.data_provider.assign_active_img_size(resolution)
-
-        if n_epochs > 0:
-            # for datasets other than the one supernet was trained on (ImageNet)
-            # a few epochs of training need to be applied
-            #these lines are commented to avoid AttributeError: 'MobileNetV3' object has no attribute 'reset_classifier'
-            #subnet.reset_classifier(
-            #    last_channel=subnet.classifier.in_features,
-            #   n_classes=run_config.data_provider.n_classes, dropout_rate=cfgs.drop_rate)
-            
-
-        run_manager = RunManager(log_dir, subnet, run_config, init=False)
-        run_managerB = RunManager(log_dir, netB, run_config, init=False)
-        
-        if reset_running_statistics:
-            # run_manager.reset_running_statistics(net=subnet, batch_size=vld_batch_size)
-            run_manager.reset_running_statistics(net=subnet)
-            run_managerB.reset_running_statistics(net=netB)
-
-        if n_epochs > 0:
-            cfgs.subnet = subnet
-            subnet = run_manager.train(cfgs)
-            cfgsB = cfgs
-            cfgsB.subnet = netB
-            netB = run_managerB.train(cfgsB)
-
-        
-        loss, top1, top5, netB_util = run_manager.adaptive_validate(net=subnet, netB = netB, threshold=threshold, is_test=is_test, no_logs=no_logs)
-
-        info['loss'], info['top1'], info['top5'], info['netB_util'] = loss, top1, top5, netB_util
-        info['tiny_ml'] = info['tiny_ml'] + netB_util*infoB['tiny_ml']
-
-        save_path = os.path.join(log_dir, 'net.stats') if cfgs.save is None else cfgs.save
-        if cfgs.save_config:
-            OFAEvaluator.save_net_config(log_dir, subnet, "net.config")
-            OFAEvaluator.save_net(log_dir, subnet, "net.init")
-        with open(save_path, 'w') as handle:
-            json.dump(info, handle)
-        
-        print(info)
-    '''
-
 
 def main(args):
     """ one evaluation of a subnet or a config from a file """
@@ -448,36 +402,32 @@ def main(args):
     elif mode == 'subnet':
         config = json.load(open(args.subnet))
         evaluator = OFAEvaluator(n_classes=args.n_classes, model_path=args.supernet, pretrained = args.pretrained)
-        subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't':config['t']})
-        #threshold = config['t']
-        #subnet.threshold = threshold
+        if ('w1.0' in args.supernet):
+          subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't':config['t']})
+        if ('eembv3' in args.supernet):
+          subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't':config['t']})
         resolution = config['r']
         
 
     else:
         raise NotImplementedError
-    '''
-    OFAEvaluator.eval(
-        subnet, log_dir=args.log_dir, data_path=args.data, dataset=args.dataset, n_epochs=args.n_epochs,
-        resolution=resolution, trn_batch_size=args.trn_batch_size, vld_batch_size=args.vld_batch_size,
-        num_workers=args.num_workers, valid_size=args.valid_size, is_test=args.test, measure_latency=args.latency,
-        no_logs=(not args.verbose), reset_running_statistics=args.reset_running_statistics, 
-        pmax = args.pmax, fmax = args.fmax, amax = args.amax, wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
-    '''
     
+    if ('w1.0' in args.supernet):
+        OFAEvaluator.eval(
+            subnet, log_dir=args.log_dir, data_path=args.data, dataset=args.dataset, n_epochs=args.n_epochs,
+            resolution=resolution, trn_batch_size=args.trn_batch_size, vld_batch_size=args.vld_batch_size,
+            num_workers=args.num_workers, valid_size=args.valid_size, is_test=args.test, measure_latency=args.latency,
+            no_logs=(not args.verbose), reset_running_statistics=args.reset_running_statistics, 
+            pmax = args.pmax, fmax = args.fmax, amax = args.amax, wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
     
-    OFAEvaluator.adaptive_eval(
-        subnet, log_dir=args.log_dir, data_path=args.data, dataset=args.dataset, n_epochs=args.n_epochs,
-        resolution=resolution, trn_batch_size=args.trn_batch_size, vld_batch_size=args.vld_batch_size,
-        num_workers=args.num_workers, valid_size=args.valid_size, is_test=args.test, measure_latency=args.latency,
-        no_logs=(not args.verbose), reset_running_statistics=args.reset_running_statistics, 
-        pmax = args.pmax, fmax = args.fmax, amax = args.amax, wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty,
-        )
-    
-    
-    
-    
-    
+    if ('eembv3' in args.supernet):
+        OFAEvaluator.adaptive_eval(
+            subnet, log_dir=args.log_dir, data_path=args.data, dataset=args.dataset, n_epochs=args.n_epochs,
+            resolution=resolution, trn_batch_size=args.trn_batch_size, vld_batch_size=args.vld_batch_size,
+            num_workers=args.num_workers, valid_size=args.valid_size, is_test=args.test, measure_latency=args.latency,
+            no_logs=(not args.verbose), reset_running_statistics=args.reset_running_statistics, 
+            pmax = args.pmax, fmax = args.fmax, amax = args.amax, wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty,
+            )
     
 
 if __name__ == '__main__':

@@ -643,16 +643,14 @@ class RunManager:
                     #weighted loss 
                     preds = self.net(images)
             
-                    #weights = np.ones(len(preds)) #all weigths are set to 1
+                    weights = np.ones(len(preds)) #all weigths are set to 1
 
                     loss = 0
                     acc1 = 0
                     acc5 = 0
                     w_tot = 0
-                    
-                    for i,p in enumerate(preds):
-                    #for p,w in zip(preds,weights):
-                        w = 1/(2**i)
+
+                    for p,w in zip(preds,weights):
                         w_tot += w
                         t_loss = self.train_criterion(p, labels) 
                         loss += t_loss * w
