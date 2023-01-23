@@ -289,11 +289,11 @@ class OFAEvaluator:
 
         lut = {'cpu': 'data/i7-8700K_lut.yaml'}
 
-        info = get_net_info(
+        info = get_net_info( ## compute net info (params, etc..)
               subnet, (3, resolution, resolution), measure_latency=measure_latency,
               print_info=False, clean=True, lut=lut, pmax = pmax, fmax = fmax, amax = amax, wp = wp, wf = wf, wa = wa, penalty = penalty)
 
-        run_config = get_run_config(
+        run_config = get_run_config(  ## get data provider class
             dataset=dataset, data_path=data_path, image_size=resolution, n_epochs=n_epochs,
             train_batch_size=trn_batch_size, test_batch_size=vld_batch_size,
             n_worker=num_workers, valid_size=valid_size)

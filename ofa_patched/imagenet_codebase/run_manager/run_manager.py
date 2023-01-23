@@ -145,18 +145,12 @@ class RunManager:
         self.start_epoch = 0
 
         os.makedirs(self.path, exist_ok=True)
-        #print("RUN MANAGER")
-        #print("CUDA AVAIL")
-        #print(torch.cuda.is_available())
-        #print("NO GPU")
-        #print(no_gpu)
         # move network to GPU if available
         if torch.cuda.is_available() and (not no_gpu):
             self.device = torch.device('cuda:0')
             self.net = self.net.to(self.device)
             cudnn.benchmark = True
         else:
-            #print("NO GPU")
             self.device = torch.device('cpu')
         # initialize model (default)
         if init:
