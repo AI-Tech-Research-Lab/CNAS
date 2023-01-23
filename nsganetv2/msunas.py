@@ -60,9 +60,6 @@ class MSuNAS:
         self.lr = kwargs.pop('lr',192) #minimum resolution
         self.ur = kwargs.pop('ur',256) #maximum resolution
         
-        print("SUPERNET PATH")
-        print(self.supernet_path)
-        
         if ('w1.0' in self.supernet_path) or ('w1.2' in self.supernet_path):
           self.search_space= OFASearchSpace('mobilenetv3',self.lr,self.ur)
         if ('eembv3' in self.supernet_path):
