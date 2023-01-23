@@ -248,11 +248,14 @@ class OFAEvaluator:
         
         
             
-    def sample(self, config=None):
+    def sample(self, config=None, supernet = 'w1.0'):
         """ randomly sample a sub-network """
         if config is not None:
             #config = validate_config(config)
-            self.engine.set_active_subnet(ks=config['ks'], e=config['e'], d=config['d'], t=config['t'])
+            if ('w1.0' in supernet):
+              self.engine.set_active_subnet(ks=config['ks'], e=config['e'], d=config['d'])
+            if ('eembv3' in supernet):
+              self.engine.set_active_subnet(ks=config['ks'], e=config['e'], d=config['d'], t=config['t'])
         else:
             config = self.engine.sample_active_subnet()
 
@@ -403,9 +406,9 @@ def main(args):
         config = json.load(open(args.subnet))
         evaluator = OFAEvaluator(n_classes=args.n_classes, model_path=args.supernet, pretrained = args.pretrained)
         if ('w1.0' in args.supernet):
-          subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't':config['t']})
+          subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']}, args.supernet)
         if ('eembv3' in args.supernet):
-          subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't':config['t']})
+          subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't':config['t']}, args.supernet)
         resolution = config['r']
         
 
