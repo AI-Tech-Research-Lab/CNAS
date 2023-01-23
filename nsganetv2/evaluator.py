@@ -163,14 +163,14 @@ class OFAEvaluator:
 
                 self.engine.load_weights_from_net(init)
         
-        elif ('ofa_eembv3_d234_e346_k357_w1.0' in model_path):
+        elif ('ofa_eembv3' in model_path):
 
             self.threshold = [0.1, 0.2, 1] if threshold is None else threshold  # number of MB block repetition
 
             self.engine = OFAEEMobileNetV3(
                 n_classes=n_classes,
                 dropout_rate=0, width_mult_list=self.width_mult, ks_list=self.kernel_size,
-                expand_ratio_list=self.exp_ratio, depth_list=self.depth)
+                expand_ratio_list=self.exp_ratio, depth_list=self.depth, t_list = self.threshold)
 
             if(pretrained):
                 init = torch.load(model_path, map_location='cpu')['state_dict']
