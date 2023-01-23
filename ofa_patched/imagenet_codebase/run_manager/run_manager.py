@@ -704,12 +704,46 @@ class RunManager:
                 t.update(1)
                 end = time.time()
         return losses.avg, top1.avg
+    
+    def adaptive_train(self, args, warmup_epoch=0, warmup_lr=0):
+
+        for epoch in range(self.start_epoch, self.run_config.n_epochs + warmup_epoch):
+        
+            train_loss, train_top1 = self.adaptive_train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
+        
+
+            if (epoch + 1) % self.run_config.validation_frequency == 0:
+                img_size, val_loss, val_acc, val_acc5 = self.validate_all_resolution(epoch=epoch, is_test=False)
+
+                is_best = np.mean(val_acc) > self.best_acc
+                self.best_acc = max(self.best_acc, np.mean(val_acc))
+                val_log = 'Valid [{0}/{1}]\tloss {2:.3f}\ttop-1 acc {3:.3f} ({4:.3f})'. \
+                    format(epoch + 1 - warmup_epoch, self.run_config.n_epochs,
+                           np.mean(val_loss), np.mean(val_acc), self.best_acc)
+                val_log += '\ttop-5 acc {0:.3f}\tTrain top-1 {top1:.3f}\tloss {train_loss:.3f}\t'. \
+                    format(np.mean(val_acc5), top1=train_top1, train_loss=train_loss)
+
+                for i_s, v_a in zip(img_size, val_acc):
+                      val_log += '(%d, %.3f), ' % (i_s, v_a)
+
+                self.write_log(val_log, prefix='valid', should_print=False)
+            else:
+                is_best = False
+
+            self.save_model({
+                'epoch': epoch,
+                'best_acc': self.best_acc,
+                'optimizer': self.optimizer.state_dict(),
+                'state_dict': self.network.state_dict(),
+            }, is_best=is_best)
+
+        return self.net
 
     def train(self, args, warmup_epoch=0, warmup_lr=0):
 
         for epoch in range(self.start_epoch, self.run_config.n_epochs + warmup_epoch):
         
-            train_loss, train_top1 = self.adaptive_train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
+            train_loss, train_top1 = self.train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
         
 
             if (epoch + 1) % self.run_config.validation_frequency == 0:
