@@ -114,8 +114,8 @@ class OFASearchSpace:
             for i in range(len(depth)):
                 x = x + [depth[i]] + [kernel_size[i]] + [exp_ratio[i]]
         
-        #if (self.supernet == 'eemobilenetv3'):
-        #    x.append(np.argwhere(_x == np.array(self.threshold))[0, 0] for _x in config['t']) 
+        if (self.supernet == 'eemobilenetv3'):
+            x.append(np.argwhere(_x == np.array(self.threshold))[0, 0] for _x in config['t']) 
 
         x.append(np.argwhere(config['r'] == np.array(self.resolution))[0, 0])
 
