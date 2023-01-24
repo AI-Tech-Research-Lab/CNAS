@@ -242,7 +242,7 @@ class MSuNAS:
     def _fit_acc_predictor(self, archive):
         inputs = np.array([self.search_space.encode(x[0]) for x in archive])
         print("INPUTS")
-        print(inputs)
+        print(inputs[0])
         targets = np.array([x[1] for x in archive])
         print("TARGETS")
         print(targets)
