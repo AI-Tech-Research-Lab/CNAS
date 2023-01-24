@@ -241,7 +241,11 @@ class MSuNAS:
 
     def _fit_acc_predictor(self, archive):
         inputs = np.array([self.search_space.encode(x[0]) for x in archive])
+        print("INPUTS")
+        print(inputs)
         targets = np.array([x[1] for x in archive])
+        print("TARGETS")
+        print(targets)
         assert len(inputs) > len(inputs[0]), "# of training samples have to be > # of dimensions"
 
         acc_predictor = get_acc_predictor(self.predictor, inputs, targets)
