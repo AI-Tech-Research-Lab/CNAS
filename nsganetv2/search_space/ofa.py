@@ -143,7 +143,9 @@ class OFASearchSpace:
               exp_rate.append(self.exp_ratio[x[i+2]])
         
         if (self.supernet == 'eemobilenetv3'): 
-            t_config = x[-1-self.num_blocks:-2]
+            t_config = x[-1-self.num_blocks:-1]
+            print("T CONFIG")
+            print(t_config)
             t = []
             for c in t_config:
               t.append(self.threshold[c])   
