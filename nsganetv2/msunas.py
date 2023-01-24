@@ -372,6 +372,7 @@ class AuxiliarySingleLevelProblem(Problem):
             if(self.ss.supernet == 'eemobilenetv3'):
                 info = get_adapt_net_info(subnet, (3, r, r),measure_latency=self.sec_obj, print_info=False, clean=True, lut=self.lut, pmax = self.pmax, fmax = self.fmax,
             amax = self.amax, wp = self.wp, wf = self.wf, wa = self.wa, penalty = self.penalty)
+                info['macs']=info['macs'][-1]
             else:
                 info = get_net_info(subnet, (3, r, r),measure_latency=self.sec_obj, print_info=False, clean=True, lut=self.lut, pmax = self.pmax, fmax = self.fmax,
                 amax = self.amax, wp = self.wp, wf = self.wf, wa = self.wa, penalty = self.penalty)
