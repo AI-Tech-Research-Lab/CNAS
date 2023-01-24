@@ -98,7 +98,6 @@ class MSuNAS:
         # main loop of the search
         for it in range(1, self.iterations + 1):
 
-            
             # construct accuracy predictor surrogate model from archive
             # Algo 1 line 9 / Fig. 3(a) in the paper
             acc_predictor, a_top1_err_pred = self._fit_acc_predictor(archive)
@@ -107,7 +106,6 @@ class MSuNAS:
             # Algo 1 line 9 / Fig. 3(a) in the paper
             compl_predictor, a_compl_err_pred = self._fit_compl_predictor(archive)
 
-            '''
             # search for the next set of candidates for high-fidelity evaluation (lower level)
             # Algo 1 line 10-11 / Fig. 3(b)-(d) in the paper
             #candidates, c_top1_err_pred = 
@@ -159,7 +157,7 @@ class MSuNAS:
                 F[:, 1] = 100 - c_top1_err_pred[:, 0]
                 plot.add(F, s=20, facecolors='none', edgecolors='g', label='candidates predicted')
                 plot.save(os.path.join(self.save_path, 'iter_{}.png'.format(it)))
-            '''  
+              
 
         return
 
@@ -243,13 +241,8 @@ class MSuNAS:
         return top1_err, complexity
 
     def _fit_acc_predictor(self, archive):
-        print("ACC PREDICTOR")
         inputs = np.array([self.search_space.encode(x[0]) for x in archive])
-        print("N INPUTS")
-        print(len(inputs))
         targets = np.array([x[1] for x in archive])
-        print("N TARGETS")
-        print(len(targets))
         assert len(inputs) > len(inputs[0]), "# of training samples have to be > # of dimensions"
 
         acc_predictor = get_acc_predictor(self.predictor, inputs, targets)
@@ -257,13 +250,8 @@ class MSuNAS:
         return acc_predictor, acc_predictor.predict(inputs)
 
     def _fit_compl_predictor(self, archive):
-        print("COMPL PREDICTOR")
         inputs = np.array([self.search_space.encode(x[0]) for x in archive])
-        print("N INPUTS")
-        print(len(inputs))
         targets = np.array([x[2] for x in archive])
-        print("N TARGETS")
-        print(len(targets))
         assert len(inputs) > len(inputs[0]), "# of training samples have to be > # of dimensions"
 
         acc_predictor = get_acc_predictor(self.predictor, inputs, targets)
@@ -377,7 +365,7 @@ class AuxiliarySingleLevelProblem(Problem):
         f = np.full((x.shape[0], self.n_obj), np.nan)
 
         top1_err = self.acc_predictor.predict(x)[:, 0]  # predicted top1 error
-        compl_err = self.compl_predictor.predict(x)[:, 0]  # predicted top1 error
+        compl_err = self.compl_predictor.predict(x)[:, 0]  # predicted compl error
 
         for i, (_x, acc_err, compl_err) in enumerate(zip(x, top1_err, compl_err)):
 
