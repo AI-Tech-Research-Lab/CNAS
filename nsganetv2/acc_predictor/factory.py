@@ -28,5 +28,8 @@ def get_acc_predictor(model, inputs, targets):
     else:
         raise NotImplementedError
 
+    print("PREDICTOR")
+    print(acc_predictor)
+
     return acc_predictor
 
