@@ -360,6 +360,9 @@ class AuxiliarySingleLevelProblem(Problem):
                   f[i,1] = 10*15
                   continue
             
+            print("CHROMOSOME")
+            print(_x)
+            
             config = self.ss.decode(_x)
 
             print("CONFIG")
