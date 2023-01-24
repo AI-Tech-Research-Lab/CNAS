@@ -75,6 +75,8 @@ class MSuNAS:
 
         if self.resume:
             archive = self._resume_from_dir()
+            print("ARCHIVE")
+            print(archive[:10])
         else:
             # the following lines corresponding to Algo 1 line 1-7 in the paper
             archive = []  # initialize an empty archive to store all trained CNNs
