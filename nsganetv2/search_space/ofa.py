@@ -116,8 +116,14 @@ class OFASearchSpace:
         
         if (self.supernet == 'eemobilenetv3'):
             idxs = [np.argwhere(_x == np.array(self.threshold))[0, 0] for _x in config['t']]
+            print("X")
+            print(x)
+            print("IDXS")
+            print(idxs)
             for i in idxs:
               x = x + i
+            print("X")
+            print(x)
 
         x.append(np.argwhere(config['r'] == np.array(self.resolution))[0, 0])
 
