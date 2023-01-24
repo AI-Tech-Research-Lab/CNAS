@@ -110,7 +110,6 @@ class MSuNAS:
             '''
             # search for the next set of candidates for high-fidelity evaluation (lower level)
             # Algo 1 line 10-11 / Fig. 3(b)-(d) in the paper
-            #candidates, c_top1_err_pred = 
             candidates, c_top1_err_pred = self._next(archive, acc_predictor, compl_predictor, self.n_iter)
             
             # high-fidelity evaluation (lower level)
@@ -253,7 +252,14 @@ class MSuNAS:
 
     def _fit_compl_predictor(self, archive):
         inputs = np.array([self.search_space.encode(x[0]) for x in archive])
+        print("CONFIG")
+        print(inputs[:10])
+        targets = np.array([x[1] for x in archive])
+        print("ACC")
+        print(targets[:10])
         targets = np.array([x[2] for x in archive])
+        print("MACS")
+        print(targets[:10])
         assert len(inputs) > len(inputs[0]), "# of training samples have to be > # of dimensions"
 
         acc_predictor = get_acc_predictor(self.predictor, inputs, targets)
