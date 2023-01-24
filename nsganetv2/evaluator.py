@@ -407,9 +407,9 @@ def main(args):
         config = json.load(open(args.subnet))
         evaluator = OFAEvaluator(n_classes=args.n_classes, model_path=args.supernet, pretrained = args.pretrained)
         if ('w1.0' in args.supernet):
-          subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']}, args.supernet)
+          subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
         if ('eembv3' in args.supernet):
-          subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't':config['t']}, args.supernet)
+          subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't':config['t']})
         resolution = config['r']
         
 

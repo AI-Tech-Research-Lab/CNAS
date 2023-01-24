@@ -98,15 +98,20 @@ class MSuNAS:
         # main loop of the search
         for it in range(1, self.iterations + 1):
 
+            
             # construct accuracy predictor surrogate model from archive
             # Algo 1 line 9 / Fig. 3(a) in the paper
-            acc_predictor, a_top1_err_pred = self._fit_acc_predictor(archive)
+            #acc_predictor, a_top1_err_pred = self._fit_acc_predictor(archive)
 
-            
+            # construct macs predictor surrogate model from archive
+            # Algo 1 line 9 / Fig. 3(a) in the paper
+            compl_predictor, a_compl_err_pred = self._fit_compl_predictor(archive)
+
+            '''
             # search for the next set of candidates for high-fidelity evaluation (lower level)
             # Algo 1 line 10-11 / Fig. 3(b)-(d) in the paper
             #candidates, c_top1_err_pred = 
-            candidates, c_top1_err_pred = self._next(archive, acc_predictor, self.n_iter)
+            candidates, c_top1_err_pred = self._next(archive, acc_predictor, compl_predictor, self.n_iter)
             
             # high-fidelity evaluation (lower level)
             # Algo 1 line 13-14 / Fig. 3(e) in the paper
@@ -154,7 +159,7 @@ class MSuNAS:
                 F[:, 1] = 100 - c_top1_err_pred[:, 0]
                 plot.add(F, s=20, facecolors='none', edgecolors='g', label='candidates predicted')
                 plot.save(os.path.join(self.save_path, 'iter_{}.png'.format(it)))
-                
+            '''  
 
         return
 
@@ -246,7 +251,16 @@ class MSuNAS:
 
         return acc_predictor, acc_predictor.predict(inputs)
 
-    def _next(self, archive, predictor, K):
+    def _fit_compl_predictor(self, archive):
+        inputs = np.array([self.search_space.encode(x[0]) for x in archive])
+        targets = np.array([x[2] for x in archive])
+        assert len(inputs) > len(inputs[0]), "# of training samples have to be > # of dimensions"
+
+        acc_predictor = get_acc_predictor(self.predictor, inputs, targets)
+
+        return acc_predictor, acc_predictor.predict(inputs)
+
+    def _next(self, archive, acc_predictor, compl_predictor, K):
         """ searching for next K candidate for high-fidelity evaluation (lower level) """
 
         # the following lines corresponding to Algo 1 line 10 / Fig. 3(b) in the paper
@@ -259,7 +273,7 @@ class MSuNAS:
 
         # initialize the candidate finding optimization problem
         problem = AuxiliarySingleLevelProblem(
-            self.search_space, predictor, self.sec_obj, self.dataset,
+            self.search_space, acc_predictor, compl_predictor, self.sec_obj, self.dataset,
             {'n_classes': self.n_classes, 'supernet_path': self.supernet_path, 'pretrained': self.pretrained},
             pmax = self.pmax, fmax = self.fmax, amax = self.amax, wp = self.wp, wf = self.wf, wa = self.wa, penalty = self.penalty)
         
@@ -289,7 +303,7 @@ class MSuNAS:
 
         # decode integer bit-string to config and also return predicted top1_err
         
-        return candidates, predictor.predict(pop.get("X"))
+        return candidates, acc_predictor.predict(pop.get("X"))
 
     @staticmethod
     def _subset_selection(pop, nd_F, K):
@@ -318,7 +332,7 @@ class MSuNAS:
 class AuxiliarySingleLevelProblem(Problem):
     """ The optimization problem for finding the next N candidate architectures """
 
-    def __init__(self, search_space, predictor, sec_obj='flops', dataset='imagenet',supernet=None, pmax = 2, fmax = 100, amax = 5,
+    def __init__(self, search_space, acc_predictor, compl_predictor, sec_obj='flops', dataset='imagenet',supernet=None, pmax = 2, fmax = 100, amax = 5,
         wp = 1, wf = 1/40, wa = 1, penalty = 10**10):
         n_var = 50 #CNAS n_var=46, ADACNAS= 46 + 4(#bits for selection schemes) = 50
         if (search_space.supernet == 'resnet50_he'):
@@ -328,7 +342,8 @@ class AuxiliarySingleLevelProblem(Problem):
         #n_var = 46
 
         self.ss = search_space
-        self.predictor = predictor
+        self.acc_predictor = acc_predictor
+        self.compl_predictor = compl_predictor
         self.xl = np.zeros(self.n_var)
         self.xu = 2 * np.ones(self.n_var)
         self.xu[-1] = int(len(self.ss.resolution) - 1)
@@ -351,9 +366,11 @@ class AuxiliarySingleLevelProblem(Problem):
 
         f = np.full((x.shape[0], self.n_obj), np.nan)
 
-        top1_err = self.predictor.predict(x)[:, 0]  # predicted top1 error
+        top1_err = self.acc_predictor.predict(x)[:, 0]  # predicted top1 error
+        compl_err = self.compl_predictor.predict(x)[:, 0]  # predicted top1 error
 
-        for i, (_x, err) in enumerate(zip(x, top1_err)):
+        for i, (_x, acc_err, compl_err) in enumerate(zip(x, top1_err, compl_err)):
+
             if(self.ss.supernet == 'resnet50_he'):
                 if not self._isvalid(_x):
                   f[i,0] = 10*15
@@ -372,12 +389,12 @@ class AuxiliarySingleLevelProblem(Problem):
             if(self.ss.supernet == 'eemobilenetv3'):
                 info = get_adapt_net_info(subnet, (3, r, r),measure_latency=self.sec_obj, print_info=False, clean=True, lut=self.lut, pmax = self.pmax, fmax = self.fmax,
             amax = self.amax, wp = self.wp, wf = self.wf, wa = self.wa, penalty = self.penalty)
-                info['macs']=info['macs'][-1]
+                #info['macs']=info['macs'][-1]
             else:
                 info = get_net_info(subnet, (3, r, r),measure_latency=self.sec_obj, print_info=False, clean=True, lut=self.lut, pmax = self.pmax, fmax = self.fmax,
                 amax = self.amax, wp = self.wp, wf = self.wf, wa = self.wa, penalty = self.penalty)
-            f[i, 0] = err
-            f[i, 1] = info[self.sec_obj]
+            f[i, 0] = acc_err
+            f[i, 1] = compl_err#info[self.sec_obj]
         out["F"] = f
 
 
