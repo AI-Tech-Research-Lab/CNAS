@@ -18,13 +18,13 @@ m1_config = ss.sample(n_samples = n_doe, d = [2,3])[0]
 print(m1_config)
 # encode m1,m2
 m1_encode = ss.encode(m1_config)
-
+print(m1_encode)
 # decode
 
-m1_config = ss.decode(m1_encode)
-print(m1_config)
+#m1_config = ss.decode(m1_encode)
+#print(m1_config)
 
-print(ss.initialize(n_doe))
+#print(ss.initialize(n_doe))
 '''
 #Compute MACS of the exit gate (< MACs of the whole net)
 
