@@ -254,8 +254,6 @@ class MSuNAS:
     def _fit_compl_predictor(self, archive):
         inputs = np.array([self.search_space.encode(x[0]) for x in archive])
         targets = np.array([x[2] for x in archive])
-        print("TARGETS")
-        print(targets[:10])
         assert len(inputs) > len(inputs[0]), "# of training samples have to be > # of dimensions"
 
         acc_predictor = get_acc_predictor(self.predictor, inputs, targets)
