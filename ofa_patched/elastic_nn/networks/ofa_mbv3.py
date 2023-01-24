@@ -612,8 +612,12 @@ class OFAEEMobileNetV3(EEMobileNetV3):
             if e is not None:
                 block.mobile_inverted_conv.active_expand_ratio = e
 
+        print("DEPTH")
+        print(depth)
         for i, d in enumerate(depth):
             if d is not None:
+                print("I")
+                print(i)
                 self.runtime_depth[i] = min(len(self.block_group_info[i]), d)
                 
         for i, t in enumerate(threshold):
