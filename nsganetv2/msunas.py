@@ -6,7 +6,7 @@ import subprocess
 import numpy as np
 import math
 from utils import get_correlation
-from evaluator import OFAEvaluator, get_net_info
+from evaluator import OFAEvaluator, get_net_info, get_adapt_net_info
 
 from pymoo.optimize import minimize
 from pymoo.model.problem import Problem
@@ -320,7 +320,7 @@ class AuxiliarySingleLevelProblem(Problem):
 
     def __init__(self, search_space, predictor, sec_obj='flops', dataset='imagenet',supernet=None, pmax = 2, fmax = 100, amax = 5,
         wp = 1, wf = 1/40, wa = 1, penalty = 10**10):
-        n_var = 50#46
+        n_var = 50 #CNAS n_var=46, ADACNAS= 46 + 4(#bits for selection schemes) = 50
         if (search_space.supernet == 'resnet50_he'):
            n_var = 10
         super().__init__(n_var=n_var, n_obj=2, n_constr=0, type_var=np.int)
@@ -361,11 +361,15 @@ class AuxiliarySingleLevelProblem(Problem):
                   continue
             
             config = self.ss.decode(_x)
-            subnet, _ = self.engine.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
+            subnet, _ = self.engine.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't': config['t']})
 
             r = config['r']
-            info = get_net_info(subnet, (3, r, r),measure_latency=self.sec_obj, print_info=False, clean=True, lut=self.lut, pmax = self.pmax, fmax = self.fmax,
+            if(self.ss.supernet == 'eemobilenetv3'):
+                info = get_adapt_net_info(subnet, (3, r, r),measure_latency=self.sec_obj, print_info=False, clean=True, lut=self.lut, pmax = self.pmax, fmax = self.fmax,
             amax = self.amax, wp = self.wp, wf = self.wf, wa = self.wa, penalty = self.penalty)
+            else:
+                info = get_net_info(subnet, (3, r, r),measure_latency=self.sec_obj, print_info=False, clean=True, lut=self.lut, pmax = self.pmax, fmax = self.fmax,
+                amax = self.amax, wp = self.wp, wf = self.wf, wa = self.wa, penalty = self.penalty)
             f[i, 0] = err
             f[i, 1] = info[self.sec_obj]
         out["F"] = f
