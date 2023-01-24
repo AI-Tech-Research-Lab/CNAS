@@ -362,7 +362,11 @@ class AuxiliarySingleLevelProblem(Problem):
             
             config = self.ss.decode(_x)
 
+            print("CONFIG")
+            print(config)
+
             if(self.ss.supernet == 'eemobilenetv3'):
+
               subnet, _ = self.engine.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't': config['t']})
             else:
               subnet, _ = self.engine.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
