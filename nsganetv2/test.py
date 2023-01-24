@@ -17,10 +17,14 @@ pretrained = True)
 m1_config = ss.sample(n_samples = n_doe, d = [2,3])[0]
 print(m1_config)
 # encode m1,m2
-m1_encode = ss.encode(m1_config)
-print(m1_encode)
+#m1_encode = ss.encode(m1_config)
+#print(m1_encode)
 # decode
-
+m1_encode = [2, 2, 0, 2, 0, 0, 0, 1, 0, 1, 
+1, 2, 1, 0, 1, 1, 1, 0, 2, 0, 
+2, 0, 1, 2, 1, 0, 1, 1, 1, 1, 
+1, 0, 1, 2, 2, 0, 1, 0, 1, 2, 
+0, 2, 0, 1, 0, 1, 2, 1, 1, 1]
 m1_config = ss.decode(m1_encode)
 print(m1_config)
 
