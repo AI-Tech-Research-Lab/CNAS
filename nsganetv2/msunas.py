@@ -320,7 +320,7 @@ class AuxiliarySingleLevelProblem(Problem):
 
     def __init__(self, search_space, predictor, sec_obj='flops', dataset='imagenet',supernet=None, pmax = 2, fmax = 100, amax = 5,
         wp = 1, wf = 1/40, wa = 1, penalty = 10**10):
-        n_var = 46
+        n_var = 50#46
         if (search_space.supernet == 'resnet50_he'):
            n_var = 10
         super().__init__(n_var=n_var, n_obj=2, n_constr=0, type_var=np.int)
