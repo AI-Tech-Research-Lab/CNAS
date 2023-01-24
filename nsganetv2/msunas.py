@@ -100,17 +100,15 @@ class MSuNAS:
 
             # construct accuracy predictor surrogate model from archive
             # Algo 1 line 9 / Fig. 3(a) in the paper
-            #acc_predictor, a_top1_err_pred = self._fit_acc_predictor(archive)
+            acc_predictor, a_top1_err_pred = self._fit_acc_predictor(archive)
 
             # construct macs predictor surrogate model from archive
             # Algo 1 line 9 / Fig. 3(a) in the paper
             compl_predictor, a_compl_err_pred = self._fit_compl_predictor(archive)
             
-
-            '''
             # search for the next set of candidates for high-fidelity evaluation (lower level)
             # Algo 1 line 10-11 / Fig. 3(b)-(d) in the paper
-            candidates, c_top1_err_pred = self._next(archive, acc_predictor, compl_predictor, self.n_iter)
+            candidates, c_top1_err_pred, c_compl_err_pred = self._next(archive, acc_predictor, compl_predictor, self.n_iter)
             
             # high-fidelity evaluation (lower level)
             # Algo 1 line 13-14 / Fig. 3(e) in the paper
@@ -119,6 +117,10 @@ class MSuNAS:
             # check for accuracy predictor's performance
             rmse, rho, tau = get_correlation(
                 np.vstack((a_top1_err_pred, c_top1_err_pred)), np.array([x[1] for x in archive] + c_top1_err))
+
+            # check for accuracy predictor's performance
+            rmse_c, rho_c, tau_c = get_correlation(
+                np.vstack((a_compl_err_pred, c_compl_err_pred)), np.array([x[2] for x in archive] + complexity))
 
             # add to archive
             # Algo 1 line 15 / Fig. 3(e) in the paper
@@ -133,6 +135,8 @@ class MSuNAS:
             print("Iter {}: hv = {:.2f}".format(it, hv))
             print("fitting {}: RMSE = {:.4f}, Spearman's Rho = {:.4f}, Kendall’s Tau = {:.4f}".format(
                 self.predictor, rmse, rho, tau))
+            print("fitting {}: RMSE = {:.4f}, Spearman's Rho = {:.4f}, Kendall’s Tau = {:.4f}".format(
+                self.predictor, rmse_c, rho_c, tau_c))
 
             # dump the statistics
             with open(os.path.join(self.save_path, "iter_{}.stats".format(it)), "w") as handle:
@@ -158,7 +162,7 @@ class MSuNAS:
                 F[:, 1] = 100 - c_top1_err_pred[:, 0]
                 plot.add(F, s=20, facecolors='none', edgecolors='g', label='candidates predicted')
                 plot.save(os.path.join(self.save_path, 'iter_{}.png'.format(it)))
-            '''  
+             
 
         return
 
@@ -252,20 +256,10 @@ class MSuNAS:
 
     def _fit_compl_predictor(self, archive):
         inputs = np.array([self.search_space.encode(x[0]) for x in archive])
-        print("CONFIG")
-        print(inputs[:10])
-        targets = np.array([x[1] for x in archive])
-        print("ACC")
-        print(targets[:10])
         targets = np.array([x[2] for x in archive])
-        print("MACS")
-        print(targets[:10])
         assert len(inputs) > len(inputs[0]), "# of training samples have to be > # of dimensions"
 
         acc_predictor = get_acc_predictor(self.predictor, inputs, targets)
-
-        print("PREDICTED MACS")
-        print(acc_predictor.predict(inputs))
 
         return acc_predictor, acc_predictor.predict(inputs)
 
@@ -312,7 +306,7 @@ class MSuNAS:
 
         # decode integer bit-string to config and also return predicted top1_err
         
-        return candidates, acc_predictor.predict(pop.get("X"))
+        return candidates, acc_predictor.predict(pop.get("X")), compl_predictor.predict(pop.get("X"))
 
     @staticmethod
     def _subset_selection(pop, nd_F, K):
@@ -376,7 +370,13 @@ class AuxiliarySingleLevelProblem(Problem):
         f = np.full((x.shape[0], self.n_obj), np.nan)
 
         top1_err = self.acc_predictor.predict(x)[:, 0]  # predicted top1 error
+        print("X")
+        print(x)
+        print("TOP1 ERR")
+        print(top1_err)
         compl_err = self.compl_predictor.predict(x)[:, 0]  # predicted compl error
+        print("COMPL ERR")
+        print(compl_err)
 
         for i, (_x, acc_err, compl_err) in enumerate(zip(x, top1_err, compl_err)):
 
@@ -403,7 +403,7 @@ class AuxiliarySingleLevelProblem(Problem):
                 info = get_net_info(subnet, (3, r, r),measure_latency=self.sec_obj, print_info=False, clean=True, lut=self.lut, pmax = self.pmax, fmax = self.fmax,
                 amax = self.amax, wp = self.wp, wf = self.wf, wa = self.wa, penalty = self.penalty)
             f[i, 0] = acc_err
-            f[i, 1] = compl_err#info[self.sec_obj]
+            f[i, 1] = 1/compl_err #info[self.sec_obj]
         out["F"] = f
 
 
