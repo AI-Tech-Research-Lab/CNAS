@@ -59,6 +59,8 @@ def train(net, x, y, trn_split=0.8, pretrained=None, device='cpu',
     trn_idx = perm[:int(n_samples * trn_split)]
     vld_idx = perm[int(n_samples * trn_split):]
 
+    print("X")
+    print(x)
     inputs = torch.from_numpy(x).float()
     target[:, 0] = torch.from_numpy(y).float()
 
