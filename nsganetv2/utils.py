@@ -346,6 +346,7 @@ def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_inf
     # latencies
     latency_types = [] if measure_latency is None else measure_latency.split('#')
 
+    
     # print(latency_types)
     for l_type in latency_types:
         if lut is not None and l_type in lut:
@@ -428,6 +429,7 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
     # activation_size
     net_info['activations'] = int(profile_activation_size(copy.deepcopy(net), inputs))
 
+    '''
     # latencies
     latency_types = [] if measure_latency is None else measure_latency.split('#')
 
@@ -444,14 +446,14 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
             'val': latency,
             'hist': measured_latency
         }
-
+    '''
     if print_info:
         # print(net)
         print('Total training params: %.2fM' % (net_info['params'] / 1e6))
         print('Total MACs: %.2fM' % (macs[-1] / 1e6))
         print('Total activations: %.2fM' % (net_info['activations'] / 1e6))
-        for l_type in latency_types:
-            print('Estimated %s latency: %.3fms' % (l_type, net_info['%s latency' % l_type]['val']))
+        #for l_type in latency_types:
+        #    print('Estimated %s latency: %.3fms' % (l_type, net_info['%s latency' % l_type]['val']))
 
     return net_info
 
