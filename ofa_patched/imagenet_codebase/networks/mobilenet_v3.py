@@ -249,6 +249,11 @@ class EEMobileNetV3(MyNetwork):
 
                 preds.append(x)
 
+                print("PREDS")
+                print(preds)
+                print("IDXS")
+                print(idxs)
+
                 #mix predictions of all exits
                 tensors = []
                 for i in range(len(preds)-1,0,-1): #mix predictions of all exits
