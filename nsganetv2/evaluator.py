@@ -250,14 +250,13 @@ class OFAEvaluator:
         
         
             
-    def sample(self, config=None, supernet = 'w1.0'):
+    def sample(self, config=None):
         """ randomly sample a sub-network """
         if config is not None:
-            #config = validate_config(config)
-            if ('w1.0' in supernet):
-              self.engine.set_active_subnet(ks=config['ks'], e=config['e'], d=config['d'])
-            if ('eembv3' in supernet):
+            if isinstance(self.engine,OFAEEMobileNetV3):
               self.engine.set_active_subnet(ks=config['ks'], e=config['e'], d=config['d'], t=config['t'])
+            else:
+              self.engine.set_active_subnet(ks=config['ks'], e=config['e'], d=config['d'])
         else:
             config = self.engine.sample_active_subnet()
 
