@@ -75,8 +75,6 @@ class MSuNAS:
 
         if self.resume:
             archive = self._resume_from_dir()
-            print("ARCHIVE")
-            print(archive[:10])
         else:
             # the following lines corresponding to Algo 1 line 1-7 in the paper
             archive = []  # initialize an empty archive to store all trained CNNs
@@ -241,11 +239,7 @@ class MSuNAS:
 
     def _fit_acc_predictor(self, archive):
         inputs = np.array([self.search_space.encode(x[0]) for x in archive])
-        print("INPUTS")
-        print(inputs[0])
         targets = np.array([x[1] for x in archive])
-        print("TARGETS")
-        print(targets)
         assert len(inputs) > len(inputs[0]), "# of training samples have to be > # of dimensions"
 
         acc_predictor = get_acc_predictor(self.predictor, inputs, targets)
