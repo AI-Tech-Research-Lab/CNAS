@@ -144,8 +144,6 @@ class OFASearchSpace:
         
         if (self.supernet == 'eemobilenetv3'): 
             t_config = x[-self.num_blocks:-1]
-            print("T CONFIG")
-            print(t_config)
             t = []
             for c in t_config:
               t.append(self.threshold[c])   
