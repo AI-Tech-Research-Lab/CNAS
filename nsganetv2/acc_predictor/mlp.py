@@ -53,7 +53,9 @@ class MLP:
 def train(net, x, y, trn_split=0.8, pretrained=None, device='cpu',
           lr=8e-4, epochs=2000, verbose=False):
 
+    print("N SAMPLES")
     n_samples = x.shape[0]
+    print(n_samples)
     target = torch.zeros(n_samples, 1)
     perm = torch.randperm(target.size(0))
     trn_idx = perm[:int(n_samples * trn_split)]
