@@ -403,7 +403,7 @@ class AuxiliarySingleLevelProblem(Problem):
                 info = get_net_info(subnet, (3, r, r),measure_latency=self.sec_obj, print_info=False, clean=True, lut=self.lut, pmax = self.pmax, fmax = self.fmax,
                 amax = self.amax, wp = self.wp, wf = self.wf, wa = self.wa, penalty = self.penalty)
             f[i, 0] = acc_err
-            f[i, 1] = 1/compl_err #info[self.sec_obj]
+            f[i, 1] = compl_err #info[self.sec_obj]
         out["F"] = f
 
 
