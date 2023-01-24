@@ -8,14 +8,14 @@ from utils import get_adapt_net_info
 from torchprofile import profile_macs
 
 lr = 40
-ur = 40
+ur = 100
 n_doe = 1
 ss = OFASearchSpace('eemobilenetv3',lr,ur)
 eval = OFAEvaluator(n_classes=1000,
 model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0',
 pretrained = True)
 m1_config = ss.sample(n_samples = n_doe, d = [2,3])[0]
-print(m1_config)
+#print(m1_config)
 # encode m1,m2
 #m1_encode = ss.encode(m1_config)
 #print(m1_encode)

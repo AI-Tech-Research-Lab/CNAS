@@ -147,6 +147,7 @@ class OFASearchSpace:
             t = []
             for c in t_config:
               t.append(self.threshold[c])   
+            
             return {'ks': kernel_size, 'e': exp_rate, 'd': depth, 
             't': t, 'r': self.resolution[x[-1]]}
         else:
