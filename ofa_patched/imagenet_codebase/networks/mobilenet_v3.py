@@ -249,11 +249,6 @@ class EEMobileNetV3(MyNetwork):
 
                 preds.append(x)
 
-                print("PREDS")
-                print(preds)
-                print("IDXS")
-                print(idxs)
-
                 #mix predictions of all exits
                 tensors = []
                 for i in range(len(preds)-1,0,-1): #mix predictions of all exits
@@ -261,7 +256,8 @@ class EEMobileNetV3(MyNetwork):
                     iter = idxs[i-1]
                     pred = preds[i]
                     for j,idx in enumerate(iter):
-                        tensors.insert(idx,pred[j])
+                        if(pred[j].shape[0]!=0): #if not empty tensor
+                          tensors.insert(idx,pred[j])
                     preds[i-1] = torch.Tensor(tensors) #torch.stack(tensors,axis=0)
                     del preds[i]
                 
