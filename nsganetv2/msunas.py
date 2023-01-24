@@ -264,6 +264,9 @@ class MSuNAS:
 
         acc_predictor = get_acc_predictor(self.predictor, inputs, targets)
 
+        print("PREDICTED MACS")
+        print(acc_predictor.predict(inputs))
+
         return acc_predictor, acc_predictor.predict(inputs)
 
     def _next(self, archive, acc_predictor, compl_predictor, K):
