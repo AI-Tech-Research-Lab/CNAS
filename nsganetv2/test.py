@@ -21,8 +21,8 @@ m1_encode = ss.encode(m1_config)
 print(m1_encode)
 # decode
 
-#m1_config = ss.decode(m1_encode)
-#print(m1_config)
+m1_config = ss.decode(m1_encode)
+print(m1_config)
 
 #print(ss.initialize(n_doe))
 '''
