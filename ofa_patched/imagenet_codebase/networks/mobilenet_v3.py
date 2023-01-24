@@ -258,7 +258,7 @@ class EEMobileNetV3(MyNetwork):
                     for j,idx in enumerate(iter):
                         if(len(pred[j])!=0): #if not empty tensor
                           tensors.insert(idx,pred[j])
-                    preds[i-1] = torch.Tensor(tensors) #torch.stack(tensors,axis=0)
+                    preds[i-1] = torch.stack(tensors,axis=0)
                     del preds[i]
                 
                 x = preds[0]
