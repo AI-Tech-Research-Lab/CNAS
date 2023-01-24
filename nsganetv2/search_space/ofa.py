@@ -120,8 +120,7 @@ class OFASearchSpace:
             print(x)
             print("IDXS")
             print(idxs)
-            for i in idxs:
-              x = x + i
+            x = x + idxs
             print("X")
             print(x)
 
