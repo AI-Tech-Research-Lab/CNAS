@@ -101,7 +101,7 @@ class MSuNAS:
             
             # construct accuracy predictor surrogate model from archive
             # Algo 1 line 9 / Fig. 3(a) in the paper
-            #acc_predictor, a_top1_err_pred = self._fit_acc_predictor(archive)
+            acc_predictor, a_top1_err_pred = self._fit_acc_predictor(archive)
 
             # construct macs predictor surrogate model from archive
             # Algo 1 line 9 / Fig. 3(a) in the paper
@@ -243,8 +243,13 @@ class MSuNAS:
         return top1_err, complexity
 
     def _fit_acc_predictor(self, archive):
+        print("ACC PREDICTOR")
         inputs = np.array([self.search_space.encode(x[0]) for x in archive])
+        print("N INPUTS")
+        print(len(inputs))
         targets = np.array([x[1] for x in archive])
+        print("N TARGETS")
+        print(len(targets))
         assert len(inputs) > len(inputs[0]), "# of training samples have to be > # of dimensions"
 
         acc_predictor = get_acc_predictor(self.predictor, inputs, targets)
@@ -252,8 +257,13 @@ class MSuNAS:
         return acc_predictor, acc_predictor.predict(inputs)
 
     def _fit_compl_predictor(self, archive):
+        print("COMPL PREDICTOR")
         inputs = np.array([self.search_space.encode(x[0]) for x in archive])
+        print("N INPUTS")
+        print(len(inputs))
         targets = np.array([x[2] for x in archive])
+        print("N TARGETS")
+        print(len(targets))
         assert len(inputs) > len(inputs[0]), "# of training samples have to be > # of dimensions"
 
         acc_predictor = get_acc_predictor(self.predictor, inputs, targets)
