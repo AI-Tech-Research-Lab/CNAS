@@ -102,9 +102,15 @@ class MSuNAS:
             # Algo 1 line 9 / Fig. 3(a) in the paper
             acc_predictor, a_top1_err_pred = self._fit_acc_predictor(archive)
 
+            print("ACC PREDICTOR")
+            print(acc_predictor)
+
             # construct macs predictor surrogate model from archive
             # Algo 1 line 9 / Fig. 3(a) in the paper
             compl_predictor, a_compl_err_pred = self._fit_compl_predictor(archive)
+
+            print("COMPL PREDICTOR")
+            print(compl_predictor)
             
             # search for the next set of candidates for high-fidelity evaluation (lower level)
             # Algo 1 line 10-11 / Fig. 3(b)-(d) in the paper
