@@ -100,12 +100,14 @@ class MSuNAS:
 
             # construct accuracy predictor surrogate model from archive
             # Algo 1 line 9 / Fig. 3(a) in the paper
-            acc_predictor, a_top1_err_pred = self._fit_acc_predictor(archive)
+            #acc_predictor, a_top1_err_pred = self._fit_acc_predictor(archive)
 
             # construct macs predictor surrogate model from archive
             # Algo 1 line 9 / Fig. 3(a) in the paper
             compl_predictor, a_compl_err_pred = self._fit_compl_predictor(archive)
+            
 
+            '''
             # search for the next set of candidates for high-fidelity evaluation (lower level)
             # Algo 1 line 10-11 / Fig. 3(b)-(d) in the paper
             #candidates, c_top1_err_pred = 
@@ -157,7 +159,7 @@ class MSuNAS:
                 F[:, 1] = 100 - c_top1_err_pred[:, 0]
                 plot.add(F, s=20, facecolors='none', edgecolors='g', label='candidates predicted')
                 plot.save(os.path.join(self.save_path, 'iter_{}.png'.format(it)))
-              
+            '''  
 
         return
 
