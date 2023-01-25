@@ -102,7 +102,7 @@ class MSuNAS:
 
 
         # main loop of the search
-        for it in range(it_start, self.iterations + 1):
+        for it in range(it_start, it_start + self.iterations + 1):
 
             print("Hiii")
 
