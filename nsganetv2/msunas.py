@@ -104,6 +104,8 @@ class MSuNAS:
         # main loop of the search
         for it in range(it_start, self.iterations + 1):
 
+            print("Hiii")
+
             # construct accuracy predictor surrogate model from archive
             # Algo 1 line 9 / Fig. 3(a) in the paper
             acc_predictor, a_top1_err_pred = self._fit_acc_predictor(archive)
