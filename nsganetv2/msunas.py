@@ -96,7 +96,7 @@ class MSuNAS:
         ref_pt = np.array([np.max([x[1] for x in archive]), np.max([x[2] for x in archive])])
 
         # main loop of the search
-        for it in range(1, self.iterations + 1):
+        for it in range(2, self.iterations + 1):
 
             # construct accuracy predictor surrogate model from archive
             # Algo 1 line 9 / Fig. 3(a) in the paper
