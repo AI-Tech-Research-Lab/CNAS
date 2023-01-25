@@ -78,8 +78,6 @@ class MSuNAS:
             archive = self._resume_from_dir()
             split = self.resume.rsplit("_",1)
             it_start = int(split[1]) + 1
-            print("IT START")
-            print(it_start)
         else:
             # the following lines corresponding to Algo 1 line 1-7 in the paper
             archive = []  # initialize an empty archive to store all trained CNNs
@@ -103,8 +101,6 @@ class MSuNAS:
 
         # main loop of the search
         for it in range(it_start, it_start + self.iterations + 1):
-
-            print("Hiii")
 
             # construct accuracy predictor surrogate model from archive
             # Algo 1 line 9 / Fig. 3(a) in the paper
