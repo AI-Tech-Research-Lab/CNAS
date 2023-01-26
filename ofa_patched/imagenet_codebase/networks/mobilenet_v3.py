@@ -203,7 +203,6 @@ class EEMobileNetV3(MyNetwork):
             return preds
         else:
             i = 0
-            alarm = False
             counts = np.zeros(self.n_exit+1)
             for idx,block in enumerate(self.blocks):
                 if(self.n_exit!=0):
