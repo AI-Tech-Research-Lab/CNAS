@@ -101,8 +101,6 @@ def main(args):
                   wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
             info["top1"] = 100 - top1[idx]
             info["subnet"] = subnets[idx]
-            print("INFO")
-            print(info)
             infos.append(info)
             idx = idx + 1
 
