@@ -744,13 +744,12 @@ class RunManager:
                         break
                 ##
 
+                print("COUNTER")
+                print(counter)
+
             else:
                 is_best = False
             
-
-                counter = counter + 1
-                if (counter > patience):
-                    break
 
             self.save_model({
                 'epoch': epoch,
