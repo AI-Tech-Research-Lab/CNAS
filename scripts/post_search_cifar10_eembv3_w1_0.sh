@@ -10,5 +10,5 @@ python post_search.py \
   --expr ../results/cifar10-mbv3-adaptive/iter_8.stats \
   -n 10 \
   --supernet_path ./ofa_nets/ofa_eembv3 \
-  --prefer trade-off \
+  --prefer macs \
   --n_classes 10 
