@@ -11,4 +11,4 @@ python post_search.py \
   -n 10 \
   --supernet_path ./ofa_nets/ofa_eembv3 \
   --prefer macs \
-  --save_stats_csv --n_classes 10 
+  --n_classes 10 

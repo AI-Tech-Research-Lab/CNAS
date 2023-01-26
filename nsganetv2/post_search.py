@@ -87,6 +87,10 @@ def main(args):
             json.dump(ps[idx], handle)
         supernet.save_net_config(save, subnet, "net.config")
         supernet.save_net(save, subnet, "net.inherited")
+        info = get_adapt_net_info(subnet,data_shape,pmax = args.pmax, fmax = args.fmax, amax = args.amax,
+                  wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
+        with open(os.path.join(save, "net.stats"), "w") as handle:
+                json.dump(info, handle)
    
     if args.save_stats_csv:
         
