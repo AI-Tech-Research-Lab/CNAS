@@ -712,7 +712,11 @@ class RunManager:
         for epoch in range(self.start_epoch, self.run_config.n_epochs + warmup_epoch):
         
             train_loss, train_top1, train_top5 = self.adaptive_train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
-        
+
+            ## Early Stopping setup ##
+            patience = 1 
+            counter = 0
+            ##
 
             if (epoch + 1) % self.run_config.validation_frequency == 0:
                 img_size, val_loss, val_acc, val_acc5 = self.validate_all_resolution(epoch=epoch, is_test=False, is_adaptive = True)
@@ -729,8 +733,24 @@ class RunManager:
                       val_log += '(%d, %.3f), ' % (i_s, v_a)
 
                 self.write_log(val_log, prefix='valid', should_print=False)
+                
+                ## Early Stopping check##
+                if(is_best):
+                    counter = 0
+                else:
+                    counter = counter + 1
+                    if (counter > patience):
+                        print("Early Stopping")
+                        break
+                ##
+
             else:
                 is_best = False
+            
+
+                counter = counter + 1
+                if (counter > patience):
+                    break
 
             self.save_model({
                 'epoch': epoch,
