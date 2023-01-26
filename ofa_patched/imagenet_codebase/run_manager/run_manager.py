@@ -714,7 +714,7 @@ class RunManager:
             train_loss, train_top1, train_top5 = self.adaptive_train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
 
             ## Early Stopping setup ##
-            patience = 1 
+            patience = 0
             counter = 0
             ##
 
