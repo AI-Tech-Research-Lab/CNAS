@@ -91,8 +91,9 @@ def main(args):
         data_shape = (3,ps[idx]['r'],ps[idx]['r'])
         info = get_adapt_net_info(subnet,data_shape,pmax = args.pmax, fmax = args.fmax, amax = args.amax,
                   wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
+        info['macs'] = ps_sec_obj[idx]
         with open(os.path.join(save, "net.stats"), "w") as handle:
-                json.dump(ps_sec_obj[idx], handle)
+                json.dump(info, handle)
    
     if args.save_stats_csv:
         
