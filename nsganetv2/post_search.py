@@ -109,6 +109,7 @@ def main(args):
             info = get_adapt_net_info(subnet,data_shape,pmax = args.pmax, fmax = args.fmax, amax = args.amax,
                   wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
             info["top1"] = 100 - top1[idx]
+            info["macs"] = sec_obj[idx]
             info["subnet"] = subnets[idx]
             infos.append(info)
             idx = idx + 1
