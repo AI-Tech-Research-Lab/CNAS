@@ -739,7 +739,7 @@ class RunManager:
                     counter = 0
                 else:
                     counter = counter + 1
-                    if (counter > patience):
+                    if (counter >= patience):
                         print("Early Stopping")
                         self.save_model({
                             'epoch': epoch,
