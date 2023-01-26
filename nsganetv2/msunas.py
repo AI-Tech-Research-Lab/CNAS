@@ -74,17 +74,10 @@ class MSuNAS:
     def search(self):
 
         it_start = 1
-
         if self.resume:
             archive = self._resume_from_dir()
             split = self.resume.rsplit("_",1)
-            it = int(split[1]) #+ 1
-            print("IT")
-            print(it)
-            with open(os.path.join(self.save_path, "iter_{}.stats".format(it)), "w") as handle:
-                json.dump({'archive': archive}, handle)
-
-        '''
+            it_start = int(split[1]) + 1
         else:
             # the following lines corresponding to Algo 1 line 1-7 in the paper
             archive = []  # initialize an empty archive to store all trained CNNs
@@ -108,7 +101,7 @@ class MSuNAS:
 
         # main loop of the search
         for it in range(it_start, it_start + self.iterations + 1):
-            
+            '''
 
             # construct accuracy predictor surrogate model from archive
             # Algo 1 line 9 / Fig. 3(a) in the paper
@@ -157,10 +150,10 @@ class MSuNAS:
                                'model': self.predictor, 'name': acc_predictor.name,
                                'winner': acc_predictor.winner if self.predictor == 'as' else acc_predictor.name,
                                'rmse': rmse, 'rho': rho, 'tau': tau}}, handle)
-            
+            '''
 
             with open(os.path.join(self.save_path, "iter_{}.stats".format(it)), "w") as handle:
-                json.dump({'archive': archive}, handle)
+                json.dump({'archive': archive, 'candidates': archive[-self.n_iter:]}, handle)
 
             if _DEBUG:
                 # plot
@@ -178,7 +171,7 @@ class MSuNAS:
                 F[:, 1] = 100 - c_top1_err_pred[:, 0]
                 plot.add(F, s=20, facecolors='none', edgecolors='g', label='candidates predicted')
                 plot.save(os.path.join(self.save_path, 'iter_{}.png'.format(it)))
-        '''     
+             
 
         return
 
