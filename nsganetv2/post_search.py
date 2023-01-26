@@ -63,6 +63,7 @@ def main(args):
     pf = F[front, :]
     print(pf)
     ps = np.array(subnets)[sort_idx][front]
+    ps_sec_obj = np.array(sec_obj)[sort_idx][front]
     if args.prefer != 'trade-off':
         # choose the best architecture for the sec_obj
         I = pf[:,1].argsort()
@@ -91,7 +92,7 @@ def main(args):
         info = get_adapt_net_info(subnet,data_shape,pmax = args.pmax, fmax = args.fmax, amax = args.amax,
                   wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
         with open(os.path.join(save, "net.stats"), "w") as handle:
-                json.dump(info, handle)
+                json.dump(ps_sec_obj[idx], handle)
    
     if args.save_stats_csv:
         
