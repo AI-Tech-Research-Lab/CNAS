@@ -714,7 +714,7 @@ class RunManager:
             train_loss, train_top1, train_top5 = self.adaptive_train_one_epoch(args, epoch, warmup_epoch, warmup_lr)
 
             ## Early Stopping setup ##
-            patience = 0
+            patience = 10
             counter = 0
             ##
 
@@ -750,9 +750,6 @@ class RunManager:
                         return self.net
                         #break
                 ##
-
-                print("COUNTER")
-                print(counter)
 
             else:
                 is_best = False
