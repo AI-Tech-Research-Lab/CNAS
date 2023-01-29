@@ -18,10 +18,9 @@ pretrained = True)
 ks = [3, 3, 5, 7, 3, 7, 7, 7, 7, 5, 5, 7, 7, 3, 7, 7]
 e = [6, 3, 3, 6, 3, 6, 6, 6, 6, 3, 6, 3, 6, 6, 3, 3]
 d = [2, 2, 4, 4, 4]
-ofa.set_active_subnet(ks=ks, e=e, d=d)
 input_shape = (3,40,40)
-m = ofa.get_active_subnet(preserve_weight=True)
-info = get_net_info(m,input_shape)
+subnet, _ = ofa.sample({'ks': ks, 'e': e, 'd': d})
+info = get_net_info(subnet,input_shape)
 
 #print(ss.initialize(n_doe))
 '''
