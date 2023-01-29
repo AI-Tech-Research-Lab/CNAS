@@ -4,29 +4,24 @@ from ofa.elastic_nn.modules.dynamic_layers import ExitBlock
 import torch
 from ofa.model_zoo import ofa_net
 import numpy as np
-from utils import get_adapt_net_info
+from utils import get_adapt_net_info,get_net_info
 from torchprofile import profile_macs
 
 lr = 40
 ur = 100
 n_doe = 1
-ss = OFASearchSpace('eemobilenetv3',lr,ur)
-eval = OFAEvaluator(n_classes=1000,
+#ss = OFASearchSpace('eemobilenetv3',lr,ur)
+
+ofa = OFAEvaluator(n_classes=1000,
 model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0',
 pretrained = True)
-m1_config = ss.sample(n_samples = n_doe, d = [2,3])[0]
-#print(m1_config)
-# encode m1,m2
-#m1_encode = ss.encode(m1_config)
-#print(m1_encode)
-# decode
-m1_encode = [2, 2, 0, 2, 0, 0, 0, 1, 0, 1, 
-1, 2, 1, 0, 1, 1, 1, 0, 2, 0, 
-2, 0, 1, 2, 1, 0, 1, 1, 1, 1, 
-1, 0, 1, 2, 2, 0, 1, 0, 1, 2, 
-0, 2, 0, 1, 0, 1, 2, 1, 1, 1]
-m1_config = ss.decode(m1_encode)
-print(m1_config)
+ks = [3, 3, 5, 7, 3, 7, 7, 7, 7, 5, 5, 7, 7, 3, 7, 7]
+e = [6, 3, 3, 6, 3, 6, 6, 6, 6, 3, 6, 3, 6, 6, 3, 3]
+d = [2, 2, 4, 4, 4]
+ofa.set_active_subnet(ks=ks, e=e, d=d)
+input_shape = (3,40,40)
+m = ofa.get_active_subnet(preserve_weight=True)
+info = get_net_info(m,input_shape)
 
 #print(ss.initialize(n_doe))
 '''
