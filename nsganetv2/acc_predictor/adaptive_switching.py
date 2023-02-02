@@ -7,7 +7,7 @@ class AdaptiveSwitching:
     """ ensemble surrogate model """
     """ try all available models, pick one based on 10-fold crx vld """
     def __init__(self, n_fold=10):
-        self.model_pool = ['rbf', 'gp', 'carts','mlp']
+        self.model_pool = ['rbf', 'gp', 'carts']
         #self.model_pool = ['mlp']
         self.n_fold = n_fold
         self.name = 'adaptive switching'
