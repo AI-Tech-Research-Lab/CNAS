@@ -13,4 +13,4 @@ python post_search.py \
   --prefer macs \
   --save_stats_csv \
   --n_classes 10 \
-  --n_exits 3
+  --n_exits 4
