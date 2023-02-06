@@ -65,7 +65,11 @@ def main(args):
         count_exits = len(t)-t.count(1)
         if(count_exits==args.n_exits):
             archive.append(v)
-    print("lunghezza archivio")        
+    print("#EEcs:")
+    print(args.n_exits)
+    print("lunghezza archivio prima")        
+    print(len(archive_temp))
+    print("lunghezza archivio dopo")        
     print(len(archive))
     return
     
