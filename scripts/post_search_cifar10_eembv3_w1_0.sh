@@ -8,9 +8,9 @@ cd ../nsganetv2
 python post_search.py \
   --save ../results/cifar10-mbv3-adaptive/final \
   --expr ../results/cifar10-mbv3-adaptive/iter_30.stats \
-  -n 10 \
+  -n 1 \
   --supernet_path ./ofa_nets/ofa_eembv3 \
-  --prefer macs \
+  --prefer trade-off \
   --save_stats_csv \
   --n_classes 10 \
-  --n_exits 4
+  --n_exits 1
