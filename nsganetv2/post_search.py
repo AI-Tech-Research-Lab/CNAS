@@ -55,8 +55,22 @@ class HighTradeoffPoints(DecisionMaking):
 def main(args):
 
     ##compute the pareto front 
-    archive = json.load(open(args.expr))['archive']
+    archive_temp = json.load(open(args.expr))['archive']
+
+    # filter according to n° of exits
+    archive = []
+    for v in archive_temp:
+        subnet = v[0]
+        t = subnet["t"]
+        count_exits = len(t)-t.count(1)
+        if(count_exits==args.n_exits):
+            archive.append(v)
+    print("lunghezza archivio")        
+    print(len(archive))
+    return
+    
     subnets, top1, sec_obj = [v[0] for v in archive], [v[1] for v in archive], [v[2] for v in archive]
+
     sort_idx = np.argsort(top1)
     F = np.column_stack((top1, sec_obj))[sort_idx, :]
     front = NonDominatedSorting().do(F, only_non_dominated_front=True)
@@ -162,5 +176,7 @@ if __name__ == '__main__':
                         help='weight for activations')
     parser.add_argument('--penalty', type = float, default=10**10,
                         help='penalty factor')
+    parser.add_argument('--n_exits', type=int, default=1,
+                        help='number of EEcs desired')
     cfgs = parser.parse_args()
     main(cfgs)
