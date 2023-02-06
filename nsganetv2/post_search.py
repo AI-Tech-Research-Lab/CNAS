@@ -71,7 +71,6 @@ def main(args):
     print(len(archive_temp))
     print("lunghezza archivio dopo")        
     print(len(archive))
-    return
     
     subnets, top1, sec_obj = [v[0] for v in archive], [v[1] for v in archive], [v[2] for v in archive]
 
