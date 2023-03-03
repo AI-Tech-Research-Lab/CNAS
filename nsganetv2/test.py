@@ -1,10 +1,10 @@
 #from search_space.ofa import OFASearchSpace
-from evaluator import OFAEvaluator,get_net_info, get_adapt_net_info
+from evaluator import OFAEvaluator#,get_net_info, get_adapt_net_info
 #from ofa.elastic_nn.modules.dynamic_layers import ExitBlock
 #import torch
 #from ofa.model_zoo import ofa_net
 #import numpy as np
-#from utils import get_net_info#,get_adapt_net_info
+from utils import get_net_info, get_adapt_net_info
 #from torchprofile import profile_macs
 import json
 
