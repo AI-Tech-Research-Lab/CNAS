@@ -32,6 +32,8 @@ ofa = OFAEvaluator(n_classes=1000,
 model_path=supernet,
 pretrained = pretrained)
 input_shape = (3,config['r'],config['r'])
+print("CONFIG")
+print(config['t'])
 subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't': config['t']})
 info = get_adapt_net_info(subnet,input_shape)
 #print(ss.initialize(n_doe))
