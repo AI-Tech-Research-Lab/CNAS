@@ -13,7 +13,7 @@ import json
 #n_doe = 1
 subnet = './../results/cifar10-mbv3-adaptive/final/net-trade-off_1@17_NAS/net.subnet'
 supernet = './ofa_nets/ofa_mbv3_d234_e346_k357_w1.0'
-pretrained = True
+pretrained = False
 config = json.load(open(subnet))
 n_classes = 10
 evaluator = OFAEvaluator(n_classes=n_classes, model_path=supernet, pretrained = pretrained)
@@ -26,7 +26,7 @@ info = get_net_info(subnet,input_shape)
 
 subnet = './../results/cifar10-mbv3-adaptive/final/net-trade-off_1@17/net.subnet'
 supernet = 'ofa_eembv3'
-pretrained = True
+pretrained = False
 config = json.load(open(subnet))
 n_classes = 10
 evaluator = OFAEvaluator(n_classes=n_classes, model_path=supernet, pretrained = pretrained)
