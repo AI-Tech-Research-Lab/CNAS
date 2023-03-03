@@ -11,7 +11,7 @@ import json
 #lr = 40
 #ur = 100
 #n_doe = 1
-subnet = './../results/cifar10-mbv3-adaptive/final/net-trade-off_3@10_NAS/net.subnet'
+subnet = './../results/cifar10-mbv3-adaptive/final/net-trade-off_4@3_NAS/net.subnet'
 supernet = './ofa_nets/ofa_mbv3_d234_e346_k357_w1.0'
 pretrained = False
 config = json.load(open(subnet))
@@ -23,7 +23,7 @@ input_shape = (3,config['r'],config['r'])
 subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
 info = get_net_info(subnet,input_shape)
 
-subnet = './../results/cifar10-mbv3-adaptive/final/net-trade-off_3@10/net.subnet'
+subnet = './../results/cifar10-mbv3-adaptive/final/net-trade-off_4@3/net.subnet'
 supernet = 'ofa_eembv3'
 pretrained = False
 config = json.load(open(subnet))
