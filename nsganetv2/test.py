@@ -25,7 +25,7 @@ subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
 info = get_net_info(subnet,input_shape)
 
 subnet = './../results/cifar10-mbv3-adaptive/final/net-trade-off_1@17/net.subnet'
-supernet = './ofa_nets/ofa_mbv3_d234_e346_k357_w1.0'
+supernet = 'ofa_eembv3'
 pretrained = True
 config = json.load(open(subnet))
 n_classes = 10
