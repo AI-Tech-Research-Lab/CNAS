@@ -450,7 +450,7 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
     if print_info:
         # print(net)
         print('Total training params: %.2fM' % (net_info['params'] / 1e6))
-        print('Total MACs: %.2fM' % (np.mean(macs) / 1e6))
+        print('Total MACs: %.2fM' % ( macs[-1] / 1e6))
         print('Total activations: %.2fM' % (net_info['activations'] / 1e6))
         #for l_type in latency_types:
         #    print('Estimated %s latency: %.3fms' % (l_type, net_info['%s latency' % l_type]['val']))
