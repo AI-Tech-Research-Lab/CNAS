@@ -16,10 +16,9 @@ supernet = './ofa_nets/ofa_mbv3_d234_e346_k357_w1.0'
 pretrained = False
 config = json.load(open(subnet))
 n_classes = 10
-evaluator = OFAEvaluator(n_classes=n_classes, model_path=supernet, pretrained = pretrained)
 ofa = OFAEvaluator(n_classes=1000,
-model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0',
-pretrained = True)
+model_path=supernet,
+pretrained = pretrained)
 input_shape = (3,config['r'],config['r'])
 subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
 info = get_net_info(subnet,input_shape)
@@ -29,10 +28,9 @@ supernet = 'ofa_eembv3'
 pretrained = False
 config = json.load(open(subnet))
 n_classes = 10
-evaluator = OFAEvaluator(n_classes=n_classes, model_path=supernet, pretrained = pretrained)
 ofa = OFAEvaluator(n_classes=1000,
-model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0',
-pretrained = True)
+model_path=supernet,
+pretrained = pretrained)
 input_shape = (3,config['r'],config['r'])
 subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't': config['t']})
 info = get_adapt_net_info(subnet,input_shape)
