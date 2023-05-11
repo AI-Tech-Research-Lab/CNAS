@@ -1,1 +1,0 @@
-{"params": 3.39, "flops": 224.9, "params_flops": 43125000009.0125, "gpu": null, "cpu": null, "loss": 2.765926494598389, "top1": 11.02, "top5": 21.76}
