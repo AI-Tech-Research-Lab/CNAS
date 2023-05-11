@@ -1,4 +1,5 @@
 from evaluator import OFAEvaluator
+from ofa.elastic_nn.networks.ofa_mbv3 import OFAMobileNetV3
 from utils import get_net_info, get_adapt_net_info
 import json
 
