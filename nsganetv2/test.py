@@ -11,6 +11,7 @@ import json
 #lr = 40
 #ur = 100
 #n_doe = 1
+'''
 subnet = './../results/cifar10-mbv3-adaptive/final/net-trade-off_4@3_NAS/net.subnet'
 supernet = './ofa_nets/ofa_mbv3_d234_e346_k357_w1.0'
 pretrained = False
@@ -22,6 +23,7 @@ pretrained = pretrained)
 input_shape = (3,config['r'],config['r'])
 subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
 info = get_net_info(subnet,input_shape)
+'''
 
 subnet = './../results/cifar10-mbv3-adaptive/final/net-trade-off_4@3/net.subnet'
 supernet = 'ofa_eembv3'
@@ -32,10 +34,12 @@ ofa = OFAEvaluator(n_classes=1000,
 model_path=supernet,
 pretrained = pretrained)
 input_shape = (3,config['r'],config['r'])
-print("CONFIG")
-print(config['t'])
-subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't': config['t']})
-info = get_adapt_net_info(subnet,input_shape)
+#subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't': config['t']})
+config_t = [0.1,0.1,0.1,0.1]
+subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't': config_t})
+print("IDXS")
+print(subnet.exit_idxs)
+#info = get_adapt_net_info(subnet,input_shape)
 #print(ss.initialize(n_doe))
 '''
 #Compute MACS of the exit gate (< MACs of the whole net)
