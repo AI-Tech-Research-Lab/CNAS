@@ -333,7 +333,7 @@ def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_inf
     if isinstance(net, nn.DataParallel):
         net = net.module
     
-    net.eval()
+    net.eval() # this avoids batch norm error https://discuss.pytorch.org/t/error-expected-more-than-1-value-per-channel-when-training/26274
 
     # parameters
     net_info['params'] = count_parameters(net)
