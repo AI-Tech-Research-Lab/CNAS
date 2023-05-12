@@ -320,7 +320,7 @@ def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_inf
     from ofa.imagenet_codebase.utils.pytorch_utils import count_parameters, measure_net_latency
 
     # artificial input data
-    inputs = torch.randn(1, 3, input_shape[-2], input_shape[-1])
+    inputs = torch.randn(20, 3, input_shape[-2], input_shape[-1])
 
     # move network to GPU if available
     if torch.cuda.is_available():
