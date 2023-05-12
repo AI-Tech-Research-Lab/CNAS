@@ -22,7 +22,7 @@ pretrained = False
 config = json.load(open(subnet))
 n_classes = 10
 ofa = OFAMobileNetV3(n_classes=10)
-input_shape = (3,config['r'],config['r'])
+input_shape = (3,32,32)
 ofa.set_active_subnet(ks=config['ks'], e=config['e'], d=config['d'])
 subnet = ofa.get_active_subnet(preserve_weight=True)
 info = get_net_info(subnet,input_shape)
