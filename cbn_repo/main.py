@@ -150,8 +150,6 @@ def my_app(cfg: DictConfig) -> None:
             model_path = model_cfg['path']
         else:
             model_path = None
-
-        print("Hello")
         
         backbone, classifiers = get_model(model_name, image_size=input_size,
                                           classes=classes,
