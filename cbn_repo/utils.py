@@ -342,7 +342,7 @@ def mobilenetv3(classes, path):
     # current path example ConfidenceBranchNetwork/outputs/cifar10/mobilenetv3/bernulli_logits
     #'./../../../../ofa/net.subnet'
     print("MODEL PATH")
-    print(model_path)
+    print(path)
     config = json.load(open(path))
     ofa = OFAMobileNetV3(n_classes=classes)
     ofa.set_active_subnet(ks=config['ks'], e=config['e'], d=config['d'])
