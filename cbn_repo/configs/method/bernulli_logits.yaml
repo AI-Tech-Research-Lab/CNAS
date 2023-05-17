@@ -1,0 +1,13 @@
+name: bernulli
+beta: 1
+joint_type: logits
+sample: true
+pre_trained: true
+regularization_loss: bce
+prior_mode: ones
+fix_last_layer: true
+normalize_weights: true
+regularization_scaling: false
+temperature_scaling: true
+dropout: 0.5
+backbone_epochs: 0

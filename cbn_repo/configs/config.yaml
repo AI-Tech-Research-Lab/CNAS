@@ -1,0 +1,4 @@
+defaults:
+  - optimizer: adam
+  - experiment: base
+  - override hydra/job_logging: dual

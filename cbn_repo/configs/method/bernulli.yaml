@@ -1,0 +1,13 @@
+name: bernulli
+beta: 1
+joint_type: losses
+sample: true
+pre_trained: true
+regularization_loss: bce
+prior_mode: ones
+fix_last_layer: false 
+normalize_weights: false
+regularization_scaling: false
+temperature_scaling: false
+dropout: 0
+backbone_epochs: 0

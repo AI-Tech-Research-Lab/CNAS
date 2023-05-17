@@ -1,0 +1,6 @@
+epochs: 50
+batch_size: 32
+device: 0
+eval_split: 0.1
+use_early_stopping: true
+early_stopping_tolerance: 5
