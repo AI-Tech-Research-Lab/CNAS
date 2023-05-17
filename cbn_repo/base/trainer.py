@@ -26,6 +26,8 @@ def standard_trainer(model: BranchModel,
 
     device = get_device(model)
 
+    print("STANDARD TRAINER")
+
     scores = []
     mean_losses = []
 
