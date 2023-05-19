@@ -4,6 +4,7 @@ DATASET=$1
 MODEL=$2
 DEVICE=$3
 MODEL_PATH=$4
+OUTPUT_PATH=$5
 
 case $DATASET in
   svhn)
@@ -45,7 +46,7 @@ case $DATASET in
       python plots.py  './outputs/cifar10/vgg11/bernulli_logits' './outputs/cifar10/vgg11/joint'
     ;;
     mobilenetv3)
-      python main.py +dataset=cifar10 +method=bernulli_logits experiment=base +model=mobilenetv3 +model.path="$MODEL_PATH" optimizer=sgd +training=cifar10 hydra.run.dir='./outputs/cifar10/mobilenetv3/bernulli_logits' training.device="$DEVICE" experiment.load=true
+      python main.py +dataset=cifar10 +method=bernulli_logits experiment=base +model=mobilenetv3 +model.path="$MODEL_PATH" optimizer=sgd +training=cifar10 hydra.run.dir="$OUTPUT_PATH" training.device="$DEVICE" experiment.load=true
     ;;
       *)
       echo -n "Unrecognized model"

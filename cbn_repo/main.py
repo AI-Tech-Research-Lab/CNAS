@@ -15,7 +15,7 @@ from base.evaluators import binary_eval, entropy_eval, standard_eval, \
     branches_eval, binary_statistics, binary_statistics_cumulative
 from base.trainer import binary_bernulli_trainer, joint_trainer, \
     standard_trainer#, adaptive_trainer
-from utils import get_dataset, get_optimizer, get_model, EarlyStopping
+from utils import get_dataset, get_optimizer, get_model, EarlyStopping, get_net_info
 
 
 @hydra.main(config_path="configs",
@@ -156,6 +156,9 @@ def my_app(cfg: DictConfig) -> None:
                                           get_binaries=get_binaries,
                                           fix_last_layer=fix_last_layer,
                                           model_path=model_path)
+        
+        print("Computational cost backbone")
+        get_net_info(backbone,input_shape=input_size)
                             
         
         # costs = backbone.computational_cost(next(iter(trainloader))[0])
