@@ -3,5 +3,5 @@ python msunas.py --sec_obj macs \
               --dataset cifar10 --n_classes 10 \
               --data ../data/cifar10 \
               --predictor as --supernet_path ./ofa_nets/ofa_eembv3 --pretrained  \
-              --save ../results/cifar10-mbv3-test --iterations 30 --vld_size 5000 \
+              --save ../results/edanas-r32 --iterations 30 --vld_size 5000 \
               --lr 32 --ur 32
