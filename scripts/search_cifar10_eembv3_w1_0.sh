@@ -1,7 +1,7 @@
 python msunas.py --sec_obj macs \
-              --n_gpus 8 --gpu 1 --n_workers 4 --n_epochs 5 \
+              --n_gpus 1 --gpu 1 --n_workers 4 --n_epochs 5 \
               --dataset cifar10 --n_classes 10 \
               --data ../data/cifar10 \
               --predictor as --supernet_path ./ofa_nets/ofa_eembv3 --pretrained  \
-              --save ../results/cifar10-mbv3-test --iterations 0 --vld_size 5000 \
-              --lr 40 --ur 104
+              --save ../results/cifar10-mbv3-test --iterations 30 --vld_size 5000 \
+              --lr 32 --ur 32
