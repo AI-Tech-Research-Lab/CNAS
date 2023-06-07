@@ -428,8 +428,10 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
 
     net_info['macs'] = macs
    
+    cp_net = copy.deepcopy(net)
+    cp_net.eval()
     # activation_size
-    net_info['activations'] = int(profile_activation_size(copy.deepcopy(net), inputs))
+    net_info['activations'] = int(profile_activation_size(cp_net, inputs))
 
     '''
     # latencies
