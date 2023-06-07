@@ -244,6 +244,11 @@ class EEMobileNetV3(MyNetwork):
             x = torch.squeeze(x)
             x = self.classifier(x)
 
+            print("PREDS")
+            print(preds)
+            print("IDXS")
+            print(idxs)
+
             if(self.n_exit!=0):
 
                 preds.append(x)
@@ -257,8 +262,8 @@ class EEMobileNetV3(MyNetwork):
                     for j,idx in enumerate(iter):
                         if(pred[j].dim()!=0): #if not empty tensor
                           tensors.insert(idx,pred[j])
-                    if tensors: 
-                        preds[i-1] = torch.stack(tensors,axis=0)
+                    #if tensors: 
+                    preds[i-1] = torch.stack(tensors,axis=0)
                     del preds[i]
                 
                 x = preds[0]
