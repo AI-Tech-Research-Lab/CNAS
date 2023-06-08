@@ -404,6 +404,7 @@ def main(args):
             resolution = args.resolution
 
     elif mode == 'subnet':
+        print("EVALUATING SUBNET {}". format(args.subnet))
         config = json.load(open(args.subnet))
         evaluator = OFAEvaluator(n_classes=args.n_classes, model_path=args.supernet, pretrained = args.pretrained)
         if ('w1.0' in args.supernet):
