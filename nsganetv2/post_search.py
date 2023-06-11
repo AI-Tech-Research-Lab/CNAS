@@ -100,6 +100,9 @@ def main(args):
     from evaluator import OFAEvaluator, get_net_info, get_adapt_net_info
     supernet = OFAEvaluator(n_classes = args.n_classes, model_path=args.supernet_path, pretrained = args.supernet_path)
 
+    print("NUMBER pareto opt solutions")
+    print(args.n)
+    print(len(I))
     for idx in I:
         save = os.path.join(args.save, "net-"+args.prefer+"@{:.0f}".format(pf[idx, 1]))
         #save = os.path.join(args.save, "net-"+args.prefer+"_"+str(args.n_exits)+"@{:.0f}".format(pf[idx, 1]))
@@ -112,11 +115,7 @@ def main(args):
         data_shape = (3,ps[idx]['r'],ps[idx]['r'])
         info = get_adapt_net_info(subnet,data_shape,pmax = args.pmax, fmax = args.fmax, amax = args.amax,
                   wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
-        print("INFO MACS PRE UPDATE")
-        print(info['macs'])
-        info['macs'] = ps_sec_obj[idx]
-        print("INFO MACS POST UPDATE")
-        print(info['macs'])
+        info['macs'] = ps_sec_obj[idx] #update value with the avg_macs
         info['top1'] = 100 - ps_top1[idx]
         with open(os.path.join(save, "net.stats"), "w") as handle:
                 json.dump(info, handle)
@@ -133,7 +132,7 @@ def main(args):
             info = get_adapt_net_info(subnet,data_shape,pmax = args.pmax, fmax = args.fmax, amax = args.amax,
                   wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
             info["top1"] = 100 - top1[idx]
-            info["macs"] = sec_obj[idx]
+            info["macs"] = sec_obj[idx] #update value with the avg_macs
             info["subnet"] = subnets[idx]
             infos.append(info)
             idx = idx + 1
