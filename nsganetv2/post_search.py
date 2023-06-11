@@ -100,9 +100,6 @@ def main(args):
     from evaluator import OFAEvaluator, get_net_info, get_adapt_net_info
     supernet = OFAEvaluator(n_classes = args.n_classes, model_path=args.supernet_path, pretrained = args.supernet_path)
 
-    print("NUMBER pareto opt solutions")
-    print(args.n)
-    print(len(I))
     for idx in I:
         save = os.path.join(args.save, "net-"+args.prefer+"_"+str(idx)+"@{:.0f}".format(pf[idx, 1]))
         #save = os.path.join(args.save, "net-"+args.prefer+"_"+str(args.n_exits)+"@{:.0f}".format(pf[idx, 1]))
