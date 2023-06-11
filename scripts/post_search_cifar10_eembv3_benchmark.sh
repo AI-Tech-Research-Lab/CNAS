@@ -11,5 +11,4 @@ python post_search.py \
   -n 10 \
   --supernet_path ./ofa_nets/ofa_eembv3 \
   --prefer trade-off \
-  --save_stats_csv \
   --n_classes 10 
