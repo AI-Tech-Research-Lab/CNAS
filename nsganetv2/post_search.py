@@ -104,7 +104,7 @@ def main(args):
     print(args.n)
     print(len(I))
     for idx in I:
-        save = os.path.join(args.save, "net-"+args.prefer+"@{:.0f}".format(pf[idx, 1]))
+        save = os.path.join(args.save, "net-"+args.prefer+"_"+str(idx)+"@{:.0f}".format(pf[idx, 1]))
         #save = os.path.join(args.save, "net-"+args.prefer+"_"+str(args.n_exits)+"@{:.0f}".format(pf[idx, 1]))
         os.makedirs(save, exist_ok=True)
         subnet, _ = supernet.sample({'ks': ps[idx]['ks'], 'e': ps[idx]['e'], 'd': ps[idx]['d'], 't': ps[idx]['t']})
