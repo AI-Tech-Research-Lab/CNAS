@@ -55,8 +55,9 @@ class HighTradeoffPoints(DecisionMaking):
 def main(args):
 
     ##compute the pareto front 
-    archive_temp = json.load(open(args.expr))['archive']
+    archive = json.load(open(args.expr))['archive']
 
+    '''
     # filter according to n° of exits
     archive = []
     for v in archive_temp:
@@ -71,6 +72,7 @@ def main(args):
     print(len(archive_temp))
     print("lunghezza archivio dopo")        
     print(len(archive))
+    '''
     
     subnets, top1, sec_obj = [v[0] for v in archive], [v[1] for v in archive], [v[2] for v in archive]
 
@@ -99,7 +101,8 @@ def main(args):
     supernet = OFAEvaluator(n_classes = args.n_classes, model_path=args.supernet_path, pretrained = args.supernet_path)
 
     for idx in I:
-        save = os.path.join(args.save, "net-"+args.prefer+"_"+str(args.n_exits)+"@{:.0f}".format(pf[idx, 1]))
+        save = os.path.join(args.save, "net-"+args.prefer+"@{:.0f}".format(pf[idx, 1]))
+        #save = os.path.join(args.save, "net-"+args.prefer+"_"+str(args.n_exits)+"@{:.0f}".format(pf[idx, 1]))
         os.makedirs(save, exist_ok=True)
         subnet, _ = supernet.sample({'ks': ps[idx]['ks'], 'e': ps[idx]['e'], 'd': ps[idx]['d'], 't': ps[idx]['t']})
         with open(os.path.join(save, "net.subnet"), 'w') as handle:
