@@ -221,8 +221,11 @@ class MSuNAS:
                 if x[0] == arch:
                   archive.remove(x) 
                   break 
-              
-              archive.append((arch, 100 - stats['top1'], stats[self.sec_obj], stats['util']))
+                
+              if (os.path.exists(path)):
+                archive.append((arch, 100 - stats['top1'], stats[self.sec_obj]))
+              else:
+                archive.append((arch, 100 - stats['top1'], stats[self.sec_obj], stats['util']))
         
         return archive
     
