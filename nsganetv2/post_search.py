@@ -103,7 +103,7 @@ def main(args):
 
     for idx in I:
         if(n_exits is not None):
-          save = os.path.join(args.save, "net-"+args.prefer+"_"+str(idx)+"@{:.0f}"+"_nExit@"+str(args.n_exits).format(pf[idx, 1]))
+          save = os.path.join(args.save, "net-"+args.prefer+"_"+str(idx)+"@{:.0f}"+"_nExits:"+str(args.n_exits).format(pf[idx, 1]))
         else:
           save = os.path.join(args.save, "net-"+args.prefer+"_"+str(idx)+"@{:.0f}".format(pf[idx, 1]))
         #save = os.path.join(args.save, "net-"+args.prefer+"_"+str(args.n_exits)+"@{:.0f}".format(pf[idx, 1]))
