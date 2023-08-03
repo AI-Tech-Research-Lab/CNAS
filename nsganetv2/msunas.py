@@ -213,6 +213,7 @@ class MSuNAS:
                 print("STATS")
                 print(stats)
               else: #failed net
+                print("FAILED NET")
                 stats = {'top1': 0, self.sec_obj: 10**15} #bad stats
               
               #Remove duplicates
