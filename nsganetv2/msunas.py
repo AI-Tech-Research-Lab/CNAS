@@ -210,6 +210,8 @@ class MSuNAS:
               
               if (os.path.exists(path)):
                 stats = json.load(open(pre + ".stats"))
+                print("STATS")
+                print(stats)
               else: #failed net
                 stats = {'top1': 0, self.sec_obj: 10**15} #bad stats
               
