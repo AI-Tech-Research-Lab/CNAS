@@ -75,14 +75,6 @@ def main(args):
         print(len(archive_temp))
         archive = archive_temp
     
-    print("V")
-    i=0
-    for v in archive:
-        if (i==1):
-            break
-        print(v)
-        i=i+1
-    
     subnets, top1, sec_obj, util = [v[0] for v in archive], [v[1] for v in archive], [v[2] for v in archive], [v[3] for v in archive]
 
     sort_idx = np.argsort(top1)
