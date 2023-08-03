@@ -75,7 +75,14 @@ def main(args):
         print(len(archive_temp))
         archive = archive_temp
     
-    subnets, top1, sec_obj = [v[0] for v in archive], [v[1] for v in archive], [v[2] for v in archive]
+    i=0
+    for v in archive:
+        if (i==1):
+            break
+        print(v)
+        i=i+1
+    
+    subnets, top1, sec_obj = [v[0] for v in archive], [v[1] for v in archive], [v[2] for v in archive],  
 
     sort_idx = np.argsort(top1)
     F = np.column_stack((top1, sec_obj))[sort_idx, :]
