@@ -76,7 +76,6 @@ def main(args):
         archive = archive_temp
     
     for v in archive: #remove failed nets
-        print(v)
         err_top1 = v[1]
         if(err_top1==100):
           archive.remove(v)
