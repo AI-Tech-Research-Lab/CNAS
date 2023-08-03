@@ -11,4 +11,5 @@ python post_search.py \
   -n 10 \
   --supernet_path ./ofa_nets/ofa_eembv3 \
   --prefer trade-off \
-  --n_classes 10 
+  --n_classes 10 \
+  --n_exits 1

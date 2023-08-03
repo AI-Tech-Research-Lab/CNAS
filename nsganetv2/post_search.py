@@ -57,22 +57,23 @@ def main(args):
     ##compute the pareto front 
     archive = json.load(open(args.expr))['archive']
 
-    '''
-    # filter according to n° of exits
-    archive = []
-    for v in archive_temp:
-        subnet = v[0]
-        t = subnet["t"]
-        count_exits = len(t)-t.count(1)
-        if(count_exits==args.n_exits):
-            archive.append(v)
-    print("#EEcs:")
-    print(args.n_exits)
-    print("lunghezza archivio prima")        
-    print(len(archive_temp))
-    print("lunghezza archivio dopo")        
-    print(len(archive))
-    '''
+    n_exits = args.n_exits
+    if n_exits is not None:
+        # filter according to n° of exits
+        archive_temp = []
+        for v in archive:
+            subnet = v[0]
+            t = subnet["t"]
+            count_exits = len(t)-t.count(1)
+            if(count_exits==args.n_exits):
+                archive_temp.append(v)
+        print("#EEcs:")
+        print(args.n_exits)
+        print("lunghezza archivio prima")        
+        print(len(archive_temp))
+        print("lunghezza archivio dopo")        
+        print(len(archive))
+        archive = archive_temp
     
     subnets, top1, sec_obj = [v[0] for v in archive], [v[1] for v in archive], [v[2] for v in archive]
 
@@ -182,7 +183,7 @@ if __name__ == '__main__':
                         help='weight for activations')
     parser.add_argument('--penalty', type = float, default=10**10,
                         help='penalty factor')
-    parser.add_argument('--n_exits', type=int, default=1,
+    parser.add_argument('--n_exits', type=int, default=None,
                         help='number of EEcs desired')
     cfgs = parser.parse_args()
     main(cfgs)
