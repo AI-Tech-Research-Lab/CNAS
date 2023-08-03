@@ -8,7 +8,7 @@ cd ../nsganetv2
 python post_search.py \
   --save ../results/edanas-r32/final \
   --expr ../results/edanas-r32/iter_30.stats \
-  -n 10 \
+  -n 1 \
   --supernet_path ./ofa_nets/ofa_eembv3 \
   --prefer trade-off \
   --n_classes 10 \
