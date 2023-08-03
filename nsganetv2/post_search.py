@@ -75,6 +75,7 @@ def main(args):
         print(len(archive_temp))
         archive = archive_temp
     
+    print("V")
     i=0
     for v in archive:
         if (i==1):
