@@ -207,25 +207,22 @@ class MSuNAS:
             niter = int(split2[0])
             if (niter <= maxiter):
               path = pre + ".stats"
+
+              #Remove duplicates
+              for x in archive:
+                if x[0] == arch:
+                  archive.remove(x) 
+                  break
               
               if (os.path.exists(path)):
                 stats = json.load(open(pre + ".stats"))
                 print("STATS")
                 print(stats)
+                archive.append((arch, 100 - stats['top1'], stats[self.sec_obj], stats['util']))
               else: #failed net
                 print("FAILED NET")
                 stats = {'top1': 0, self.sec_obj: 10**15} #bad stats
-              
-              #Remove duplicates
-              for x in archive:
-                if x[0] == arch:
-                  archive.remove(x) 
-                  break 
-                
-              if (os.path.exists(path)):
                 archive.append((arch, 100 - stats['top1'], stats[self.sec_obj]))
-              else:
-                archive.append((arch, 100 - stats['top1'], stats[self.sec_obj], stats['util']))
         
         return archive
     
