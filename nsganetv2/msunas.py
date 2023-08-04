@@ -171,22 +171,7 @@ class MSuNAS:
                 plot.save(os.path.join(self.save_path, 'iter_{}.png'.format(it)))
              
 
-        return
-
-    '''
-    def _resume_from_dir(self):
-        """ resume search from a previous iteration """
-        import glob
-
-        archive = []
-        for file in glob.glob(os.path.join(self.resume, "net_*.subnet")):
-            arch = json.load(open(file))
-            pre, ext = os.path.splitext(file)
-            stats = json.load(open(pre + ".stats"))
-            archive.append((arch, 100 - stats['top1'], stats[self.sec_obj]))
-        print(archive)
-        return archive    
-    '''   
+        return 
     
     def _resume_from_dir(self):
         """ resume search from a previous iteration """
@@ -213,8 +198,6 @@ class MSuNAS:
               
               if (os.path.exists(path)):
                 stats = json.load(open(pre + ".stats"))
-                print("STATS")
-                print(stats)
                 archive.append((arch, 100 - stats['top1'], stats[self.sec_obj], stats['util']))
               else: #failed net
                 print("FAILED NET")
