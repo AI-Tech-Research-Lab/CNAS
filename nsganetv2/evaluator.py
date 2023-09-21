@@ -4,8 +4,9 @@ import torch
 import argparse
 import numpy as np
 import math
-
 import utils
+import datetime
+
 from codebase.networks import NSGANetV2
 from codebase.run_manager import get_run_config
 from ofa.elastic_nn.networks import OFAMobileNetV3, OFAEEMobileNetV3, OFAResNets, OFAResNetsHE, OFAMobileNetV3HE
@@ -338,6 +339,12 @@ class OFAEvaluator:
              reset_running_statistics=True, pmax = 2, fmax = 100, amax = 5, wp = 1, wf = 1/40, wa = 1, penalty = 10**10):
 
         lut = {'cpu': 'data/i7-8700K_lut.yaml'}
+
+        # Get the current date and time
+        current_time = datetime.datetime.now()
+
+        # Print the current time
+        print("Current time:", current_time)
         
         
         info = get_adapt_net_info(
@@ -379,6 +386,12 @@ class OFAEvaluator:
             json.dump(info, handle)
         
         print(info)
+
+        # Get the current date and time
+        current_time = datetime.datetime.now()
+
+        # Print the current time
+        print("Current time:", current_time)
         
 
 

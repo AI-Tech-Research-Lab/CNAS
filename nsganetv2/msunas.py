@@ -5,6 +5,8 @@ import argparse
 import subprocess
 import numpy as np
 import math
+import datetime
+
 from utils import get_correlation
 from evaluator import OFAEvaluator, get_net_info, get_adapt_net_info
 
@@ -73,6 +75,12 @@ class MSuNAS:
   
     def search(self):
 
+        # Get the current date and time
+        current_time = datetime.datetime.now()
+
+        # Print the current time
+        print("Current time:", current_time)
+
         it_start = 1
         if self.resume:
             archive = self._resume_from_dir()
@@ -112,6 +120,12 @@ class MSuNAS:
             # search for the next set of candidates for high-fidelity evaluation (lower level)
             # Algo 1 line 10-11 / Fig. 3(b)-(d) in the paper
             candidates, c_top1_err_pred, c_compl_err_pred = self._next(archive, acc_predictor, compl_predictor, self.n_iter)
+
+            # Get the current date and time
+            current_time = datetime.datetime.now()
+
+            # Print the current time
+            print("Current time:", current_time)
             
             # high-fidelity evaluation (lower level)
             # Algo 1 line 13-14 / Fig. 3(e) in the paper
