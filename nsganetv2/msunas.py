@@ -217,6 +217,9 @@ class MSuNAS:
                 print("FAILED NET")
                 stats = {'top1': 0, self.sec_obj: 10**15} #bad stats
                 archive.append((arch, 100 - stats['top1'], stats[self.sec_obj]))
+    
+        print("LEN ARCHIVE")
+        print(len(archive))
         
         return archive
     
