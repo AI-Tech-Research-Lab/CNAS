@@ -345,8 +345,6 @@ class OFAEvaluator:
 
         # Print the current time
         print("Current time:", current_time)
-
-        print("Hello")
         
         info = get_adapt_net_info(
               subnet, (3, resolution, resolution), measure_latency=measure_latency,
