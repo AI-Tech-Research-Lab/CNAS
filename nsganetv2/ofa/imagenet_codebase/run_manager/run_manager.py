@@ -360,68 +360,6 @@ class RunManager:
                     t.update(1)
         return losses.avg, top1.avg, top5.avg
 
-    '''
-    def adaptive_validate(self, epoch=0, is_test=True, run_str='', net=None, netB = None, threshold = 0.1,
-                         data_loader=None, no_logs=False):
-
-        if not isinstance(net, nn.DataParallel):
-            net = nn.DataParallel(net)
-
-        if not isinstance(netB, nn.DataParallel):
-            netB = nn.DataParallel(netB)
-
-        if data_loader is None:
-            if is_test:
-                data_loader = self.run_config.test_loader
-            else:
-                data_loader = self.run_config.valid_loader
-
-        net.eval()
-        netB.eval()
-        
-        losses = AverageMeter()
-        top1 = AverageMeter()
-        top5 = AverageMeter()
-        netB_util = AverageMeter()
-
-        with torch.no_grad():
-            with tqdm(total=len(data_loader),
-                      desc='Validate Epoch #{} {}'.format(epoch + 1, run_str), disable=no_logs) as t:
-                for i, (images, labels) in enumerate(data_loader):
-                    images, labels = images.to(self.device), labels.to(self.device)
-                    # compute output
-                    x = net(images)
-                    
-                    #compute score margin
-                    prob = F.softmax(x)
-                    top2_prob, top2_index = torch.topk(prob,2) 
-                    sm = torch.diff(top2_prob,dim=1)*(-1)
-
-                    mask = sm < threshold
-                    output = (mask) * netB(images) + (torch.logical_not(mask)) * x
-                    count = torch.sum(mask)
-
-                    loss = self.test_criterion(output, labels)
-                    # measure accuracy and record loss
-                    acc1, acc5 = accuracy(output, labels, topk=(1, 5))
-
-                    losses.update(loss.item(), images.size(0))
-                    top1.update(acc1[0].item(), images.size(0))
-                    top5.update(acc5[0].item(), images.size(0))
-                    netB_util.update(count.item(), images.size(0))
-
-                    t.set_postfix({
-                        'loss': losses.avg,
-                        'top1': top1.avg,
-                        'top5': top5.avg,
-                        'netB_util': netB_util.avg,
-                        'threshold': threshold,
-                        'img_size': images.size(2),
-                    })
-                    t.update(1)
-        return losses.avg, top1.avg, top5.avg, netB_util.avg
-    '''
-
     def adaptive_validate(self, epoch=0, is_test=True, run_str='', net=None, data_loader=None, no_logs=False):
 
         if net is None:

@@ -346,7 +346,6 @@ class OFAEvaluator:
         # Print the current time
         print("Current time:", current_time)
         
-        
         info = get_adapt_net_info(
               subnet, (3, resolution, resolution), measure_latency=measure_latency,
               print_info=False, clean=True, lut=lut, pmax = pmax, fmax = fmax, amax = amax, wp = wp, wf = wf, wa = wa, penalty = penalty)
@@ -364,6 +363,10 @@ class OFAEvaluator:
         if reset_running_statistics:
             # run_manager.reset_running_statistics(net=subnet, batch_size=vld_batch_size)
             run_manager.reset_running_statistics(net=subnet)
+        
+        # Check the current device
+        current_device = next(subnet.parameters()).device
+        print(f"The model is currently on device: {current_device}")
         
         if n_epochs > 0:
             cfgs.subnet = subnet
