@@ -427,9 +427,6 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
     macs.append(int(profile_macs(cp_net, inputs)))
 
     net_info['macs'] = macs
-
-    print("NET INFO")
-    print(net_info['macs'])
    
     cp_net = copy.deepcopy(net)
     cp_net.eval()

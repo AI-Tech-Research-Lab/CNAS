@@ -376,10 +376,13 @@ class OFAEvaluator:
 
         info['loss'], info['top1'], info['top5'], info['util'] = loss, top1, top5, utils
 
-        macs = 0
+        avg_macs = 0
         for u,m in zip(utils,info['macs']):
-          macs += u*m
-        info['macs']=macs #average number of macs
+          avg_macs += u*m
+        info['avg_macs']=avg_macs #average number of macs
+
+        #TinyML metric is computed on the avg_macs
+        info['tiny_ml']=tiny_ml(info['params'],info['avg_macs'],info['activations'],pmax,fmax,amax,wp,wf,wa,penalty)
 
         save_path = os.path.join(log_dir, 'net.stats') if cfgs.save is None else cfgs.save
         if cfgs.save_config:
