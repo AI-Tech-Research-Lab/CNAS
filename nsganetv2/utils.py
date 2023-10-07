@@ -493,6 +493,7 @@ def get_stats_by_subnet(exp_path, subnet):
         split = exp_path.rsplit("_",1)
         maxiter = int(split[1])
         path = exp_path.rsplit("/",1)[0] 
+        stats = None
 
         for file in glob.glob(os.path.join(path + '/iter_*', "net_*.subnet")):
             arch = json.load(open(file))  
@@ -502,4 +503,5 @@ def get_stats_by_subnet(exp_path, subnet):
             niter = int(split2[0])
             if arch == subnet and niter <= maxiter:
                 stats = pre + '.stats'
-                return stats
+                
+        return stats

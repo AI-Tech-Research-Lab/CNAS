@@ -128,7 +128,7 @@ def main(args):
           save = os.path.join(args.save, "net-"+args.prefer+"_"+str(idx)+"@{:.0f}".format(pf[idx, 1]))
         #save = os.path.join(args.save, "net-"+args.prefer+"_"+str(args.n_exits)+"@{:.0f}".format(pf[idx, 1]))
         os.makedirs(save, exist_ok=True)
-        config = {'ks': ps[idx]['ks'], 'e': ps[idx]['e'], 'd': ps[idx]['d'], 't': ps[idx]['t']}
+        config = {'ks': ps[idx]['ks'], 'e': ps[idx]['e'], 'd': ps[idx]['d'], 't': ps[idx]['t'], 'r': ps[idx]['r']}
         subnet, _ = supernet.sample(config)
         with open(os.path.join(save, "net.subnet"), 'w') as handle:
             json.dump(ps[idx], handle)
