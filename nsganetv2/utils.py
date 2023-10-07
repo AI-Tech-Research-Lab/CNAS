@@ -487,7 +487,7 @@ def load_model(model_path,img_size,pretrained = 'None'):
 def save_model(model,path): #usually path has a .pt extension
     torch.save(model,path)
 
-def get_subnet_folder(exp_path, subnet):
+def get_stats_by_subnet(exp_path, subnet):
         """ search for a subnet folder in the experiment folder filtering by subnet architecture """
         import glob
         split = exp_path.rsplit("_",1)
@@ -501,5 +501,5 @@ def get_subnet_folder(exp_path, subnet):
             split2 = split[1].rsplit("/",1)
             niter = int(split2[0])
             if arch == subnet and niter <= maxiter:
-                folder_path = pre.rsplit("/",1)[0]
-                return folder_path
+                stats = pre + '.stats'
+                return stats
