@@ -59,6 +59,7 @@ def main(args):
 
     ##compute the pareto front 
     archive = json.load(open(args.expr))['archive']
+    exp_path,_ = os.path.splitext(args.expr)
 
     n_exits = args.n_exits
     if n_exits is not None:
@@ -131,7 +132,7 @@ def main(args):
         supernet.save_net_config(save, subnet, "net.config")
         supernet.save_net(save, subnet, "net.inherited")
         data_shape = (3,ps[idx]['r'],ps[idx]['r'])
-        with open(get_stats_by_subnet(config), "r") as info:
+        with open(get_stats_by_subnet(exp_path,config), "r") as info:
             #info['avg_macs'] = ps_sec_obj[idx] #update value with the avg_macs
             #info['top1'] = 100 - ps_top1[idx]
             #info['util'] = list(ps_util[idx])
