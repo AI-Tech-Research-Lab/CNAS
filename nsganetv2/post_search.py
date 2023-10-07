@@ -137,6 +137,9 @@ def main(args):
         supernet.save_net(save, subnet, "net.inherited")
         data_shape = (3,ps[idx]['r'],ps[idx]['r'])
         stats_src = get_stats_by_subnet(exp_path,config)
+        print("STATS PATH")
+        print(stats_src)
+        print("STATS")
         info = json.load(open(stats_src))
         print(info)
         stats_dest = os.path.join(save, "net.stats")
@@ -152,8 +155,8 @@ def main(args):
             subnet, _ = supernet.sample({'ks': subnets[idx]['ks'], 'e': subnets[idx]['e'], 'd': subnets[idx]['d'], 't': subnets[idx]['t']})
             data_shape = (3,subnets[idx]['r'],subnets[idx]['r'])
             stats_src = get_stats_by_subnet(exp_path,config)
-            with open(stats_src,'r') as info:
-                infos.append(info)
+            info = json.load(open(stats_src))
+            infos.append(info)
             idx = idx + 1
 
         df = pd.DataFrame(infos)
