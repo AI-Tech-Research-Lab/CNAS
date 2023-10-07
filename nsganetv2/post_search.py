@@ -136,9 +136,9 @@ def main(args):
         supernet.save_net_config(save, subnet, "net.config")
         supernet.save_net(save, subnet, "net.inherited")
         data_shape = (3,ps[idx]['r'],ps[idx]['r'])
-        print("CONFIG")
-        print(config)
         stats_src = get_stats_by_subnet(exp_path,config)
+        with open(stats_src,'r') as info:
+            print(info)
         stats_dest = os.path.join(save, "net.stats")
         shutil.copyfile(stats_src, stats_dest)
    
@@ -151,11 +151,9 @@ def main(args):
         for s in subnets:
             subnet, _ = supernet.sample({'ks': subnets[idx]['ks'], 'e': subnets[idx]['e'], 'd': subnets[idx]['d'], 't': subnets[idx]['t']})
             data_shape = (3,subnets[idx]['r'],subnets[idx]['r'])
-            #info = get_adapt_net_info(subnet,data_shape,pmax = args.pmax, fmax = args.fmax, amax = args.amax, wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
-            info["top1"] = 100 - top1[idx]
-            info["avg_macs"] = sec_obj[idx] #update value with the avg_macs
-            info["subnet"] = subnets[idx]
-            infos.append(info)
+            stats_src = get_stats_by_subnet(exp_path,config)
+            with open(stats_src,'r') as info:
+                infos.append(info)
             idx = idx + 1
 
         df = pd.DataFrame(infos)
