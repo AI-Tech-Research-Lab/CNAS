@@ -123,7 +123,7 @@ def main(args):
         data_shape = (3,ps[idx]['r'],ps[idx]['r'])
         info = get_adapt_net_info(subnet,data_shape,pmax = args.pmax, fmax = args.fmax, amax = args.amax,
                   wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
-        info['macs'] = ps_sec_obj[idx] #update value with the avg_macs
+        info['avg_macs'] = ps_sec_obj[idx] #update value with the avg_macs
         info['top1'] = 100 - ps_top1[idx]
         info['util'] = list(ps_util[idx])
         with open(os.path.join(save, "net.stats"), "w") as handle:
@@ -141,7 +141,7 @@ def main(args):
             info = get_adapt_net_info(subnet,data_shape,pmax = args.pmax, fmax = args.fmax, amax = args.amax,
                   wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
             info["top1"] = 100 - top1[idx]
-            info["macs"] = sec_obj[idx] #update value with the avg_macs
+            info["avg_macs"] = sec_obj[idx] #update value with the avg_macs
             info["subnet"] = subnets[idx]
             infos.append(info)
             idx = idx + 1
