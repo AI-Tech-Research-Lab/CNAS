@@ -61,6 +61,9 @@ def main(args):
     archive = json.load(open(args.expr))['archive']
     exp_path,_ = os.path.splitext(args.expr)
 
+    print("EXP PATH")
+    print(exp_path)
+
     n_exits = args.n_exits
     if n_exits is not None:
         # filter according to n° of exits
@@ -132,6 +135,8 @@ def main(args):
         supernet.save_net_config(save, subnet, "net.config")
         supernet.save_net(save, subnet, "net.inherited")
         data_shape = (3,ps[idx]['r'],ps[idx]['r'])
+        print("CONFIG")
+        print(config)
         with open(get_stats_by_subnet(exp_path,config), "r") as info:
             #info['avg_macs'] = ps_sec_obj[idx] #update value with the avg_macs
             #info['top1'] = 100 - ps_top1[idx]
