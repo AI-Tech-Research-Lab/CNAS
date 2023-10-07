@@ -7,6 +7,9 @@ from pymoo.model.decision_making import DecisionMaking, normalize, find_outliers
 
 from matplotlib import pyplot as plt
 
+from utils import get_stats_by_subnet
+from evaluator import OFAEvaluator
+
 
 _DEBUG = True
 
@@ -111,7 +114,7 @@ def main(args):
     I = np.append(I, 0)
 
     # create the supernet
-    from evaluator import OFAEvaluator, get_net_info, get_adapt_net_info
+
     supernet = OFAEvaluator(n_classes = args.n_classes, model_path=args.supernet_path, pretrained = args.supernet_path)
 
     for idx in I:
@@ -121,19 +124,19 @@ def main(args):
           save = os.path.join(args.save, "net-"+args.prefer+"_"+str(idx)+"@{:.0f}".format(pf[idx, 1]))
         #save = os.path.join(args.save, "net-"+args.prefer+"_"+str(args.n_exits)+"@{:.0f}".format(pf[idx, 1]))
         os.makedirs(save, exist_ok=True)
-        subnet, _ = supernet.sample({'ks': ps[idx]['ks'], 'e': ps[idx]['e'], 'd': ps[idx]['d'], 't': ps[idx]['t']})
+        config = {'ks': ps[idx]['ks'], 'e': ps[idx]['e'], 'd': ps[idx]['d'], 't': ps[idx]['t']}
+        subnet, _ = supernet.sample(config)
         with open(os.path.join(save, "net.subnet"), 'w') as handle:
             json.dump(ps[idx], handle)
         supernet.save_net_config(save, subnet, "net.config")
         supernet.save_net(save, subnet, "net.inherited")
         data_shape = (3,ps[idx]['r'],ps[idx]['r'])
-        info = get_adapt_net_info(subnet,data_shape,pmax = args.pmax, fmax = args.fmax, amax = args.amax,
-                  wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
-        info['avg_macs'] = ps_sec_obj[idx] #update value with the avg_macs
-        info['top1'] = 100 - ps_top1[idx]
-        #info['util'] = list(ps_util[idx])
-        with open(os.path.join(save, "net.stats"), "w") as handle:
-                json.dump(info, handle)
+        with open(get_stats_by_subnet(config), "r") as info:
+            #info['avg_macs'] = ps_sec_obj[idx] #update value with the avg_macs
+            #info['top1'] = 100 - ps_top1[idx]
+            #info['util'] = list(ps_util[idx])
+            with open(os.path.join(save, "net.stats"), "w") as handle:
+                    json.dump(info, handle)
    
     if args.save_stats_csv:
         
@@ -144,8 +147,7 @@ def main(args):
         for s in subnets:
             subnet, _ = supernet.sample({'ks': subnets[idx]['ks'], 'e': subnets[idx]['e'], 'd': subnets[idx]['d'], 't': subnets[idx]['t']})
             data_shape = (3,subnets[idx]['r'],subnets[idx]['r'])
-            info = get_adapt_net_info(subnet,data_shape,pmax = args.pmax, fmax = args.fmax, amax = args.amax,
-                  wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
+            #info = get_adapt_net_info(subnet,data_shape,pmax = args.pmax, fmax = args.fmax, amax = args.amax, wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
             info["top1"] = 100 - top1[idx]
             info["avg_macs"] = sec_obj[idx] #update value with the avg_macs
             info["subnet"] = subnets[idx]
