@@ -141,6 +141,8 @@ def main(args):
             #info['avg_macs'] = ps_sec_obj[idx] #update value with the avg_macs
             #info['top1'] = 100 - ps_top1[idx]
             #info['util'] = list(ps_util[idx])
+            print("INFO")
+            print(info)
             with open(os.path.join(save, "net.stats"), "w") as handle:
                     json.dump(info, handle)
    
