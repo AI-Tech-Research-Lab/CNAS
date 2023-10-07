@@ -2,6 +2,7 @@ import os
 import json
 import argparse
 import numpy as np
+import shutil
 from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 from pymoo.model.decision_making import DecisionMaking, normalize, find_outliers_upper_tail, NeighborFinder
 
@@ -137,14 +138,9 @@ def main(args):
         data_shape = (3,ps[idx]['r'],ps[idx]['r'])
         print("CONFIG")
         print(config)
-        with open(get_stats_by_subnet(exp_path,config), "r") as info:
-            #info['avg_macs'] = ps_sec_obj[idx] #update value with the avg_macs
-            #info['top1'] = 100 - ps_top1[idx]
-            #info['util'] = list(ps_util[idx])
-            print("INFO")
-            print(info)
-            with open(os.path.join(save, "net.stats"), "w") as handle:
-                    json.dump(info, handle)
+        stats_src = get_stats_by_subnet(exp_path,config)
+        stats_dest = os.path.join(save, "net.stats")
+        shutil.copyfile(stats_src, stats_dest)
    
     if args.save_stats_csv:
         
