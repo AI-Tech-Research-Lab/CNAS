@@ -84,9 +84,9 @@ def main(args):
     print(v[0])
     print(v[1])
     print(v[2])
-    print(v[3])
+    p#rint(v[3])
     
-    subnets, top1, sec_obj, util = [v[0] for v in archive], [v[1] for v in archive], [v[2] for v in archive], [v[3] for v in archive]
+    subnets, top1, sec_obj = [v[0] for v in archive], [v[1] for v in archive], [v[2] for v in archive]
 
     sort_idx = np.argsort(top1)
     F = np.column_stack((top1, sec_obj))[sort_idx, :]
@@ -96,7 +96,7 @@ def main(args):
     ps = np.array(subnets)[sort_idx][front]
     ps_top1 = np.array(top1)[sort_idx][front]
     ps_sec_obj = np.array(sec_obj)[sort_idx][front]
-    ps_util = np.array(util)[sort_idx][front]
+    #ps_util = np.array(util)[sort_idx][front]
 
     if args.prefer != 'trade-off':
         # choose the best architecture for the sec_obj
@@ -131,7 +131,7 @@ def main(args):
                   wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
         info['avg_macs'] = ps_sec_obj[idx] #update value with the avg_macs
         info['top1'] = 100 - ps_top1[idx]
-        info['util'] = list(ps_util[idx])
+        #info['util'] = list(ps_util[idx])
         with open(os.path.join(save, "net.stats"), "w") as handle:
                 json.dump(info, handle)
    
