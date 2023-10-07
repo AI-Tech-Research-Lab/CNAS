@@ -137,8 +137,8 @@ def main(args):
         supernet.save_net(save, subnet, "net.inherited")
         data_shape = (3,ps[idx]['r'],ps[idx]['r'])
         stats_src = get_stats_by_subnet(exp_path,config)
-        with open(stats_src,'r') as info:
-            print(info)
+        info = json.load(open(stats_src))
+        print(info)
         stats_dest = os.path.join(save, "net.stats")
         shutil.copyfile(stats_src, stats_dest)
    
