@@ -60,6 +60,7 @@ class OFASearchSpace:
 
             if (self.supernet == 'eemobilenetv3'):
                 while True:
+                    print("t: ", t)
                     thresholds = np.random.choice(t, size=(len(depth)-1), replace=True).tolist()
                     if any(el != 1 for el in thresholds):
                         break
