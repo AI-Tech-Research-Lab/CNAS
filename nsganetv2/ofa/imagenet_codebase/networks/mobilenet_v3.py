@@ -230,7 +230,7 @@ class EEMobileNetV3(MyNetwork):
                                 pred = pred[mask==1,:]
                             del mask 
                             del conf
-                            if(pred.size(1) != self.n_classes and pred.numel() != 0): #(pred.dim()!=0): #if not empty tensor
+                            if(pred.size(-1) != self.n_classes and pred.numel() != 0): #(pred.dim()!=0): #if not empty tensor
                                 print("ANOMALY: pred.shape = ",pred.shape)
                             preds.append(pred)
                             idxs.append(p)
