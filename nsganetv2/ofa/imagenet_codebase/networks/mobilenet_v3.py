@@ -230,7 +230,7 @@ class EEMobileNetV3(MyNetwork):
                                 pred = pred[mask==1,:]
                             del mask 
                             del conf
-                            if(pred.size(-1) != self.n_classes and pred.dim() != 0): #(pred.dim()!=0): #if not empty tensor
+                            if(pred.dim() == 0): #(pred.dim()!=0): #if not empty tensor
                                 print("ANOMALY: pred.shape = ",pred.shape)
                             preds.append(pred)
                             idxs.append(p)
@@ -251,7 +251,7 @@ class EEMobileNetV3(MyNetwork):
                 preds.append(x)
 
                 for pred in preds:
-                    if(pred.size(-1) != self.n_classes and pred.dim() != 0): #(pred.dim()!=0): #if not empty tensor
+                    if(pred.dim() == 0): #(pred.dim()!=0): #if not empty tensor
                                     print("ANOMALY3: pred.shape = ",pred.shape)
 
                 #mix predictions of all exits
@@ -262,7 +262,7 @@ class EEMobileNetV3(MyNetwork):
 
                     filtered_tensors = []
                     for tensor in tensors:
-                        if tensor.numel() != self.n_classes and tensor.dim() != 0:
+                        if tensor.dim() == 0:
                             print("ANOMALY2: tensor.shape = ",tensor)
                         else:
                             filtered_tensors.append(tensor)
