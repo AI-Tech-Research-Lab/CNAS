@@ -268,8 +268,8 @@ class EEMobileNetV3(MyNetwork):
                     if tensors:
                         #print(tensors)
                         preds[i-1] = torch.stack(tensors,axis=0)
-                    else:
-                        preds[i-1] = torch.empty(0,preds[i-1].shape[1])
+                    #else:
+                    #    preds[i-1] = torch.empty(0,preds[i-1].shape[1])
 
                     del preds[i]
                 
