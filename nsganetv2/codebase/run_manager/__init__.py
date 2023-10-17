@@ -6,8 +6,7 @@ from codebase.data_providers.dtd import *
 from codebase.data_providers.pets import *
 from codebase.data_providers.aircraft import *
 from codebase.data_providers.mnist import * 
-
-
+from codebase.data_providers.svhn import * 
 
 from ofa.imagenet_codebase.run_manager.run_manager import *
 
@@ -328,6 +327,44 @@ class MNISTRunConfig(RunConfig):
                 distort_color=self.distort_color, image_size=self.image_size,
             )
         return self.__dict__['_data_provider']
+    
+class SVHNRunConfig(RunConfig):
+
+    def __init__(self, n_epochs=1, init_lr=0.05, lr_schedule_type='cosine', lr_schedule_param=None,
+                 dataset='aircraft', train_batch_size=32, test_batch_size=250, valid_size=None,
+                 opt_type='sgd', opt_param=None, weight_decay=4e-5, label_smoothing=0.0, no_decay_keys=None,
+                 mixup_alpha=None,
+                 model_init='he_fout', validation_frequency=1, print_frequency=10,
+                 n_worker=32, resize_scale=0.08, distort_color='tf', image_size=224,
+                 data_path='/mnt/datastore/SVHN',
+                 **kwargs):
+        super(SVHNRunConfig, self).__init__(
+            n_epochs, init_lr, lr_schedule_type, lr_schedule_param,
+            dataset, train_batch_size, test_batch_size, valid_size,
+            opt_type, opt_param, weight_decay, label_smoothing, no_decay_keys,
+            mixup_alpha,
+            model_init, validation_frequency, print_frequency
+        )
+        self.n_worker = n_worker
+        self.resize_scale = resize_scale
+        self.distort_color = distort_color
+        self.image_size = image_size
+        self.data_path = data_path
+
+    @property
+    def data_provider(self):
+        if self.__dict__.get('_data_provider', None) is None:
+            if self.dataset == SVHNDataProvider.name():
+                DataProviderClass = SVHNDataProvider
+            else:
+                raise NotImplementedError
+            self.__dict__['_data_provider'] = DataProviderClass(
+                save_path=self.data_path,
+                train_batch_size=self.train_batch_size, test_batch_size=self.test_batch_size,
+                valid_size=self.valid_size, n_worker=self.n_worker, resize_scale=self.resize_scale,
+                distort_color=self.distort_color, image_size=self.image_size,
+            )
+        return self.__dict__['_data_provider']
 
 
 def get_run_config(**kwargs):
@@ -347,6 +384,8 @@ def get_run_config(**kwargs):
         run_config = AircraftRunConfig(**kwargs)
     elif kwargs['dataset'] == 'mnist': #actually MNIST not working
         run_config = MNISTRunConfig(**kwargs)
+    elif kwargs['dataset'] == 'svhn':
+        run_config = SVHNRunConfig(**kwargs)
     else:
         raise NotImplementedError
 
