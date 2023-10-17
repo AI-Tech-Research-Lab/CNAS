@@ -61,9 +61,9 @@ class OFASearchSpace:
             if (self.supernet == 'eemobilenetv3'):
                 while True:
                     thresholds = np.random.choice(t, size=(len(depth)-1), replace=True).tolist()
-                    print("THRESHOLDS: ", thresholds)
                     if any(t != 1 for t in thresholds):
                         break
+                print("THRESHOLDS: ", thresholds)
                 data.append({'ks': kernel_size, 'e': exp_ratio, 'd': depth, 't': thresholds, 'r': resolution})
             else:
                 data.append({'ks': kernel_size, 'e': exp_ratio, 'd': depth, 'r': resolution})
