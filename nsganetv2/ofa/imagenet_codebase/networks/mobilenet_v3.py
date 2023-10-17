@@ -231,7 +231,7 @@ class EEMobileNetV3(MyNetwork):
                             del mask 
                             del conf
                             for tensors in pred:
-                                if tensors:
+                                if tensors.dim!=0:
                                     for tensor in tensors:
                                         if(tensor.dim() == 0): #(pred.dim()!=0): #if not empty tensor
                                             print("ANOMALY: pred.shape = ",pred.shape)
@@ -254,7 +254,7 @@ class EEMobileNetV3(MyNetwork):
                 preds.append(x)
 
                 for tensors in pred:
-                    if tensors:
+                    if tensors.dim()!=0:
                         for tensor in tensors:
                             if(tensor.dim() == 0): #(pred.dim()!=0): #if not empty tensor
                                 print("ANOMALY: pred.shape = ",pred.shape)
