@@ -44,10 +44,10 @@ class CIFAR10DataProvider(DataProvider):
         if valid_size is not None:
             if not isinstance(valid_size, int):
                 assert isinstance(valid_size, float) and 0 < valid_size < 1
-                valid_size = int(len(train_dataset.data) * valid_size)
+                valid_size = int(len(train_dataset) * valid_size)
             
             valid_dataset = self.train_dataset(valid_transforms)
-            train_indexes, valid_indexes = self.random_sample_valid_set(len(train_dataset.data), valid_size)
+            train_indexes, valid_indexes = self.random_sample_valid_set(len(train_dataset), valid_size)
             
             if num_replicas is not None:
                 train_sampler = MyDistributedSampler(train_dataset, num_replicas, rank, np.array(train_indexes))
@@ -259,10 +259,10 @@ class CIFAR10HEDataProvider(DataProvider):
         if valid_size is not None:
             if not isinstance(valid_size, int):
                 assert isinstance(valid_size, float) and 0 < valid_size < 1
-                valid_size = int(len(train_dataset.data) * valid_size)
+                valid_size = int(len(train_dataset) * valid_size)
             
             valid_dataset = self.train_dataset(valid_transforms)
-            train_indexes, valid_indexes = self.random_sample_valid_set(len(train_dataset.data), valid_size)
+            train_indexes, valid_indexes = self.random_sample_valid_set(len(train_dataset), valid_size)
             
             if num_replicas is not None:
                 train_sampler = MyDistributedSampler(train_dataset, num_replicas, rank, np.array(train_indexes))
@@ -449,10 +449,10 @@ class CIFAR100DataProvider(DataProvider):
         if valid_size is not None:
             if not isinstance(valid_size, int):
                 assert isinstance(valid_size, float) and 0 < valid_size < 1
-                valid_size = int(len(train_dataset.data) * valid_size)
+                valid_size = int(len(train_dataset) * valid_size)
 
             valid_dataset = self.train_dataset(valid_transforms)
-            train_indexes, valid_indexes = self.random_sample_valid_set(len(train_dataset.data), valid_size)
+            train_indexes, valid_indexes = self.random_sample_valid_set(len(train_dataset), valid_size)
 
             if num_replicas is not None:
                 train_sampler = MyDistributedSampler(train_dataset, num_replicas, rank, np.array(train_indexes))
@@ -665,10 +665,10 @@ class CINIC10DataProvider(DataProvider):
         if valid_size is not None:
             if not isinstance(valid_size, int):
                 assert isinstance(valid_size, float) and 0 < valid_size < 1
-                valid_size = int(len(train_dataset.data) * valid_size)
+                valid_size = int(len(train_dataset) * valid_size)
 
             valid_dataset = self.train_dataset(valid_transforms)
-            train_indexes, valid_indexes = self.random_sample_valid_set(len(train_dataset.data), valid_size)
+            train_indexes, valid_indexes = self.random_sample_valid_set(len(train_dataset), valid_size)
 
             if num_replicas is not None:
                 train_sampler = MyDistributedSampler(train_dataset, num_replicas, rank, np.array(train_indexes))
