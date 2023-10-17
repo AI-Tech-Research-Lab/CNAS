@@ -118,6 +118,7 @@ class SVHNDataProvider(DataProvider):
         raise ValueError('unable to download %s' % self.name())
     
     def train_dataset(self, _transforms):
+        print("DATA PROVIDER: ", self.save_path)
         dataset = torchvision.datasets.SVHN(
             root=self.save_path, split='train', download=False,
             transform=_transforms)
