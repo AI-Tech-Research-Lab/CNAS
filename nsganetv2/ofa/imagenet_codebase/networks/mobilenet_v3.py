@@ -252,7 +252,7 @@ class EEMobileNetV3(MyNetwork):
                     if tensors.dim()!=0:
                         for tensor in tensors:
                             if(tensor.dim() == 0): #(pred.dim()!=0): #if not empty tensor
-                                print("ANOMALY: pred.shape = ",pred.shape)
+                                print("ANOMALY: pred.shape = ",tensor)
 
                 #mix predictions of all exits
                 tensors = []
