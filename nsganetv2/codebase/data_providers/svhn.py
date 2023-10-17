@@ -119,13 +119,13 @@ class SVHNDataProvider(DataProvider):
     
     def train_dataset(self, _transforms):
         dataset = torchvision.datasets.SVHN(
-            root='~/loss_landscape_dataset/svhn', split='train', download=False,
+            root=self.save_path, split='train', download=False,
             transform=_transforms)
         return dataset
     
     def test_dataset(self, _transforms):
         dataset = torchvision.datasets.SVHN(
-            root='~/loss_landscape_dataset/svhn', split='test', download=False,
+            root=self.save_path, split='test', download=False,
             transform=_transforms)
         return dataset
     
