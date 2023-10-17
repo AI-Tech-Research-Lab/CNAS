@@ -256,12 +256,12 @@ class EEMobileNetV3(MyNetwork):
                     iter = idxs[i-1]  
                     pred = preds[i]
                     for j,idx in enumerate(iter):
-                        if pred[j].numel() > 0:#(pred[j].dim()!=0): #if not empty tensor
+                        if pred[j].numel() == self.n_classes:#(pred[j].dim()!=0): #if not empty tensor
                           tensors.insert(idx,pred[j])
 
                     filtered_tensors = []
                     for tensor in tensors:
-                        if tensor.numel() > 0:
+                        if tensor.numel() == self.n_classes:
                             filtered_tensors.append(tensor)
                     tensors = filtered_tensors
                     
