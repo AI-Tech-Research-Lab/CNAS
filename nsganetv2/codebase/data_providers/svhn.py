@@ -40,6 +40,9 @@ class SVHNDataProvider(DataProvider):
 
         train_transforms = self.build_train_transform()
         train_dataset = self.train_dataset(train_transforms)
+
+        print("LEN OF TRAIN DATASET: ", len(train_dataset.data))
+              
         
         if valid_size is not None:
             if not isinstance(valid_size, int):
@@ -79,6 +82,8 @@ class SVHNDataProvider(DataProvider):
             self.valid = None
         
         test_dataset = self.test_dataset(valid_transforms)
+        print("LEN OF TEST DATASET: ", len(test_dataset.data))
+
         if num_replicas is not None:
             test_sampler = torch.utils.data.distributed.DistributedSampler(test_dataset, num_replicas, rank)
             self.test = torch.utils.data.DataLoader(
