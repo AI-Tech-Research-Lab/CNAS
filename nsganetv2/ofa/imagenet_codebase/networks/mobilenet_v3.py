@@ -262,11 +262,12 @@ class EEMobileNetV3(MyNetwork):
 
                     filtered_tensors = []
                     for tensor in tensors:
-                        if tensor.dim() == 0:
-                            print("ANOMALY2: tensor.shape = ",tensor)
-                        else:
+                        if tensor.numel()>0:
                             filtered_tensors.append(tensor)
                     tensors = filtered_tensors
+
+                    if tensor.dim()==0:
+                                print("ANOMALY4: tensor.shape = ",tensor.shape)
 
                     iter = idxs[i-1]  
                     pred = preds[i]
@@ -275,7 +276,9 @@ class EEMobileNetV3(MyNetwork):
                           tensors.insert(idx,pred[j])
                     
                     if tensors:
-                        #print(tensors)
+                        for tensor in tensors:
+                            if tensor.dim()==0:
+                                print("ANOMALY2: tensor.shape = ",tensor.shape)
                         preds[i-1] = torch.stack(tensors,axis=0)
 
                     del preds[i]
