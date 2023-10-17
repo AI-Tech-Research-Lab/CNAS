@@ -256,6 +256,14 @@ class EEMobileNetV3(MyNetwork):
                 for i in range(len(preds)-1,0,-1): #mix predictions of all exits
                     tensors = list(torch.unbind(preds[i-1],axis=0)) #preds of the previous exit
 
+                    filtered_tensors = []
+                    for tensor in tensors:
+                        if tensor.numel() != self.n_classes and tensor.numel() != 0:
+                            print("ANOMALY: tensor.shape = ",tensor.shape)
+                        else:
+                            filtered_tensors.append(tensor)
+                    tensors = filtered_tensors
+
                     iter = idxs[i-1]  
                     pred = preds[i]
                     for j,idx in enumerate(iter):
