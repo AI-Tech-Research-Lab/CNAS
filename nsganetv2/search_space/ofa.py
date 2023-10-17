@@ -59,6 +59,7 @@ class OFASearchSpace:
             resolution = int(np.random.choice(r))
 
             if (self.supernet == 'eemobilenetv3'):
+                print("THRESHOLD: ", t")
                 while True:
                     thresholds = np.random.choice(t, size=(len(depth)-1), replace=True).tolist()
                     if all(t == 1 for t in thresholds):
