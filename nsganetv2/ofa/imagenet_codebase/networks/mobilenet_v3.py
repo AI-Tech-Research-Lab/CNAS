@@ -275,7 +275,7 @@ class EEMobileNetV3(MyNetwork):
                           tensors.insert(idx,pred[j])
                     
                     if tensors:
-                        print(tensors)
+                        #print(tensors)
                         preds[i-1] = torch.stack(tensors,axis=0)
 
                     del preds[i]
