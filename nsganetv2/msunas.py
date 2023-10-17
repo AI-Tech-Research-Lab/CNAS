@@ -91,10 +91,10 @@ class MSuNAS:
             archive = []  # initialize an empty archive to store all trained CNNs
 
             # Design Of Experiment
-            if self.iterations < 1:
-                arch_doe = self.search_space.sample(n_samples = self.n_doe)
-            else:
-                arch_doe = self.search_space.initialize(self.n_doe)
+            #if self.iterations < 1:
+            arch_doe = self.search_space.sample(n_samples = self.n_doe)
+            #else:
+            #    arch_doe = self.search_space.initialize(self.n_doe)
 
             # parallel evaluation of arch_doe
             top1_err, complexity = self._evaluate(arch_doe, it=0)
