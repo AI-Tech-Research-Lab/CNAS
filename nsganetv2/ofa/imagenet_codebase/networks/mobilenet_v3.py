@@ -273,7 +273,7 @@ class EEMobileNetV3(MyNetwork):
                     iter = idxs[i-1]  
                     pred = preds[i]
                     for j,idx in enumerate(iter):
-                        if pred[j].numel() > 0: #(pred[j].dim()!=0): #if not empty tensor
+                        if pred[j].dim()!=0 and pred[j].numel()>0: #if not scalar and not empty tensor
                           tensors.insert(idx,pred[j])
                     
                     if tensors:
