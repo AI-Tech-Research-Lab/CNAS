@@ -259,7 +259,7 @@ class EEMobileNetV3(MyNetwork):
                     filtered_tensors = []
                     for tensor in tensors:
                         if tensor.numel() != self.n_classes and tensor.numel() != 0:
-                            print("ANOMALY2: tensor.shape = ",tensor.shape)
+                            print("ANOMALY2: tensor.shape = ",tensor)
                         else:
                             filtered_tensors.append(tensor)
                     tensors = filtered_tensors
