@@ -662,7 +662,7 @@ class CINIC10DataProvider(DataProvider):
         train_transforms = self.build_train_transform()
         train_dataset = self.train_dataset(train_transforms)
 
-        print("LEN OF TRAIN DATASET: ", len(train_dataset))
+        #print("LEN OF TRAIN DATASET: ", len(train_dataset))
 
         if valid_size is not None:
             if not isinstance(valid_size, int):

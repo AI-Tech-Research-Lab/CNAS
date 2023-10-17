@@ -41,7 +41,6 @@ class OFASearchSpace:
         e = self.exp_ratio if e is None else e
         d = self.depth if d is None else d
         t = self.threshold if t is None else t
-        print("t",t)
         r = self.resolution if r is None else r
 
         data = []
