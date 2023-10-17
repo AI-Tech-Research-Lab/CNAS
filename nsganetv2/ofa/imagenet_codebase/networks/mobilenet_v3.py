@@ -248,11 +248,13 @@ class EEMobileNetV3(MyNetwork):
 
                 preds.append(x)
 
+                '''
                 for tensors in pred:
                     if tensors.dim()!=0:
                         for tensor in tensors:
                             if(tensor.dim() == 0): #(pred.dim()!=0): #if not empty tensor
                                 print("ANOMALY: pred.shape = ",tensor)
+                '''
 
                 #mix predictions of all exits
                 tensors = []
@@ -260,26 +262,30 @@ class EEMobileNetV3(MyNetwork):
                 for i in range(len(preds)-1,0,-1): #mix predictions of all exits
                     tensors = list(torch.unbind(preds[i-1],axis=0)) #preds of the previous exit
 
+                    '''
                     filtered_tensors = []
                     for tensor in tensors:
                         if tensor.numel()>0:
                             filtered_tensors.append(tensor)
                     tensors = filtered_tensors
-
+ 
                     for tensor in tensors:
                         if tensor.dim()==0:
                                     print("ANOMALY4: tensor.shape = ",tensor.shape)
+                    '''
 
                     iter = idxs[i-1]  
                     pred = preds[i]
                     for j,idx in enumerate(iter):
-                        if pred[j].dim()!=0 and pred[j].numel()>0: #if not scalar and not empty tensor
+                        if pred[j].numel()>0: #if not empty tensor
                           tensors.insert(idx,pred[j])
                     
                     if tensors:
+                        '''
                         for tensor in tensors:
                             if tensor.dim()==0:
                                 print("ANOMALY2: tensor.shape = ",tensor.shape)
+                        '''
                         preds[i-1] = torch.stack(tensors,axis=0)
 
                     del preds[i]
