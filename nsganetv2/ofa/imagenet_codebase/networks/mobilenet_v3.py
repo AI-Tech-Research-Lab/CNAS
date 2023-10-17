@@ -218,7 +218,6 @@ class EEMobileNetV3(MyNetwork):
                             mask = mask.cpu() #gpu>cpu memory
                             p = np.where(np.array(mask)==False)[0] #idxs of non EE predictions
                             counts[i] = torch.sum(mask).item()
-                            print("BS shape: ",x.shape[0])
                             if (x.shape[0]==1): #if batch size = 1
                                 if mask.item()==1: #exit
                                     x = torch.empty(0,x.shape[1],x.shape[2],x.shape[3])
