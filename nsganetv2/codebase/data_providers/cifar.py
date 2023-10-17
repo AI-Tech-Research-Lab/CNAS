@@ -752,7 +752,7 @@ class CINIC10DataProvider(DataProvider):
 
     @property
     def train_path(self):
-        return os.path.join(self.save_path, 'train_and_valid')
+        return os.path.join(self.save_path, 'train')
         # return self.save_path
 
     @property
