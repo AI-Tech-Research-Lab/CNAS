@@ -41,6 +41,7 @@ class OFASearchSpace:
         e = self.exp_ratio if e is None else e
         d = self.depth if d is None else d
         t = self.threshold if t is None else t
+        print("t",t)
         r = self.resolution if r is None else r
 
         data = []
@@ -60,7 +61,6 @@ class OFASearchSpace:
 
             if (self.supernet == 'eemobilenetv3'):
                 while True:
-                    print("t: ", t)
                     thresholds = np.random.choice(t, size=(len(depth)-1), replace=True).tolist()
                     if any(el != 1 for el in thresholds):
                         break
