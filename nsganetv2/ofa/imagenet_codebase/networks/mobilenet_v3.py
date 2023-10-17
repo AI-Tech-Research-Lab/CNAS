@@ -250,6 +250,22 @@ class EEMobileNetV3(MyNetwork):
 
                 #mix predictions of all exits
                 tensors = []
+
+                for i in range(len(preds)-1,0,-1): #mix predictions of all exits
+                    tensors = list(torch.unbind(preds[i-1],axis=0)) #preds of the previous exit
+
+                    iter = idxs[i-1]  
+                    pred = preds[i]
+                    for j,idx in enumerate(iter):
+                        if pred[j].numel() > 0 #(pred[j].dim()!=0): #if not empty tensor
+                          tensors.insert(idx,pred[j])
+                    
+                    if tensors:
+                        preds[i-1] = torch.stack(tensors,axis=0)
+
+                    del preds[i]
+
+                '''
                 for i in range(len(preds)-1,0,-1): #mix predictions of all exits
                     tensors = list(torch.unbind(preds[i-1],axis=0)) #preds of the previous exit
 
@@ -272,6 +288,7 @@ class EEMobileNetV3(MyNetwork):
                     #    preds[i-1] = torch.empty(0,preds[i-1].shape[1])
 
                     del preds[i]
+                '''
                 
                 x = preds[0]
                 del preds[0]
