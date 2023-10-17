@@ -266,8 +266,9 @@ class EEMobileNetV3(MyNetwork):
                             filtered_tensors.append(tensor)
                     tensors = filtered_tensors
 
-                    if tensor.dim()==0:
-                                print("ANOMALY4: tensor.shape = ",tensor.shape)
+                    for tensor in tensors:
+                        if tensor.dim()==0:
+                                    print("ANOMALY4: tensor.shape = ",tensor.shape)
 
                     iter = idxs[i-1]  
                     pred = preds[i]
