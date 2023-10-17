@@ -218,8 +218,9 @@ class EEMobileNetV3(MyNetwork):
                             mask = mask.cpu() #gpu>cpu memory
                             p = np.where(np.array(mask)==False)[0] #idxs of non EE predictions
                             counts[i] = torch.sum(mask).item()
-                            if (x.shape[0]==1):
-                                if mask.item()==1: 
+                            if (x.shape[0]==1): #if batch size = 1
+                                print("batch size = 1")
+                                if mask.item()==1: #exit
                                     x = torch.empty(0,x.shape[1],x.shape[2],x.shape[3])
                                     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
                                     x = x.to(device)
@@ -251,8 +252,8 @@ class EEMobileNetV3(MyNetwork):
                 #mix predictions of all exits
                 tensors = []
                 for i in range(len(preds)-1,0,-1): #mix predictions of all exits
-                    tensors = list(torch.unbind(preds[i-1],axis=0))
-                    iter = idxs[i-1]
+                    tensors = list(torch.unbind(preds[i-1],axis=0)) #preds of the previous exit
+                    iter = idxs[i-1]  
                     pred = preds[i]
                     for j,idx in enumerate(iter):
                         if not (pred[j].size() == (0,)):#(pred[j].dim()!=0): #if not empty tensor
