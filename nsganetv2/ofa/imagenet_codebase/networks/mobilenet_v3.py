@@ -250,6 +250,10 @@ class EEMobileNetV3(MyNetwork):
 
                 preds.append(x)
 
+                for pred in preds:
+                    if(pred.size(-1) != self.n_classes and pred.numel() != 0): #(pred.dim()!=0): #if not empty tensor
+                                    print("ANOMALY3: pred.shape = ",pred.shape)
+
                 #mix predictions of all exits
                 tensors = []
 
