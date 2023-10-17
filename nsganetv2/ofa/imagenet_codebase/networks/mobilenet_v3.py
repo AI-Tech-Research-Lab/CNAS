@@ -231,9 +231,10 @@ class EEMobileNetV3(MyNetwork):
                             del mask 
                             del conf
                             for tensors in pred:
-                                for tensor in tensors:
-                                    if(tensor.dim() == 0): #(pred.dim()!=0): #if not empty tensor
-                                        print("ANOMALY: pred.shape = ",pred.shape)
+                                if tensors:
+                                    for tensor in tensors:
+                                        if(tensor.dim() == 0): #(pred.dim()!=0): #if not empty tensor
+                                            print("ANOMALY: pred.shape = ",pred.shape)
                             preds.append(pred)
                             idxs.append(p)
                             # FIX bug that for one sample x.shape = (0,1,,,,) when empty
@@ -253,6 +254,7 @@ class EEMobileNetV3(MyNetwork):
                 preds.append(x)
 
                 for tensors in pred:
+                    if tensors:
                         for tensor in tensors:
                             if(tensor.dim() == 0): #(pred.dim()!=0): #if not empty tensor
                                 print("ANOMALY: pred.shape = ",pred.shape)
