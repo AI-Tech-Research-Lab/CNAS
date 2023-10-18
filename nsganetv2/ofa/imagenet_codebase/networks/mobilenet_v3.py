@@ -228,6 +228,8 @@ class EEMobileNetV3(MyNetwork):
                             else:
                                 x = x[mask==0,:,:,:]
                                 pred = pred[mask==1,:]
+                                if(pred.dim()==0):
+                                    print("BUG of the EEC with exit idx: " + str(i))
                             del mask 
                             del conf
                             preds.append(pred)

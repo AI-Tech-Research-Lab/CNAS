@@ -124,25 +124,25 @@ class SVHNDataProvider(DataProvider):
     
     def train_dataset(self, _transforms):
         dataset = torchvision.datasets.SVHN(
-            root=self.save_path, split='train', download=True,
+            root=self.save_path, split='train', download=False,
             transform=_transforms)
         return dataset
     
     def test_dataset(self, _transforms):
         dataset = torchvision.datasets.SVHN(
-            root=self.save_path, split='test', download=True,
+            root=self.save_path, split='test', download=False,
             transform=_transforms)
         return dataset
     
     @property
     def train_path(self):
-        return os.path.join(self.save_path, 'train_32x32.mat')
-        #return self.save_path
+        #return os.path.join(self.save_path, 'train_32x32.mat')
+        return self.save_path
     
     @property
     def valid_path(self):
-        return os.path.join(self.save_path, 'test_32x32.mat')
-        #return self.save_path
+        #return os.path.join(self.save_path, 'test_32x32.mat')
+        return self.save_path
     
     @property
     def normalize(self):
