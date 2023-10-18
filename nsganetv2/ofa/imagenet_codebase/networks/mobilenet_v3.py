@@ -248,13 +248,13 @@ class EEMobileNetV3(MyNetwork):
             x = self.classifier(x)
 
             if(self.n_exit!=0):
-
+                
                 preds.append(x)
 
-                
-                for tensor in preds:
-                    print("TENSOR SHAPE")
-                    print(tensor.shape)
+                for i,tensor in enumerate(preds):
+                    if tensor.dim()==1:
+                        print(tensor.shape)
+                        preds[i]=tensor.unsqueeze(0)
                 
                 '''
                     if tensors.dim()!=0:
