@@ -255,7 +255,7 @@ class EEMobileNetV3(MyNetwork):
                 for tensors in pred:
                     if tensors.dim()!=0:
                         for tensor in tensors:
-                            print("tensor: " + tensor)
+                            #print(tensor)
                             if(tensor.dim() == 0): #(pred.dim()!=0): #if not empty tensor
                                 print("ANOMALY: pred = ",tensor)
                 
