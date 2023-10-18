@@ -228,6 +228,7 @@ class EEMobileNetV3(MyNetwork):
                             else:
                                 x = x[mask==0,:,:,:]
                                 pred = pred[mask==1,:]
+                                #print("Prediction: "+pred)
                                 if(pred.dim()==0):
                                     print("BUG of the EEC with exit idx: " + str(i))
                             del mask 
@@ -250,13 +251,14 @@ class EEMobileNetV3(MyNetwork):
 
                 preds.append(x)
 
-                '''
+                
                 for tensors in pred:
                     if tensors.dim()!=0:
                         for tensor in tensors:
+                            print("tensor: " + tensor)
                             if(tensor.dim() == 0): #(pred.dim()!=0): #if not empty tensor
-                                print("ANOMALY: pred.shape = ",tensor)
-                '''
+                                print("ANOMALY: pred = ",tensor)
+                
 
                 #mix predictions of all exits
                 tensors = []
