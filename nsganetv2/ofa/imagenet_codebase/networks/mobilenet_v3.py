@@ -251,78 +251,32 @@ class EEMobileNetV3(MyNetwork):
                 
                 preds.append(x)
 
+                '''
                 for i,tensor in enumerate(preds):
-                    if tensor.dim()==1:
-                        print(tensor.shape)
+                    if tensor.dim()==1: 
                         preds[i]=tensor.unsqueeze(0)
-                
-                '''
-                    if tensors.dim()!=0:
-                        for tensor in tensors:
-                            #print(tensor)
-                            if(tensor.dim() == 0): #(pred.dim()!=0): #if not empty tensor
-                                print("ANOMALY: pred = ",tensor)
                 '''
                 
-
                 #mix predictions of all exits
                 tensors = []
 
                 for i in range(len(preds)-1,0,-1): #mix predictions of all exits
+
                     tensors = list(torch.unbind(preds[i-1],axis=0)) #preds of the previous exit
 
-                    '''
-                    filtered_tensors = []
-                    for tensor in tensors:
-                        if tensor.numel()>0:
-                            filtered_tensors.append(tensor)
-                    tensors = filtered_tensors
- 
-                    for tensor in tensors:
-                        if tensor.dim()==0:
-                                    print("ANOMALY4: tensor.shape = ",tensor.shape)
-                    '''
+                    iter = idxs[i-1] 
+                    if preds[i].dim()==1: #squeezed tensor (i.e., torch.Size([n_classes]))
+                         preds[i]=preds[i].unsqueeze(0) # torch.Size([1,n_classes])
+                    pred = preds[i] #preds of the current exit
 
-                    iter = idxs[i-1]  
-                    pred = preds[i]
                     for j,idx in enumerate(iter):
                         if pred[j].numel()>0: #if not empty tensor
                           tensors.insert(idx,pred[j])
                     
                     if tensors:
-                        '''
-                        for tensor in tensors:
-                            if tensor.dim()==0:
-                                print("ANOMALY2: tensor.shape = ",tensor.shape)
-                        '''
-                        preds[i-1] = torch.stack(tensors,axis=0)
+                        preds[i-1] = torch.stack(tensors,axis=0) #stack predictions all together
 
                     del preds[i]
-
-                '''
-                for i in range(len(preds)-1,0,-1): #mix predictions of all exits
-                    tensors = list(torch.unbind(preds[i-1],axis=0)) #preds of the previous exit
-
-                    iter = idxs[i-1]  
-                    pred = preds[i]
-                    for j,idx in enumerate(iter):
-                        if pred[j].numel() == self.n_classes:#(pred[j].dim()!=0): #if not empty tensor
-                          tensors.insert(idx,pred[j])
-
-                    filtered_tensors = []
-                    for tensor in tensors:
-                        if tensor.numel() == self.n_classes:
-                            filtered_tensors.append(tensor)
-                    tensors = filtered_tensors
-                    
-                    if tensors:
-                        #print(tensors)
-                        preds[i-1] = torch.stack(tensors,axis=0)
-                    #else:
-                    #    preds[i-1] = torch.empty(0,preds[i-1].shape[1])
-
-                    del preds[i]
-                '''
                 
                 x = preds[0]
                 del preds[0]
