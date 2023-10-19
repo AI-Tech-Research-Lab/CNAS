@@ -87,12 +87,6 @@ def main(args):
         err_top1 = v[1]
         if(err_top1==100):
           archive.remove(v)
-
-    print("ARCHIVE")
-    print(v[0])
-    print(v[1])
-    print(v[2])
-    #print(v[3])
     
     subnets, top1, sec_obj = [v[0] for v in archive], [v[1] for v in archive], [v[2] for v in archive]
 
