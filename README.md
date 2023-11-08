@@ -32,10 +32,9 @@ Download the dataset from the link embedded in the name.
 |:-:|:-:|:-:|:-:|:-:|
 | [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html)* |  | 50,000 | 10,000 | 10 |
 
-
-## How to use CNAS to search
+## How to launch the search
 ```python
-""" Bi-objective search
+""" CNAS search
 Syntax: python msunas.py \
     --resume /path/to/iter/stats \ # iter stats file path
     --sec_obj [params/macs/activations/tiny_ml] \ # objective (in addition to top-1 acc)
@@ -48,6 +47,7 @@ Syntax: python msunas.py \
     --data /path/to/data/ \ # dataset folder path
     --predictor [as] \ # type of accuracy predictor. 'as' stands for Adaptive Switching
     --supernet_path /path/to/supernet/weights \ # supernet model path
+    --search_space \ # ['mobilenetv3',
     --pretrained \ # flag to use the supernet pretrained weights
     --save /path/to/results/folder \ # results folder path
     --iterations [30] \ # number of NAS iterations
@@ -63,6 +63,8 @@ Syntax: python msunas.py \
     --lr [192] \ # minimum resolution of the search
     --ur [256] # maximum resolution of the search
 """
+## How to launch EDANAS search
+
 ```
 - To launch the search, you can use the above command with the proper syntax or simply run a file in the `scripts` folder.
 - It supports searching for *params*, *macs*, *activations*, *tiny_ml* as the second objective. *Params*, *macs*, *activations* stand for the number of parameters, the number of macs, the sum of the activation sizes respectively.
