@@ -1,6 +1,6 @@
 This repository contains the code for Constrained Neural Architecture Search (CNAS) and Adaptive Neural Architecture Search for Early Exit Neural Networks (EDANAS).
 
-#References
+# References
 
 ## CNAS: Constrained Neural Architecture Search
 Published in 2022 IEEE International Conference on Systems, Man, and Cybernetics (SMC)
