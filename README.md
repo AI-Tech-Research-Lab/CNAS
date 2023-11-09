@@ -36,7 +36,6 @@ Download the dataset from the link embedded in the name.
 
 ## How to launch the search
 ```python
-""" CNAS search
 Syntax: python msunas.py \
     --resume /path/to/iter/stats \ # iter stats file path
     --sec_obj [params/macs/activations/tiny_ml] \ # objective (in addition to top-1 acc)
