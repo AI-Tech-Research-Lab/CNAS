@@ -65,8 +65,6 @@ Syntax: python msunas.py \
     --lr [192] \ # minimum resolution of the search
     --ur [256] # maximum resolution of the search
 """
-## How to launch EDANAS search
-
 ```
 - To launch the search, you can use the above command with the proper syntax or simply run a file in the `scripts` folder.
 - It supports searching for *params*, *macs*, *activations*, *tiny_ml* as the second objective. *Params*, *macs*, *activations* stand for the number of parameters, the number of macs, the sum of the activation sizes respectively.
@@ -118,36 +116,3 @@ Syntax: python train_cifar.py \
     --cutout --autoaugment --save
 """
 ```
-
-## Benchmarks
-- TinyML
-
-| Model | NAS | Params | MACs | Act. Sizes | Accuracy |
-|:-:|:-:|:-:|:-:|:-:|:-:|
-| TinyFR (our) | yes | 2.89M | 126.17M | 5.21M | 97.2% |
-| TinyRasp1% (our) | yes | 2.14M | 6.85M | 0.23M | 89.9% |
-| MSUNAS | yes | 2.53M | 194.16M | 8.2M | 97.75% |
-| MuxNet | yes | 2.1M | 200M |  | 98.0% |
-| HCGNet-A1 | no | 1.1M | 100M |  | 96.85% |
-| CCT-2/3x2 | no | 0.28M | 30M |  | 89.17% |
-| CCT-7/3x1 | no | 3.76M | 950M |  | 98.0% |
-
-TinyRasp1% experiment folders (tiny_ml): search-cifar10-mbv3-w1.0-2022-03-23 > final > net-tiny_ml@3 (NAS) + TinyMLRaspFineTuning (additional fine-tuning)
-
-TinyFR experiment folders (tiny_ml): search-cifar10-mbv3-w1.0_07_03_2022 > final > net-tiny_ml@9 (NAS) + finetuningcifar10tiny192-2022_03_09 (additional fine-tuning)
-
-MSUNAS experiment folders (noconstraints): search-noconstraintsFR-cifar10-mbv3-w1.0 > final > net-tiny_ml@3 (NAS) + finetuningPART1MSUNASFR + finetuningPART2MSUNASFR (additional fine-tuning)
-
-- Privacy Preserving Deep Learning with Homomorphic Encryption
-
-| Model | NAS | Params | MACs | Act. Sizes | Accuracy |
-|:-:|:-:|:-:|:-:|:-:|:-:|
-| CResNetHE (our) | yes | 0.49M | 137.51M | 1.19M | 74.72% |
-| LeNet5| no | 0.14M | 1.5M | 0.018M | 46.0% |
-| SingleLayerNN | no | 0.05M | 0.05M | 0.005M | 41.0% |
-
-CResNetHE experiment folders (he): search-cifar10-resnet50_he > final > net-trade-off@5 (NAS)
-
-
-
-
