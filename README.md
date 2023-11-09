@@ -1,6 +1,6 @@
 This repository contains the code for a Neural Architecture Search framework supporting for:
 - technological and functional constraints (introduced in CNAS)
-- early exit classifiers (introduced EDANAS)
+- early exit classifiers (introduced in EDANAS)
 
 # References
 
