@@ -1,4 +1,6 @@
-This repository contains the code for Constrained Neural Architecture Search (CNAS) and Adaptive Neural Architecture Search for Early Exit Neural Networks (EDANAS).
+This repository contains the code for a Neural Architecture Search framework supporting for:
+- technological and functional constraints (introduced in CNAS)
+- early exit classifiers (introduced EDANAS)
 
 # References
 
@@ -47,7 +49,7 @@ Syntax: python msunas.py \
     --data /path/to/data/ \ # dataset folder path
     --predictor [as] \ # type of accuracy predictor. 'as' stands for Adaptive Switching
     --supernet_path /path/to/supernet/weights \ # supernet model path
-    --search_space \ # ['mobilenetv3',
+    --search_space \ # ['mobilenetv3', 'eemobilenetv3']
     --pretrained \ # flag to use the supernet pretrained weights
     --save /path/to/results/folder \ # results folder path
     --iterations [30] \ # number of NAS iterations
@@ -93,17 +95,9 @@ Syntax: python post_search.py \
     --supernet_path /path/to/imagenet/supernet/weights \
     --prefer top1#80+flops#150 \ # your preferences, i.e. you want an architecture with 80% top-1 acc. and 150M FLOPs 
     --save_stats_csv \ # flag to be set whether to save post search results 
-    --n_classes \ #number of classes 
-    --pmax [2] \ # max number of params for candidate architecture
-    --mmax [100] \ # max number of macs for candidate architecture
-    --amax [5] \ # max number of activations for candidate architecture
-    --wp [1] \ # weight for params
-    --wm [1/40] \ # weight for macs
-    --wa [1] \ # weight for activations
-    --penalty [10**10] # penalty factor
 """
 ```
-- If you do not have preferences, pass `None` to argument `--prefer`, architectures will then be selected based on trade-offs. 
+- If you do not have preferences, pass `trade-off` to argument `--prefer`, architectures will then be selected based on trade-offs. 
 - If you want the tiniest model according to the definitin of `tiny_ml` objective, pass `tiny_ml` to argument `--prefer`. Tiniest stands for the lowest `tiny_ml`   value.
 - All selected architectures should have three files created:
   - `net.subnet`: use to sample the architecture from the supernet
