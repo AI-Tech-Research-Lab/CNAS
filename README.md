@@ -1,22 +1,6 @@
 This repository contains the code for a Neural Architecture Search framework supporting for:
-- technological and functional constraints (introduced in CNAS)
-- early exit classifiers (introduced in EDANAS)
-
-# References
-
-## CNAS: Constrained Neural Architecture Search
-Published in 2022 IEEE International Conference on Systems, Man, and Cybernetics (SMC)
-
-Neural Architecture Search (NAS) paves the way for the automatic definition of neural networks architectures. The research interest in this field is steadily growing with several solutions available in the literature. This study introduces, for the first time in the literature, a NAS solution, called Constrained NAS (CNAS), able to take into account constraints on the search of the designed neural architecture. Specifically, CNAS is able to consider both functional constraints (i.e., the type of operations that can be carried out in the neural network) and technological constraints (i.e., constraints on the computational and memory demand of the designed neural network). CNAS has been successfully applied to Tiny Machine Learning and Privacy-Preserving Deep Learning with Homomorphic Encryption being two relevant and challenging application scenarios where functional and technological constraints are relevant in the neural network search.
-
-Link to the paper: https://ieeexplore.ieee.org/document/9945080
-
-## EDANAS: Adaptive Neural Architecture Search for Early Exit Neural Networks
-Published in 2023 IEEE International Joint Conference on Neural Networks (IJCNN)
-
-Early Exit Neural Networks (EENNs) endow neural network architectures with auxiliary classifiers to progressively process the input and make decisions at intermediate points of the network. This leads to significant benefits in terms of effectiveness and efficiency such as the reduction of the average inference time as well as the mitigation of overfitting and vanishing gradient phenomena. Currently, the design of EENNs, which is a very complex and time-consuming task, is carried out manually by experts. This is where Neural Architecture Search (NAS) comes into play by automatically designing neural network architectures focusing also on the optimization of the computational demand of these networks. These requirements are crucial in the design of machine and deep learning solutions meant to operate in devices constrained by the technology (computation, memory, and energy) such as Internet-Of-Things and embedded systems. Interestingly, few NAS solutions have taken into account the design of early exiting mechanisms. This work introduces, for the first time in the literature, a framework called Early exit aDAptive Neural Architecture Search (EDANAS) for the automatic design of both the EENN architecture and the parameters that manage its early exit mechanism in order to optimize both the accuracy in the classification tasks and the computational demand. EDANAS has proven to compete with expert-designed early exit solutions paving the way for a new era in the prominent field of NAS.
-
-Link to the paper: https://ieeexplore.ieee.org/document/10191876
+- technological and functional constraints (introduced in CNAS, https://ieeexplore.ieee.org/document/9945080)
+- early exit classifiers on top of OFA backbones (introduced in EDANAS, https://ieeexplore.ieee.org/document/10191876)
 
 ## Requirements
 
