@@ -30,14 +30,13 @@ Syntax: python msunas.py \
     --dataset [cifar10/cifar100/imagenet] \ # dataset 
     --n_classes [10/100/1000] \ # number of classes
     --data /path/to/data/ \ # dataset folder path
-    --predictor [as] \ # type of accuracy predictor. 'as' stands for Adaptive Switching
+    --predictor [as/carts/rbf/mlp/gp] \ # type of accuracy predictor. 'as' stands for Adaptive Switching
     --supernet_path /path/to/supernet/weights \ # supernet model path
     --search_space \ # ['mobilenetv3', 'eemobilenetv3']
     --pretrained \ # flag to use the supernet pretrained weights
     --save /path/to/results/folder \ # results folder path
     --iterations [30] \ # number of NAS iterations
     --vld_size [10000/5000/...] \ # number of subset images from training set to guide search 
-    # NOVEL PARAMETERS w.r.t. MSUNAS
     --pmax [2] \ # max number of params for candidate architecture
     --mmax [100] \ # max number of macs for candidate architecture
     --amax [5] \ # max number of activations for candidate architecture
