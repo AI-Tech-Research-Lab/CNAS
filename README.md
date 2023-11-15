@@ -49,8 +49,8 @@ Syntax: python msunas.py \
 """
 ```
 - To launch the search, you can use the above command with the proper syntax or simply run a file in the `scripts` folder.
-- It supports searching for *params*, *macs*, *activations*, *tiny_ml*, *avg_macs* as the second objective. *Params*, *macs*, *activations* stand for the number of parameters, the number of macs, the sum of the activation sizes respectively.
-- *tiny_ml* is a figure of merit, introduced in CBNAS, accounting jointly for *Params*, *macs*, *activations* and the related constraints.
+- It supports searching for *params*, *macs*, *activations*, *tiny_ml*, *avg_macs* as the second objective. *params*, *macs*, *activations* stand for the number of parameters, the number of macs, the sum of the activation sizes respectively.
+- *tiny_ml* is a figure of merit, introduced in CBNAS, accounting jointly for *params*, *macs*, *activations* and the related constraints.
 - *avg_macs* is a figure of merit, introduced in EDANAS, for Early Exit Neural Networks accounting for the sum of the number of MACs of each exit of an EENN weighted by the exit ratios of the data. It is different from *macs* which accounts for the number of MACs of the backbone network (i.e., considering the network with a single exit, the final classifier).
 - Choose an appropriate `--vld_size` to guide the search, e.g. 5,000 for CIFAR-10.
 - To launch the search you can simply run a file in the `scripts` folder.
