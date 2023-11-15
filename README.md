@@ -67,17 +67,16 @@ Once the search is completed, you can choose suitable architectures by:
 ```python
 """ Find architectures with objectives close to your preferences
 Syntax: python post_search.py \
-    --save search-imagenet/final \ # path to the dir to store the selected architectures
-    --expr search-imagenet/iter_30.stats \ # path to last iteration stats file in experiment dir
+    --save search-cifar10/final \ # path to the dir to store the selected architectures
+    --expr search-cifar10/iter_30.stats \ # path to last iteration stats file in experiment dir
     -n 3 \ # number of desired architectures you want, the most accurate archecture will always be selected 
-    --supernet_path /path/to/imagenet/supernet/weights \
-    --prefer top1#80+flops#150 \ # your preferences, i.e. you want an architecture with 80% top-1 acc. and 150M FLOPs
+    --supernet_path /path/to/OFA/supernet/weights \
+    --prefer params \ # your preferences, i.e. you want an architecture with the lowest sec_obj value (e.g., 'params') or alternatively with the best trade-off ('trade-off')
     --n_exits \ # optional, used to filter the results by the number of exits of the network
     --save_stats_csv \ # flag to be set whether to save post search results 
 """
 ```
 - If you do not have preferences, pass `trade-off` to argument `--prefer`, architectures will then be selected based on trade-offs. 
-- If you want the tiniest model according to the definitin of `tiny_ml` objective, pass `tiny_ml` to argument `--prefer`. Tiniest stands for the lowest `tiny_ml`   value.
 - All selected architectures should have three files created:
   - `net.subnet`: use to sample the architecture from the supernet
   - `net.config`: configuration file that defines the full architectural components
