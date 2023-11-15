@@ -1,6 +1,6 @@
-This repository contains the code for a Neural Architecture Search framework supporting for:
-- technological and functional constraints (introduced in CNAS, https://ieeexplore.ieee.org/document/9945080)
-- early exit classifiers on top of OFA backbones (introduced in EDANAS, https://ieeexplore.ieee.org/document/10191876)
+This repository contains the code for a Neural Architecture Search framework, based on MSUNAS[1], supporting for:
+- technological and functional constraints (introduced in CNAS[2])
+- early exit classifiers on top of OFA[3] backbones (introduced in EDANAS[4])
 
 ## Requirements
 
@@ -99,3 +99,10 @@ Syntax: python train_cifar.py \
     --cutout --autoaugment --save
 """
 ```
+
+## References
+
+[1] NSGANetV2: Evolutionary Multi-Objective Surrogate-Assisted Neural Architecture Search, ECCV 2020 (https://www.ecva.net/papers/eccv_2020/papers_ECCV/papers/123460035.pdf)
+[2] CNAS: Constrained Neural Architecture Search, SMC 2022 (https://ieeexplore.ieee.org/document/9945080)
+[3] ONCE-FOR-ALL: TRAIN ONE NETWORK AND SPECIALIZE IT FOR EFFICIENT DEPLOYMENT, ICLR 2019 (https://openreview.net/pdf?id=HylxE1HKwS)
+[4] EDANAS: Adaptive Neural Architecture Search for Early Exit Neural Networks, IJCNN 2023 (https://ieeexplore.ieee.org/document/10191876)
