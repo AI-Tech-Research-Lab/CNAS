@@ -64,7 +64,7 @@ class MSuNAS:
         
         if ('w1.0' in self.supernet_path) or ('w1.2' in self.supernet_path):
           self.search_space= OFASearchSpace('mobilenetv3',self.lr,self.ur)
-        if ('eembv3' in self.supernet_path):
+        elif ('eembv3' in self.supernet_path):
           self.search_space= OFASearchSpace('eemobilenetv3',self.lr,self.ur)
         elif 'resnet50_he_d' in self.supernet_path:
           self.search_space = OFASearchSpace('resnet50_he',self.lr,self.ur)

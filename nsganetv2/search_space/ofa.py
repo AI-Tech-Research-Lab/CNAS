@@ -40,7 +40,8 @@ class OFASearchSpace:
         ks = self.kernel_size if ks is None else ks
         e = self.exp_ratio if e is None else e
         d = self.depth if d is None else d
-        t = self.threshold if t is None else t
+        if(self.supernet == 'eemobilenetv3'):
+            t = self.threshold if t is None else t
         r = self.resolution if r is None else r
 
         data = []
