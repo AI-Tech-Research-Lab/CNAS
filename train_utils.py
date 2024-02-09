@@ -73,6 +73,7 @@ def validate(val_loader, model, device=None, print_freq=10):
     batch_time = AverageMeter('Time', ':6.3f')
     top1 = AverageMeter('Acc@1', ':6.2f')
     progress = ProgressMeter(len(val_loader), [batch_time, top1], prefix='Test: ')
+    model.to(device)
 
     # switch to evaluate mode
     model.eval()
@@ -81,10 +82,7 @@ def validate(val_loader, model, device=None, print_freq=10):
         end = time.time()
         for i, (images, target) in enumerate(val_loader):
 
-            if device is not None:
-                images = images.cuda(device, non_blocking=True)
-            target = target.cuda(device, non_blocking=True)
-
+            images, target = images.to(device), target.to(device)
             # compute output
             output = model(images)
 
