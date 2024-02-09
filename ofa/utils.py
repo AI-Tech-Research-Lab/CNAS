@@ -21,7 +21,6 @@ import torch.nn.functional as F
 import numpy as np
 
 
-
 def accuracy(output, target, topk=(1,)):
     """ Computes the precision@k for the specified values of k """
     
