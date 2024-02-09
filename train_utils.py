@@ -28,18 +28,18 @@ def load_checkpoint(model, optimizer, filename='checkpoint.pth'):
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     return model, optimizer
 
-def train(train_loader, val_loader, num_epochs, model, criterion, optimizer, args):
+def train(train_loader, val_loader, num_epochs, model, device, criterion, optimizer, print_freq=10):
 
     batch_time = AverageMeter('Time', ':6.3f')
     top1 = AverageMeter('Acc@1', ':6.2f')
     progress = ProgressMeter(len(train_loader), [batch_time, top1], prefix='Train: ')
-
+    model = model.to(device)
     for epoch in range(num_epochs):
         # Training phase
         model.train()
         end = time.time()
         for i, (images, labels) in enumerate(train_loader):
-            labels = labels.cuda()
+            images, labels = images.to(device), labels.to(device)
             optimizer.zero_grad()
             outputs = model(images)
             loss = criterion(outputs, labels)
@@ -54,12 +54,12 @@ def train(train_loader, val_loader, num_epochs, model, criterion, optimizer, arg
             batch_time.update(time.time() - end)
             end = time.time()
 
-            if i % args.print_freq == 0:
+            if i % print_freq == 0:
                 progress.display(i)
 
         # Validation phase
         model.eval()
-        top1_val = validate(val_loader, model, args)  # Reuse the validate function
+        top1_val = validate(val_loader, model, device, print_freq)  # Reuse the validate function
 
         # Print training and validation statistics
         print(f'Train Epoch: {epoch + 1}, Train Accuracy: {top1.avg:.2f}%, Val Accuracy: {top1_val:.2f}%')
