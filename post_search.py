@@ -1,20 +1,19 @@
 import os
 import json
-import shutil
 import argparse
-import glob
 import numpy as np
+import shutil
 from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 from pymoo.model.decision_making import DecisionMaking, normalize, find_outliers_upper_tail, NeighborFinder
-from explainability import get_archive
-from trainers.cbn.utils import get_subnet_folder
-from search_space import OFASearchSpace
 
 from matplotlib import pyplot as plt
 
+from utils import get_stats_by_subnet
+from evaluator import OFAEvaluator
 
-_DEBUG = False
-                    
+
+_DEBUG = True
+
 
 class HighTradeoffPoints(DecisionMaking):
 
@@ -56,14 +55,15 @@ class HighTradeoffPoints(DecisionMaking):
         else:
             return find_outliers_upper_tail(mu)  # return points with trade-off > 2*sigma
 
+
 def main(args):
 
-    exp_path,_= os.path.splitext(args.expr)
-    
-    if args.get_archive:
-       archive = get_archive(exp_path, args.first_obj, args.sec_obj)
-    else:
-       archive = json.load(open(args.expr))['archive']
+    ##compute the pareto front 
+    archive = json.load(open(args.expr))['archive']
+    exp_path,_ = os.path.splitext(args.expr)
+
+    print("EXP PATH")
+    print(exp_path)
 
     n_exits = args.n_exits
     if n_exits is not None:
@@ -71,95 +71,101 @@ def main(args):
         archive_temp = []
         for v in archive:
             subnet = v[0]
-            b_config = subnet["b"]
-            count_exits = len([element for element in b_config if element != 0])
+            t = subnet["t"]
+            count_exits = len(t)-t.count(1)
             if(count_exits==args.n_exits):
                 archive_temp.append(v)
         print("#EEcs:")
         print(args.n_exits)
         print("lunghezza archivio prima")        
         print(len(archive))
+        print("lunghezza archivio dopo")        
+        print(len(archive_temp))
         archive = archive_temp
     
-    print("NUM CANDIDATES")
-    print(len(archive))
+    for v in archive: #remove failed nets
+        err_top1 = v[1]
+        if(err_top1==100):
+          archive.remove(v)
+    
+    subnets, top1, sec_obj = [v[0] for v in archive], [v[1] for v in archive], [v[2] for v in archive]
 
-    if args.sec_obj is None:
-        subnets, first_obj = [v[0] for v in archive], [v[1] for v in archive]
-        prefer = args.first_obj
-    else:
-        subnets, first_obj, sec_obj = [v[0] for v in archive], [v[1] for v in archive], [v[2] for v in archive]
-        prefer = 'trade-off'
-        ps_sec_obj = np.array(sec_obj)
+    sort_idx = np.argsort(top1)
+    F = np.column_stack((top1, sec_obj))[sort_idx, :]
+    front = NonDominatedSorting().do(F, only_non_dominated_front=True)
+    pf = F[front, :]
+    print(pf)
+    ps = np.array(subnets)[sort_idx][front]
+    ps_top1 = np.array(top1)[sort_idx][front]
+    ps_sec_obj = np.array(sec_obj)[sort_idx][front]
+    #ps_util = np.array(util)[sort_idx][front]
 
-    if args.sec_obj is None:
-        ps = np.array(subnets)
-        ps_first_obj = np.array(first_obj)
-        I = ps_first_obj.argsort()[:args.n]
+    if args.prefer != 'trade-off':
+        # choose the best architecture for the sec_obj
+        I = pf[:,1].argsort()
+        I = I[:args.n]
     else:
-        sort_idx = np.argsort(first_obj)
-        F = np.column_stack((first_obj, sec_obj))[sort_idx, :]
-        front = NonDominatedSorting().do(F, only_non_dominated_front=True)
-        ps = np.array(subnets)[sort_idx][front]
-        pf = F[front, :]
         # choose the architectures with highest trade-off
         dm = HighTradeoffPoints(n_survive=args.n)
         I = dm.do(pf)
 
     # always add most accurate architectures
-    #I = np.append(I, 0)
+    I = np.append(I, 0)
 
     # create the supernet
-    from ofa_evaluator import OFAEvaluator, get_net_info, get_adapt_net_info
+
     supernet = OFAEvaluator(n_classes = args.n_classes, model_path=args.supernet_path, pretrained = args.supernet_path)
-    #search_space = OFASearchSpace(args.search_space,args.lr,args.ur,args.rstep)
 
-    for rank, idx in enumerate(I):
-
+    for idx in I:
         if(n_exits is not None):
-          save = os.path.join(args.save, "net-"+ prefer +"_"+str(idx)+"_nExits:"+str(args.n_exits))
+          save = os.path.join(args.save, "net-"+args.prefer+"_"+str(idx)+"@{:.0f}".format(pf[idx, 1])+"_nExits:"+str(args.n_exits))
         else:
-          save = os.path.join(args.save, "net-"+ prefer +"_"+str(rank))
-
+          save = os.path.join(args.save, "net-"+args.prefer+"_"+str(idx)+"@{:.0f}".format(pf[idx, 1]))
+        #save = os.path.join(args.save, "net-"+args.prefer+"_"+str(args.n_exits)+"@{:.0f}".format(pf[idx, 1]))
         os.makedirs(save, exist_ok=True)
-        config = ps[idx]
-        print("CONFIG: {}".format(config))
-
-        #subnet, _ = supernet.sample(config)
-        subnet_folder = get_subnet_folder(exp_path,config)
-        shutil.rmtree(save, ignore_errors=True)
-        shutil.copytree(subnet_folder, save)
-        n_subnet = subnet_folder.rsplit("_", 1)[1]
-        subnet_file = [filename for filename in os.listdir(save) if filename.endswith('.subnet')][0]
-        stats_file = [filename for filename in os.listdir(save) if filename.endswith('.stats')][0]
-        os.rename(os.path.join(save, subnet_file), os.path.join(save, "net.subnet"))
-        os.rename(os.path.join(save, stats_file), os.path.join(save, "net.stats"))   
-
-        print("SUBNET FOLDER: {}".format(subnet_folder))    
-
-        stats_file = os.path.join(save, "net.stats")
+        config = {'ks': ps[idx]['ks'], 'e': ps[idx]['e'], 'd': ps[idx]['d'], 't': ps[idx]['t'], 'r': ps[idx]['r']}
+        subnet, _ = supernet.sample(config)
+        with open(os.path.join(save, "net.subnet"), 'w') as handle:
+            json.dump(ps[idx], handle)
+        supernet.save_net_config(save, subnet, "net.config")
+        supernet.save_net(save, subnet, "net.inherited")
+        data_shape = (3,ps[idx]['r'],ps[idx]['r'])
+        stats_src = get_stats_by_subnet(exp_path,config)
+        print("STATS PATH")
+        print(stats_src)
+        print("STATS")
+        info = json.load(open(stats_src))
+        print(info)
+        stats_dest = os.path.join(save, "net.stats")
+        shutil.copyfile(stats_src, stats_dest)
+   
+    if args.save_stats_csv:
         
-        if os.path.exists(stats_file):
-            
-            stats = json.load(open(stats_file))
-            print("INFO SUBNET RANK {}".format(rank))
-            print(stats)
+        import pandas as pd
+
+        infos = [] ## array not dict
+        idx = 0
+        for s in subnets:
+            subnet, _ = supernet.sample({'ks': subnets[idx]['ks'], 'e': subnets[idx]['e'], 'd': subnets[idx]['d'], 't': subnets[idx]['t']})
+            data_shape = (3,subnets[idx]['r'],subnets[idx]['r'])
+            stats_src = get_stats_by_subnet(exp_path,config)
+            info = json.load(open(stats_src))
+            infos.append(info)
+            idx = idx + 1
+
+        df = pd.DataFrame(infos)
+        df.to_csv(args.save + '/results.csv')
 
     if _DEBUG:
         # Plot
-
-        pf = np.array(pf)
         x = pf[:,0]
         y = pf[:,1]
         plt.scatter(x, y, c='red')
-
         plt.title('Pareto front')
         plt.xlabel('1-top1')
         plt.ylabel('sec_obj')
-        plt.legend()
         plt.show()
         plt.savefig(args.save + 'scatter_plot_pareto_front.png')
-
     return 
 
 
@@ -169,18 +175,16 @@ if __name__ == '__main__':
                         help='location of dir to save')
     parser.add_argument('--expr', type=str, default='',
                         help='location of search experiment dir')
-    parser.add_argument('--first_obj', type=str, default='top1',
+    parser.add_argument('--sec_obj', type=str, default='params',
                         help='second objective to optimize')
-    parser.add_argument('--sec_obj', type=str, default=None,
-                        help='second objective to optimize')
-    parser.add_argument('--n', type=int, default=1,
+    parser.add_argument('-n', type=int, default=1,
                         help='number of architectures desired')
     parser.add_argument('--supernet_path', type=str, default='./data/ofa_mbv3_d234_e346_k357_w1.0',
                         help='file path to supernet weights')
-    parser.add_argument('--search_space', type=str, default='mobilenetv3',
-                        help='type of search space')
-    parser.add_argument('--get_archive', action='store_true', default=False,
-                        help='create the archive scanning the iter folders')
+    parser.add_argument('--prefer', type=str, default='trade-off',
+                        help='preferences in choosing architectures (top1#80+flops#150)')
+    parser.add_argument('--save_stats_csv', action='store_true', default=False,
+                        help='save csv with all stats')
     parser.add_argument('--n_classes', type=int, default=1000,
                         help='number of classes')                   
     parser.add_argument('--pmax', type = float, default=2.0,
@@ -199,12 +203,5 @@ if __name__ == '__main__':
                         help='penalty factor')
     parser.add_argument('--n_exits', type=int, default=None,
                         help='number of EEcs desired')
-    parser.add_argument('--lr', type = int , default=192,
-                        help='minimum resolution')
-    parser.add_argument('--ur', type = int, default=256,
-                        help='maximum resolution')
-    parser.add_argument('--rstep', type = int, default=4,
-                        help='resolution step')
     cfgs = parser.parse_args()
     main(cfgs)
-

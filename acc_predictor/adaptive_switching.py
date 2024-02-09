@@ -7,7 +7,8 @@ class AdaptiveSwitching:
     """ ensemble surrogate model """
     """ try all available models, pick one based on 10-fold crx vld """
     def __init__(self, n_fold=10):
-        self.model_pool = ['rbf', 'gp', 'carts', 'mlp']
+        self.model_pool = ['rbf', 'gp', 'carts']
+        #self.model_pool = ['mlp']
         self.n_fold = n_fold
         self.name = 'adaptive switching'
         self.model = None
@@ -29,30 +30,11 @@ class AdaptiveSwitching:
             for j, model in enumerate(self.model_pool):
 
                 acc_predictor = get_acc_predictor(model, train_data[trn_split], train_target[trn_split])
-                rmse, rho, tau = utils.get_correlation(
-                acc_predictor.predict(train_data[tst_split]), train_target[tst_split])
-                
-                '''
-                try:
-                    acc_predictor = get_acc_predictor(model, train_data[trn_split], train_target[trn_split])
-                except Exception as e: # catch exception of gp
-                    kendall_tau[i, j] =0
-                    continue
 
-                try:
-                    rmse, rho, tau = utils.get_correlation(
+                rmse, rho, tau = utils.get_correlation(
                     acc_predictor.predict(train_data[tst_split]), train_target[tst_split])
-                except np.linalg.LinAlgError as e: # catch exception of rbf 
-                    kendall_tau[i, j] =0
-                    continue
-                '''
 
                 kendall_tau[i, j] = tau
-        
-        
-        
-        for j, model in enumerate(self.model_pool):
-                print("model = {}, tau = {}".format(model, np.mean(kendall_tau, axis=0)[j]))
 
         winner = int(np.argmax(np.mean(kendall_tau, axis=0) - np.std(kendall_tau, axis=0)))
         print("winner model = {}, tau = {}".format(self.model_pool[winner],

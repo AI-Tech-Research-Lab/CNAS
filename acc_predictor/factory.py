@@ -22,8 +22,6 @@ def get_acc_predictor(model, inputs, targets):
 
     elif model == 'as':
         from acc_predictor.adaptive_switching import AdaptiveSwitching
-        #import numpy as np
-        #from numpy.linalg import inv, det
         acc_predictor = AdaptiveSwitching()
         acc_predictor.fit(inputs, targets)
 

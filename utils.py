@@ -1,4 +1,3 @@
-import csv
 import os
 import copy
 import json
@@ -70,7 +69,6 @@ def profile_activation_size(model,input):
       for label, target in target_layers.items():
         if(isinstance(layer,target)):
           #print(name)
-
           activation_shape = activations[layer][1].shape
           activation_size = 1
           for i in activation_shape:
@@ -89,11 +87,10 @@ def get_correlation(prediction, target):
 
     return rmse, rho, tau
 
-def bash_command_template_single_exit(**kwargs):
 
+def bash_command_template(**kwargs):
     gpus = kwargs.pop('gpus', DEFAULT_CFG['gpus'])
     cfg = OrderedDict()
-
     cfg['subnet'] = kwargs['subnet']
     cfg['data'] = kwargs['data']
     cfg['dataset'] = kwargs['dataset']
@@ -134,107 +131,22 @@ def bash_command_template_single_exit(**kwargs):
     execution_line += ' &'
     return execution_line
 
-def bash_command_template_multi_exits(**kwargs):
 
-    gpus = kwargs.pop('gpus', DEFAULT_CFG['gpus'])
-    cfg = OrderedDict()
-
-    cfg['dataset'] = kwargs['dataset']
-    cfg['model'] = kwargs['model']
-    cfg['device'] = gpus #kwargs['device']
-    cfg['model_path'] = kwargs['subnet']
-    cfg['output_path'] = kwargs['save']
-    cfg['mmax'] = kwargs['mmax']
-    cfg['top1min'] = kwargs['top1min']
-
-    #+dataset=cifar10 +method=bernulli_logits method.pre_trained="$PRETRAINED" +model=mobilenetv3 +model.path="$MODEL_PATH" +training=cifar10 hydra.run.dir="$OUTPUT_PATH" training.device="$DEVICE" experiment.load=true
-
-    execution_line = "CUDA_VISIBLE_DEVICES={} python trainers/cbn/main.py".format(gpus)
-    execution_line += " +{}={}".format("dataset",cfg['dataset'])
-    execution_line += " +{}={}".format("method",'bernulli_logits') #Confidence Branch Network (CBN)
-    execution_line += " {}={}".format("method.pre_trained", "true")
-    execution_line += " +{}={}".format("model",cfg['model'])
-    execution_line += " +{}={}".format("model.path",cfg['model_path'])
-    execution_line += " +{}={}".format("training",cfg['dataset'])
-    execution_line += " {}={}".format("hydra.run.dir",cfg['output_path'])
-    execution_line += " {}={}".format("training.device",cfg['device'])
-    execution_line += " {}={}".format("experiment.load","true")
-    execution_line += " +{}={}".format("mmax",cfg['mmax'])
-    execution_line += " +{}={}".format("top1min",cfg['top1min'])
-
-    #for k, v in cfg.items():
-    #    execution_line += " {}".format(v)
-    execution_line += ' &'
-    return execution_line
-
-def bash_command_template_entropic(**kwargs):
-
-    gpus = kwargs.pop('gpus', DEFAULT_CFG['gpus'])
-    cfg = OrderedDict()
-    
-    cfg['dataset'] = kwargs['dataset']
-    cfg['data'] = kwargs['data']
-    cfg['model'] = kwargs['model']
-    cfg['device'] = gpus #kwargs['device']
-    cfg['model_path'] = kwargs['subnet']
-    cfg['output_path'] = kwargs['save']
-    cfg['pretrained'] = kwargs['pretrained']
-    cfg['supernet_path'] = kwargs['supernet_path']
-    cfg['epochs'] = kwargs.pop('n_epochs', DEFAULT_CFG['n_epochs'])
-    cfg['optim'] = kwargs['optim']
-    cfg['sigma_min'] = kwargs['sigma_min']
-    cfg['sigma_max'] = kwargs['sigma_max']
-    cfg['sigma_step'] = kwargs['sigma_step']
-    cfg['alpha'] = kwargs['alpha']
-    cfg['res'] = kwargs['res']
-    cfg ['pmax'] = kwargs['pmax']
-    cfg['p'] = kwargs['penalty']
-    cfg['alpha_norm'] = kwargs['alpha_norm']
-
-    #execution_line = "CUDA_VISIBLE_DEVICES={} python trainers/entropic/train.py".format(gpus)
-    execution_line = "python trainers/entropic/train.py".format(gpus)
-    for k, v in cfg.items():
-        if v is not None:
-            if isinstance(v, bool):
-                if v:
-                    execution_line += " --{}".format(k)
-            else:
-                execution_line += " --{} {}".format(k, v)
-    execution_line += ' &'
-    return execution_line
-
-def get_template_by_type(gpus, subnet, save, type, **kwargs):
-
-    if type == 'single_exit':
-        return bash_command_template_single_exit(gpus=gpus, subnet=subnet, save=save, **kwargs)
-    elif type == 'multi_exits':
-        return bash_command_template_multi_exits(gpus=gpus, subnet=subnet, save=save, **kwargs)
-    elif type == 'entropic':
-        return bash_command_template_entropic(gpus=gpus, subnet=subnet, save=save, **kwargs)
-    else:
-        raise ValueError('Unknown template type: {}'.format(type))
-
-
-def prepare_eval_folder(path, configs, gpu=2, n_gpus=8, gpu_list=None, type='single-exit', **kwargs):
+def prepare_eval_folder(path, configs, gpu=2, n_gpus=8, **kwargs):
     """ create a folder for parallel evaluation of a population of architectures """
-
     os.makedirs(path, exist_ok=True)
     gpu_template = ','.join(['{}'] * gpu)
-    if gpu_list is not None:
-        n_gpus = len(gpu_list)
-        gpus = [gpu_template.format(i, i + 1) for i in gpu_list]
-    else:
-        gpus = [gpu_template.format(i, i + 1) for i in range(0, n_gpus, gpu)]
+    gpus = [gpu_template.format(i, i + 1) for i in range(0, n_gpus, gpu)]
     bash_file = ['#!/bin/bash']
     for i in range(0, len(configs), n_gpus//gpu):
         for j in range(n_gpus//gpu):
             if i + j < len(configs):
-                experiment_path = os.path.join(path, 'net_{}'.format(i + j))
-                os.makedirs(experiment_path, exist_ok=True)
-                job = os.path.join(experiment_path, "net_{}.subnet".format(i + j))
+                job = os.path.join(path, "net_{}.subnet".format(i + j))
                 with open(job, 'w') as handle:
                     json.dump(configs[i + j], handle)
-                bash_file.append(get_template_by_type(gpus=gpus[j], subnet=job, save=experiment_path, type=type, **kwargs))
+                bash_file.append(bash_command_template(
+                    gpus=gpus[j], subnet=job, save=os.path.join(
+                        path, "net_{}.stats".format(i + j)), **kwargs))
         bash_file.append('wait')
 
     with open(os.path.join(path, 'run_bash.sh'), 'w') as handle:
@@ -400,12 +312,12 @@ def look_up_latency(net, lut, resolution=224):
     return predicted_latency
 
 
-def get_net_info(net, input_shape=(3, 224, 224), print_info=False):
+def get_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_info=True, clean=False, lut=None):
     """
     Modified from https://github.com/mit-han-lab/once-for-all/blob/
     35ddcb9ca30905829480770a6a282d49685aa282/ofa/imagenet_codebase/utils/pytorch_utils.py#L139
     """
-    from ofa.imagenet_codebase.utils.pytorch_utils import count_parameters
+    from ofa.imagenet_codebase.utils.pytorch_utils import count_parameters, measure_net_latency
 
     # artificial input data
     inputs = torch.randn(1, 3, input_shape[-2], input_shape[-1])
@@ -429,15 +341,35 @@ def get_net_info(net, input_shape=(3, 224, 224), print_info=False):
     net = copy.deepcopy(net)
 
     net_info['macs'] = int(profile_macs(net, inputs))
-
+   
     # activation_size
-    #net_info['activations'] = int(profile_activation_size(net, inputs))
+    net_info['activations'] = int(profile_activation_size(net, inputs))
+
+    # latencies
+    latency_types = [] if measure_latency is None else measure_latency.split('#')
+
+    
+    # print(latency_types)
+    for l_type in latency_types:
+        if lut is not None and l_type in lut:
+            latency_estimator = LatencyEstimator(lut[l_type])
+            latency = look_up_latency(net, latency_estimator, input_shape[2])
+            measured_latency = None
+        else:
+            latency, measured_latency = measure_net_latency(
+                net, l_type, fast=False, input_shape=input_shape, clean=clean)
+        net_info['%s latency' % l_type] = {
+            'val': latency,
+            'hist': measured_latency
+        }
 
     if print_info:
         # print(net)
         print('Total training params: %.2fM' % (net_info['params'] / 1e6))
         print('Total MACs: %.2fM' % ( net_info['macs'] / 1e6))
-        #print('Total activations: %.2fM' % (net_info['activations'] / 1e6))
+        print('Total activations: %.2fM' % (net_info['activations'] / 1e6))
+        for l_type in latency_types:
+            print('Estimated %s latency: %.3fms' % (l_type, net_info['%s latency' % l_type]['val']))
 
     return net_info
 
@@ -496,9 +428,29 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
 
     net_info['macs'] = macs
    
+    cp_net = copy.deepcopy(net)
+    cp_net.eval()
     # activation_size
-    net_info['activations'] = int(profile_activation_size(copy.deepcopy(net), inputs))
+    net_info['activations'] = int(profile_activation_size(cp_net, inputs))
 
+    '''
+    # latencies
+    latency_types = [] if measure_latency is None else measure_latency.split('#')
+
+    # print(latency_types)
+    for l_type in latency_types:
+        if lut is not None and l_type in lut:
+            latency_estimator = LatencyEstimator(lut[l_type])
+            latency = look_up_latency(net, latency_estimator, input_shape[2])
+            measured_latency = None
+        else:
+            latency, measured_latency = measure_net_latency(
+                net, l_type, fast=False, input_shape=input_shape, clean=clean)
+        net_info['%s latency' % l_type] = {
+            'val': latency,
+            'hist': measured_latency
+        }
+    '''
     if print_info:
         # print(net)
         print('Total training params: %.2fM' % (net_info['params'] / 1e6))
@@ -507,25 +459,49 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
         #for l_type in latency_types:
         #    print('Estimated %s latency: %.3fms' % (l_type, net_info['%s latency' % l_type]['val']))
 
-    return net_info 
+    return net_info
 
-def get_net_OFAMBV3(subnet_path, n_classes=10, supernet='supernets/ofa_mbv3_d234_e346_k357_w1.0', pretrained=True):
+def load_model(model_path,img_size,pretrained = 'None'):
 
-    # current path example /home/gambella/results/cifar10-mbv3-test/iter_0/net_0.stats
-    #'../results/cifar10-mbv3-test/iter_0/net_0.subnet'
+    from codebase.networks.nsganetv2 import NSGANetV2
+
+    net_config = json.load(open(model_path))
+
+    model = NSGANetV2.build_from_config(net_config)
     
-    import os
-
-    #idx = subnet_path.rfind('/')
-    #path = subnet_path[(idx+1):] 
+    ## FIX, to initialize the pretrained weights ##
+    if (pretrained != 'None'):
+      print('Weights loaded')
+      init = torch.load(pretrained, map_location='cpu')['state_dict']
+      model.load_state_dict(init)
+    ###############################################
+    else:
+      print('Vanilla architecture')
     
-    from ofa_evaluator import OFAEvaluator
-    config = json.load(open(subnet_path))
+    info = get_net_info(net = model,input_shape = (3,img_size,img_size))
 
-    ofa = OFAEvaluator(n_classes=n_classes,
-    model_path=supernet,
-    pretrained = pretrained)
-    r=config.get("r",32)
-    input_shape = (3,r,r)
-    subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
-    return subnet
+    model = model.cuda()
+
+    return model,info
+
+def save_model(model,path): #usually path has a .pt extension
+    torch.save(model,path)
+
+def get_stats_by_subnet(exp_path, subnet):
+        """ search for a subnet folder in the experiment folder filtering by subnet architecture """
+        import glob
+        split = exp_path.rsplit("_",1)
+        maxiter = int(split[1])
+        path = exp_path.rsplit("/",1)[0] 
+        stats = None
+
+        for file in glob.glob(os.path.join(path + '/iter_*', "net_*.subnet")):
+            arch = json.load(open(file))  
+            pre,ext= os.path.splitext(file)
+            split = pre.rsplit("_",3)  
+            split2 = split[1].rsplit("/",1)
+            niter = int(split2[0])
+            if arch == subnet and niter <= maxiter:
+                stats = pre + '.stats'
+                
+        return stats
