@@ -1,0 +1,838 @@
+import json
+import logging
+import os
+import warnings
+from copy import deepcopy
+from itertools import chain
+import datetime
+import copy
+
+import hydra
+import numpy as np
+import torch
+from omegaconf import DictConfig, OmegaConf
+from torchvision.datasets import ImageFolder
+
+import sys
+sys.path.append(os.getcwd())
+
+from evaluators import binary_eval, entropy_eval, standard_eval, \
+    branches_eval, binary_statistics, binary_statistics_cumulative, ece_score
+from trainer import binary_bernulli_trainer, joint_trainer, \
+    standard_trainer#, adaptive_trainer
+from utils import get_dataset, get_optimizer, EarlyStopping, get_net_info, get_model, get_intermediate_backbone_cost, get_intermediate_classifiers_cost, \
+    get_ee_scores,get_subnet_folder_by_backbone
+
+@hydra.main(config_path="configs",
+            config_name="config")
+def my_app(cfg: DictConfig) -> None:
+    log = logging.getLogger(__name__)
+    log.info(OmegaConf.to_yaml(cfg))
+
+    # Get the current date and time
+    current_time = datetime.datetime.now()
+
+    # Print the current time
+    print("Current time:", current_time)
+
+    model_cfg = cfg['model']
+    model_name = model_cfg['name']
+
+    dataset_cfg = cfg['dataset']
+    dataset_name = dataset_cfg['name']
+    augmented_dataset = dataset_cfg.get('augment', False)
+
+    experiment_cfg = cfg['experiment']
+    load, save, path, experiments = experiment_cfg.get('load', True), \
+                                    experiment_cfg.get('save', True), \
+                                    experiment_cfg.get('path', None), \
+                                    experiment_cfg.get('experiments', 1)
+
+    plot = experiment_cfg.get('plot', False)
+
+    method_cfg = cfg['method']
+    method_name = method_cfg['name']
+
+    get_binaries = True if method_name in ['bernulli', 'adaptive'] \
+        else False
+
+    training_cfg = cfg['training']
+    epochs, batch_size, device = training_cfg['epochs'], \
+                                 training_cfg['batch_size'], \
+                                 training_cfg.get('device', 'cpu')
+    eval_percentage = training_cfg.get('eval_split', None)
+
+    use_early_stopping = training_cfg.get('use_early_stopping', False)
+    early_stopping_tolerance = training_cfg.get('early_stopping_tolerance', 5)
+
+    optimizer_cfg = cfg['optimizer']
+    optimizer_name, lr, momentum, weight_decay = optimizer_cfg.get('optimizer',
+                                                                   'sgd'), \
+                                                 optimizer_cfg.get('lr', 1e-1), \
+                                                 optimizer_cfg.get('momentum',
+                                                                   0.9), \
+                                                 optimizer_cfg.get(
+                                                     'weight_decay', 0)
+    
+    mmax = cfg.get('mmax',1000.0)
+    top1min = cfg.get('top1min', 0.0)
+
+    checkpoint = method_cfg.get('checkpoint', False)
+
+    if torch.cuda.is_available() and device != 'cpu':
+        torch.cuda.set_device(device)
+        device = 'cuda:{}'.format(device)
+        print("Running on GPU")
+    else:
+        warnings.warn("Device not found or CUDA not available.")
+
+    device = torch.device(device)
+
+    if not isinstance(experiments, int):
+        raise ValueError('experiments argument must be integer: {} given.'
+                         .format(experiments))
+
+    if path is None:
+        path = os.getcwd()
+    else:
+        os.chdir(path)
+        os.makedirs(path, exist_ok=True)
+
+    if use_early_stopping:
+        early_stopping = EarlyStopping(
+            tolerance=early_stopping_tolerance,
+            min=not (eval_percentage is not None and eval_percentage > 0))
+    else:
+        early_stopping = None
+    
+    if model_name == 'mobilenetv3':
+        model_path = model_cfg['path']
+        '''
+        #extract from the model path the number of iteration
+        last_slash_index = model_path.rfind("/")
+        last_underscore_index = model_path.rfind("_", 0, last_slash_index)
+        n_iteration = int(model_path[last_underscore_index + 1:last_slash_index])
+        '''
+                
+        #extract from the model path the number of subnet in the iteration
+        last_underscore_index = model_path.rfind("_")
+        last_dot_index = model_path.rfind(".")
+        n_subnet = int(model_path[last_underscore_index + 1:last_dot_index])
+
+    else:
+        model_path = None
+        n_subnet=0
+     
+    log.info('Experiment path: {}'.format(path)) #1 experiment per subnet
+
+    if(checkpoint):
+        print("Checkpointing")
+        ckpt_path = os.path.join(path, 'ckpt.pt')
+    else:
+        ckpt_path = None
+
+    for experiment in range(experiments):
+        #log.info('Experiment #{}'.format(experiment))
+
+        torch.manual_seed(experiment)
+        np.random.seed(experiment)
+
+        #experiment_path = os.path.join(path, 'exp_{}'.format(n_subnet))
+        #os.makedirs(experiment_path, exist_ok=True)
+
+        #log.info('Experiment path: {}'.format(experiment_path))
+
+        eval_loader = None
+        eval = None
+
+        train_set, test_set, input_size, n_classes = \
+            get_dataset(name=dataset_name,
+                        model_name=None,
+                        augmentation=augmented_dataset)
+
+        if eval_percentage is not None and eval_percentage > 0:
+            assert eval_percentage < 1
+            train_len = len(train_set)
+            eval_len = int(train_len * eval_percentage)
+            train_len = train_len - eval_len
+
+            train_set, eval = torch.utils.data.random_split(train_set,
+                                                            [train_len,
+                                                             eval_len])
+
+            if isinstance(test_set, ImageFolder):
+                eval = deepcopy(eval.dataset)
+                train_set = deepcopy(train_set.dataset)
+            
+            eval.transform = test_set.transform
+            eval.target_transform = test_set.target_transform
+
+            eval_loader = torch.utils.data.DataLoader(dataset=eval,
+                                                      batch_size=batch_size,
+                                                      shuffle=False)
+
+        #log.info('Train dataset size: {}'.format(len(train_set)))
+        #log.info('Test dataset size: {}'.format(len(test_set)))
+        #if eval is not None:
+            #log.info('Eval dataset size: {}'.format(len(eval)))
+
+        trainloader = torch.utils.data.DataLoader(train_set,
+                                                  batch_size=batch_size,
+                                                  shuffle=True)
+
+        testloader = torch.utils.data.DataLoader(test_set,
+                                                 batch_size=batch_size,
+                                                 shuffle=False)
+
+        if get_binaries:
+            fix_last_layer = method_cfg.get('fix_last_layer', False)
+        else:
+            fix_last_layer = False
+
+        print("Training model: {}".format(model_path))
+        
+        backbone, classifiers = get_model(model_name, image_size=input_size,
+                                          n_classes=n_classes,
+                                          get_binaries=get_binaries,
+                                          fix_last_layer=fix_last_layer,
+                                          model_path=model_path,
+                                          pretrained=method_cfg.get('pre_trained', False)
+                                          )
+        
+        gg_on = method_cfg.get('global_gate', False)
+
+        if(gg_on):
+            print("Training with global gate")
+        else: 
+            print("Training without global gate")
+        
+        results = {}
+        
+        # MODEL COST PROFILING
+        
+        net = copy.deepcopy(backbone)
+        if model_name == 'mobilenetv3':
+            net.exit_idxs=[net.exit_idxs[-1]] #take only the final exit
+            b_params, b_macs = get_intermediate_backbone_cost(backbone, input_size)
+        else:
+            dict_macs = net.computational_cost(torch.randn((1, 3, 32, 32)))
+            b_macs = []
+            for m in dict_macs.values():
+                    b_macs.append(m/1e6)
+            b_params=[] #Not implemented
+         
+
+        c_params, c_macs = get_intermediate_classifiers_cost(backbone, classifiers, input_size)
+
+        results['classifiers_params'] = c_params
+        results['backbone_params_i'] = b_params
+        results['classifiers_macs'] = c_macs
+        results['backbone_macs_i'] = b_macs
+
+        #results['classifiers_activations']=c_act
+
+        if method_cfg.get('pre_trained', False): #get() provides the value of the field pre_trained of method_cfg. False is the default value if
+                                                 #the field does not exist 
+
+            
+            iter_path = path.rsplit("/",1)[0] 
+            
+            #CHECK BACKBONE IN ARCHIVE
+            arch = json.load(open(os.path.join(path,'net_'+str(n_subnet)+'.subnet')))
+            arch_b={'ks':arch['ks'],'e':arch['e'],'d':arch['d']}
+            backbone_dir=get_subnet_folder_by_backbone(iter_path,arch_b,n_subnet)
+
+            if backbone_dir is None:
+                pre_trained_model_path = os.path.join(path, 'bb_s.pt')
+                pre_trained_classifier_path = os.path.join(path, 'c_s.pt')
+                backbone_dir = path
+            else:
+                print("LOADED BACKBONE FROM " + backbone_dir)
+                pre_trained_model_path = os.path.join(backbone_dir, 'bb_s.pt')
+                pre_trained_classifier_path = os.path.join(backbone_dir, 'c_s.pt')
+            
+            log.info('Pre trained model path {}'.format(backbone_dir))
+
+            #pre_trained_model_path = os.path.join(path, 'bb_s.pt')
+            #pre_trained_classifier_path = os.path.join(path, 'c_s.pt')
+
+            pretrained_backbone, pretrained_classifiers = get_model(
+                model_name,
+                image_size=input_size,
+                n_classes=n_classes,
+                get_binaries=False,
+                model_path=model_path)
+            
+            
+            if os.path.exists(pre_trained_model_path) and \
+                    os.path.exists(pre_trained_classifier_path):
+                log.info('Pre trained model loaded')
+                
+                pretrained_backbone.load_state_dict(
+                    torch.load(pre_trained_model_path,
+                               map_location=device))
+                
+                state_dict = torch.load(pre_trained_classifier_path,
+                               map_location=device)
+
+                # Define a prefix for the weights you want to filter (e.g., "1.classifier.1")
+                #prefix = str(pretrained_backbone.n_branches()-1)
+
+                prefix=0
+                for el in state_dict.keys():
+                    prefix=max(prefix,int(el.split('.')[0]))
+                prefix=str(prefix)
+                
+                # Filter the state_dict to select only the weights with the specified prefix and remove it 
+                filtered_state_dict = {key[len(prefix)+1:]: value for key, value in state_dict.items() if key.startswith(prefix)}
+                
+                pretrained_classifiers[-1].load_state_dict(filtered_state_dict)
+
+                '''
+                pretrained_classifiers.load_state_dict(
+                    torch.load(pre_trained_classifier_path,
+                               map_location=device))
+                '''
+                
+            else:
+            
+                #os.makedirs(pre_trained_path, exist_ok=True)
+
+                log.info('Training the base model')
+
+                '''
+                print("Freeze backbone parameters")
+                for param in pretrained_backbone.parameters():
+                    param.requires_grad = False
+                '''
+
+                pretrained_backbone.to(device)
+                pretrained_classifiers.to(device)
+
+                train_set, test_set, input_size, n_classes = \
+                    get_dataset(name=dataset_name,
+                                model_name=None,
+                                augmentation=True)
+
+                pre_trainloader = torch.utils.data.DataLoader(train_set,
+                                                                batch_size=batch_size,
+                                                                shuffle=True)
+
+                pre_testloader = torch.utils.data.DataLoader(test_set,
+                                                                batch_size=batch_size,
+                                                                shuffle=False)
+
+                parameters = chain(pretrained_backbone.parameters(),
+                                    pretrained_classifiers.parameters())
+
+                optimizer = get_optimizer(parameters=parameters,
+                                            name='sgd',
+                                            lr=0.01,
+                                            momentum=0.9,
+                                            weight_decay=0)
+
+
+                res = standard_trainer(model=pretrained_backbone,
+                                        predictors=pretrained_classifiers,
+                                        optimizer=optimizer,
+                                        train_loader=pre_trainloader,
+                                        epochs=epochs,
+                                        scheduler=None,
+                                        early_stopping=early_stopping,
+                                        test_loader=pre_testloader,
+                                        eval_loader=eval_loader,
+                                        ckpt_path = ckpt_path
+                                        )[0]
+
+                backbone_dict, classifiers_dict = res
+                # classifiers.load_state_dict(classifiers_dict)
+                
+                torch.save(backbone_dict,
+                            pre_trained_model_path)
+                torch.save(classifiers_dict,
+                            pre_trained_classifier_path)
+                
+
+                pretrained_classifiers.load_state_dict(classifiers_dict)
+                pretrained_backbone.load_state_dict(backbone_dict)
+
+                log.info('Pre trained model Saved.')
+
+            # train_scores = standard_eval(model=pretrained_backbone,
+            #                              dataset_loader=trainloader,
+            #                              classifier=pretrained_classifiers[
+            #                                  -1])
+
+            test_scores = standard_eval(model=pretrained_backbone,
+                                        dataset_loader=testloader,
+                                        classifier=pretrained_classifiers[
+                                            -1])
+            
+            results['backbone_top1'] = test_scores * 100
+
+            log.info('Pre trained model scores : {}, {}'.format(-1,test_scores))
+
+
+            backbone.load_state_dict(pretrained_backbone.state_dict())
+
+        if os.path.exists(os.path.join(path, 'bb.pt')) and load:
+            #log.info('Model loaded')
+
+            backbone.to(device)
+            classifiers.to(device)
+
+            backbone.load_state_dict(torch.load(
+                os.path.join(path, 'bb.pt'), map_location=device))
+
+            loaded_state_dict = torch.load(os.path.join(
+                path, 'classifiers.pt'), map_location=device)
+
+            # old code compatibility
+            loaded_state_dict = {k: v for k, v in
+                                 loaded_state_dict.items()
+                                 if 'binary_classifier' not in k}
+
+            classifiers.load_state_dict(loaded_state_dict)
+
+            stats_ece = ece_score(model=backbone,predictors=classifiers, dataset_loader=testloader)
+            ece_scores={}
+            for i,k in enumerate(stats_ece):
+                scores = stats_ece[i]
+                ece_scores[i]=scores[0]
+            results['ece_scores']=ece_scores
+            #pre_trained_path = os.path.join('~/branch_models/','{}'.format(dataset_name),'{}'.format(model_name))
+            # Construct the file path using the same format as when the file was saved
+            save_path = os.path.join(path, 'net_{}.stats'.format(n_subnet))
+
+            # Load the JSON data from the file
+            with open(save_path, 'r') as handle:
+                json_data = json.load(handle)
+
+            # Access the "support_conf" field directly
+            support_conf = json_data["support_conf"]
+            sigma = json_data["global_gate"]
+
+            # Now you can use the 'support_conf_value' variable, which contains the value of "support_conf"
+            #print("Support Confidence:", support_conf)
+
+        else:
+
+            backbone.to(device)
+            classifiers.to(device)
+
+            # optimizer = optim.SGD(chain(backbone1.parameters(),
+            #                             backbone2.parameters(),
+            #                             backbone3.parameters(),
+            #                             classifier.parameters()), lr=0.01,
+            #                       momentum=0.9)
+            log.info('Training started.')
+
+            parameters = chain(backbone.parameters(),
+                               classifiers.parameters())
+
+            optimizer = get_optimizer(parameters=parameters,
+                                      name=optimizer_name,
+                                      lr=lr,
+                                      momentum=momentum,
+                                      weight_decay=weight_decay)
+
+            if method_name == 'bernulli':
+
+                priors = method_cfg.get('priors', 0.5)
+                joint_type = method_cfg.get('joint_type', 'predictions')
+                beta = method_cfg.get('beta', 1e-3)
+                sample = method_cfg.get('sample', True)
+
+                recursive = method_cfg.get('recursive', False)
+                normalize_weights = method_cfg.get('normalize_weights', False)
+                prior_mode = method_cfg.get('prior_mode', 'ones')
+                regularization_loss = method_cfg.get('regularization_loss',
+                                                     'bce')
+                temperature_scaling = method_cfg.get('temperature_scaling',
+                                                     True)
+                regularization_scaling = method_cfg.get(
+                    'regularization_scaling',
+                    True)
+
+                dropout = method_cfg.get('dropout', 0.0)
+                backbone_epochs = method_cfg.get('backbone_epochs', 0.0)
+                support_set = method_cfg.get('support_set', False)
+
+                
+                w_alpha = method_cfg.get('w_alpha',1.0)
+                w_beta = method_cfg.get('w_beta',1.0)
+                w_gamma = method_cfg.get('w_gamma',1.0)
+                n_epoch_gamma = method_cfg.get('n_epoch_gamma',5)
+
+                if normalize_weights:
+                    assert fix_last_layer
+
+                res = binary_bernulli_trainer(model=backbone,
+                                              predictors=classifiers,
+                                              optimizer=optimizer,
+                                              train_loader=trainloader,
+                                              epochs=epochs,
+                                              prior_parameters=priors,
+                                              ckpt_path=ckpt_path,
+                                              joint_type=joint_type,
+                                              beta=beta,
+                                              sample=sample,
+                                              prior_mode=prior_mode,
+                                              eval_loader=eval_loader,
+                                              recursive=recursive,
+                                              test_loader=testloader,
+                                              fix_last_layer=fix_last_layer,
+                                              normalize_weights=
+                                              normalize_weights,
+                                              temperature_scaling=
+                                              temperature_scaling,
+                                              regularization_loss=
+                                              regularization_loss,
+                                              regularization_scaling=
+                                              regularization_scaling,
+                                              dropout=dropout,
+                                              backbone_epochs=
+                                              backbone_epochs,
+                                              early_stopping=early_stopping,
+                                              gg_on=gg_on,
+                                              support_set=support_set,
+                                              mmax = mmax,
+                                              w_alpha=w_alpha,
+                                              w_beta=w_beta,
+                                              w_gamma=w_gamma,
+                                              n_epoch_gamma=n_epoch_gamma,
+                                              n_classes=n_classes
+                                              )[0]
+
+                backbone_dict, classifiers_dict, support_conf, global_gate = res
+                if support_conf is not None:
+                    support_conf = torch.mean(support_conf, dim=0).tolist() # compute the average on the n_classes dimension
+                sigma=torch.nn.Sigmoid()(global_gate).tolist()
+
+                backbone.load_state_dict(backbone_dict)
+                classifiers.load_state_dict(classifiers_dict)
+
+            elif method_name == 'joint':
+                joint_type = method_cfg.get('joint_type', 'losses')
+                weights = method_cfg.get('weights', None)
+                train_weights = method_cfg.get('train_weights', False)
+
+                if train_weights:
+                    weights = torch.tensor(weights, device=device,
+                                           dtype=torch.float)
+
+                    if joint_type == 'predictions':
+                        weights = weights.unsqueeze(-1)
+                        weights = weights.unsqueeze(-1)
+
+                    weights = torch.nn.Parameter(weights)
+                    parameters = chain(backbone.parameters(),
+                                       classifiers.parameters(),
+                                       [weights])
+
+                    optimizer = get_optimizer(parameters=parameters,
+                                              name=optimizer_name,
+                                              lr=lr,
+                                              momentum=momentum,
+                                              weight_decay=weight_decay)
+
+                res = joint_trainer(model=backbone, predictors=classifiers,
+                                    optimizer=optimizer,
+                                    weights=weights, train_loader=trainloader,
+                                    epochs=epochs,
+                                    scheduler=None, joint_type=joint_type,
+                                    test_loader=testloader,
+                                    eval_loader=eval_loader,
+                                    early_stopping=early_stopping)[0]
+
+                backbone_dict, classifiers_dict = res
+
+                backbone.load_state_dict(backbone_dict)
+                classifiers.load_state_dict(classifiers_dict)
+
+            elif method_name == 'adaptive':
+                reg_w = method_cfg.get('reg_w', 1)
+
+                res = adaptive_trainer(model=backbone,
+                                       predictors=classifiers,
+                                       optimizer=optimizer,
+                                       train_loader=trainloader,
+                                       epochs=epochs,
+                                       scheduler=None,
+                                       test_loader=testloader,
+                                       eval_loader=eval_loader,
+                                       early_stopping=early_stopping,
+                                       reg_w=reg_w)[0]
+
+                backbone_dict, classifiers_dict = res
+
+                backbone.load_state_dict(backbone_dict)
+                classifiers.load_state_dict(classifiers_dict)
+
+            elif method_name == 'standard':
+
+                res = standard_trainer(model=backbone,
+                                       predictors=classifiers,
+                                       optimizer=optimizer,
+                                       train_loader=trainloader,
+                                       epochs=epochs,
+                                       scheduler=None,
+                                       test_loader=testloader,
+                                       eval_loader=eval_loader,
+                                       early_stopping=early_stopping)[0]
+
+                backbone_dict, classifiers_dict = res
+
+                backbone.load_state_dict(backbone_dict)
+                classifiers.load_state_dict(classifiers_dict)
+
+            else:
+                assert False
+
+            if save:
+                torch.save(backbone.state_dict(), os.path.join(path,
+                                                               'bb.pt'))
+                torch.save(classifiers.state_dict(),
+                           os.path.join(path,
+                                        'classifiers.pt'))
+
+
+        train_scores = standard_eval(model=backbone,
+                                     dataset_loader=trainloader,
+                                     classifier=classifiers[-1])
+
+        test_scores = standard_eval(model=backbone,
+                                    dataset_loader=testloader,
+                                    classifier=classifiers[-1])
+
+        log.info('Last layer train and test scores : {}, {}'.format(train_scores,test_scores))
+
+        if method_name != 'standard':
+
+            results['support_conf']=support_conf#.tolist()
+            results['global_gate']=sigma#.tolist()
+
+        if 'bernulli' in method_name:
+
+            ## ECE SCORE ##
+
+            stats_ece = ece_score(model=backbone,predictors=classifiers, dataset_loader=testloader)
+            ece_scores={}
+            for i,k in enumerate(stats_ece):
+                ece_scores[i]=k[0]
+            results['ece_scores']=ece_scores
+
+            ## TUNING THRESHOLDS ##
+            
+            cumulative_threshold_scores = {}
+
+            best_scores = {}
+            best_score=0.0
+            best_epsilon=0.1
+            best_counters=[0]*backbone.n_branches()
+            best_cumulative=True
+
+            for epsilon in [0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8]:#, 0.9, 0.95, 0.98]:
+                a, b = binary_eval(model=backbone,
+                                   dataset_loader=testloader,
+                                   predictors=classifiers,
+                                   epsilon=[
+                                               0.7 if epsilon <= 0.7 else epsilon] +
+                                           [epsilon] *
+                                           (backbone.n_branches() - 1),
+                                   # epsilon=[epsilon] *
+                                   #         (backbone.n_branches()),
+                                   cumulative_threshold=True,
+                                   sample=False)
+
+                a, b = dict(a), dict(b)
+
+                # log.info('Epsilon {} scores: {}, {}'.format(epsilon,
+                #                                             dict(a), dict(b)))
+
+                s = '\tCumulative binary {}. '.format(epsilon)
+
+                for k in sorted([k for k in a.keys() if k != 'global']):
+                    s += 'Branch {}, score: {}, counter: {}. '.format(k,
+                                                                      np.round(
+                                                                          a[
+                                                                              k] * 100,
+                                                                          2),
+                                                                      b[k])
+                s += 'Global score: {}'.format(a['global'])
+                #log.info(s)
+
+                cumulative_threshold_scores[epsilon] = {'scores': a,
+                                                        'counters': b}
+                
+                if(a['global']>best_score):
+                    best_score=a['global']
+                    best_epsilon=epsilon
+                    best_counters=b
+                    best_scores=a
+                    print("New best threshold: {}".format(best_epsilon))
+                    print("New best score: {}".format(best_score))
+            
+
+            #results['cumulative_results'] = cumulative_threshold_scores
+
+            '''
+
+            binary_threshold_scores = {}
+            for epsilon in [0.1, 0.2, 0.3, 0.5, 0.6]:#, 0.7, 0.8, 0.9, 0.95, 0.98]:
+                a, b = binary_eval(model=backbone,
+                                   dataset_loader=testloader,
+                                   predictors=classifiers,
+                                   epsilon=[
+                                               0.7 if epsilon <= 0.7 else epsilon] +
+                                           [epsilon] *
+                                           (backbone.n_branches() - 1)
+                                   # epsilon=[epsilon] *
+                                   #         (backbone.n_branches()),
+                                   )
+
+                a, b = dict(a), dict(b)
+
+                # log.info('Threshold {} scores: {}, {}'.format(epsilon, a, b))
+
+                s = '\tThreshold {}. '.format(epsilon)
+                for k in sorted([k for k in a.keys() if k != 'global']):
+                    s += 'Branch {}, score: {}, counter: {}. '.format(k,
+                                                                      np.round(
+                                                                          a[
+                                                                              k] * 100,
+                                                                          2),
+                                                                      b[k])
+                s += 'Global score: {}'.format(a['global'])
+                log.info(s)
+
+                binary_threshold_scores[epsilon] = {'scores': a,
+                                                    'counters': b}
+                
+                if(a['global']>best_score):
+                    best_score=a['global']
+                    best_epsilon=epsilon
+                    best_counters=b
+                    best_scores=a
+                    print("New best threshold: {}".format(best_epsilon))
+                    print("New best score: {}".format(best_score))
+                    if(best_cumulative):
+                        print("Best threshold is not cumulative!")
+                    best_cumulative=False
+
+            #results['binary_results'] = binary_threshold_scores
+            '''
+
+        n_samples = len(test_set)
+        weights = []
+        for ex in best_counters.values():
+                weights.append(ex/n_samples)
+        
+        
+        # For each b-th exit the avg_macs is the percentage of samples exiting from the exit 
+        # multiplied by the sum of the MACs of the backbone up to the b-th exit + MACs of the b-th exit 
+
+        #print("INFO GET_AVG_MACS")
+        #print(weights)
+        #print(backbone_macs_i)
+        #print(classifiers_macs)
+   
+        avg_macs = 0
+        for b in range(backbone.b):
+            avg_macs += weights[b] * (b_macs[b] + c_macs[b])
+
+        # Repair action: adjust the thresholds to make the network fit in terms of MACs
+        constraint_compl = mmax
+        constraint_acc = top1min
+        i=backbone.b-2#cycle from the second last elem
+        repaired = False
+        epsilon=[ 0.7 if best_epsilon <= 0.7 else best_epsilon] + [best_epsilon] * (backbone.n_branches() - 1)
+        best_epsilon = epsilon
+        if(a['global']>=constraint_acc):
+            while (i>=0 and avg_macs>constraint_compl): #cycle from the second last elem
+                #print("CONSTRAINT MACS VIOLATED: REPAIR ACTION ON BRANCH {}".format(i))
+                epsilon[i] = epsilon[i] - 0.1 
+                '''
+                if(epsilon[0]<1e-2):
+                    #print("SOLUTION IS NOT ADMISSIBLE")
+                    break
+                '''
+                a, b = binary_eval(model=backbone,
+                                    dataset_loader=testloader,
+                                    predictors=classifiers,
+                                    epsilon=epsilon,
+                                    # epsilon=[epsilon] *
+                                    #         (backbone.n_branches()),
+                                    cumulative_threshold=True,
+                                    sample=False)
+                a, b = dict(a), dict(b)
+                if(a['global']<constraint_acc):
+                    #print("ACC VIOLATED")
+                    #print(a['global'])
+                    if i>=1:
+                      i=i-1
+                      continue
+                    else:
+                      break
+                best_epsilon = epsilon
+                #print("Evaluating config {}".format(str(epsilon)))
+                n_samples = len(test_set) #len of cifar10 eval dataset
+                weights = []
+                for ex in b.values():
+                        weights.append(ex/n_samples)
+                avg_macs = 0
+                for b in range(backbone.b):
+                    avg_macs += weights[b] * (b_macs[b] + c_macs[b])
+                best_scores=a
+                
+                '''
+                print("BRANCHES SCORES")
+                print(a)
+                print("WEIGHTS")
+                print(weights)
+                print("AVG MACS")
+                print(avg_macs)
+                '''
+                
+                if(avg_macs<=constraint_compl):
+                    repaired=True
+                    break
+                if(epsilon[i]<=0.11):
+                    i=i-1   
+        
+        #print("Solution repaired: {}".format(repaired))
+        results["exits_ratio"]=weights
+        #results['backbone_macs_i'] = b_macs
+        results['avg_macs'] = avg_macs
+        results['epsilon'] = best_epsilon#.tolist()
+        results['cumulative_threshold'] = best_cumulative
+
+        #The branch score of the binary_eval is the percentage of samples of the dataset EXITING 
+        #FROM THAT BRANCH correctly classified by the the branch
+        
+        results['top1'] = best_scores['global'] * 100
+        results['branch_scores'] = best_scores
+
+        #log.info('Best epsilon: {}'.format(best_epsilon))
+        #log.info('Best cumulative threshold: {}'.format(best_cumulative))
+        log.info('Branches scores on exiting samples: {}'.format(best_scores))
+        log.info('Exit ratios: {}'.format(weights))
+        log.info('Average MACS: {:.2f}'.format(avg_macs))
+        
+        if save:
+            save_path = os.path.join(path, 'net_{}.stats'.format(n_subnet)) # #exp__path = ..iter_x/exp_y 
+    
+            with open(save_path, 'w') as handle:
+                json.dump(results, handle)
+        
+        # Get the current date and time
+        current_time = datetime.datetime.now()
+
+        # Print the current time
+        print("Current time:", current_time)
+
+        log.info('#' * 100)
+
+
+if __name__ == "__main__":
+    my_app()

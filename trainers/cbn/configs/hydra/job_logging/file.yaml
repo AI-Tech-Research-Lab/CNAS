@@ -1,0 +1,16 @@
+version: 1
+formatters:
+  simple:
+    format: '[%(filename)s][%(levelname)s] - %(message)s'
+  longer:
+    format: '[%(asctime)s][%(filename)s][%(levelname)s] - %(message)s'
+handlers:
+  file:
+    class: logging.FileHandler
+    formatter: longer
+    filename: experiments.log
+    mode: w
+root:
+  handlers: [file]
+
+disable_existing_loggers: false

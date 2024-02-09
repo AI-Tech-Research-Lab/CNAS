@@ -1,0 +1,1 @@
+{"params": 5.33, "macs": 37.21, "activations": 0.99, "tiny_ml": 33300000007.25025, "gpu": null, "cpu": null, "loss": 0.3694117909669876, "top1": 86.82, "top5": 95.8}
