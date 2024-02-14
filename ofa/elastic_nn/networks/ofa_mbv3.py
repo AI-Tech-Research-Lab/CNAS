@@ -888,7 +888,7 @@ class OFAQuantMobileNetV3(QuantMobileNetV3):
             classifier = DynamicLinearLayer(
                 in_features_list=last_channel, out_features=n_classes, bias=True, dropout_rate=dropout_rate
             )
-        super(OFAMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier)
+        super(OFAQuantMobileNetV3, self).__init__(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier)
 
         # set bn param
         self.set_bn_param(momentum=bn_param[0], eps=bn_param[1])
@@ -1085,7 +1085,7 @@ class OFAQuantMobileNetV3(QuantMobileNetV3):
                 input_channel = stage_blocks[-1].mobile_inverted_conv.out_channels
             blocks += stage_blocks
 
-        _subnet = MobileNetV3(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier)
+        _subnet = QuantMobileNetV3(first_conv, blocks, final_expand_layer, feature_mix_layer, classifier)
         _subnet.set_bn_param(**self.get_bn_param())
         return _subnet
 

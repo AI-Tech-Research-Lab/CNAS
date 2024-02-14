@@ -393,7 +393,7 @@ class QuantMobileNetV3(MyNetwork): #MobileNetV3 with quantization stubs
 
     def __init__(self, first_conv, blocks, final_expand_layer, feature_mix_layer, classifier):
 
-        super(MobileNetV3, self).__init__()
+        super(QuantMobileNetV3, self).__init__()
 
         self.first_conv = first_conv
         self.blocks = nn.ModuleList(blocks)
