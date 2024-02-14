@@ -17,7 +17,6 @@ except ImportError:
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.ao.nn.quantized import FloatFunctional
 
 import numpy as np
 
@@ -297,21 +296,15 @@ class MyGlobalAvgPool2d(nn.Module):
 	def __repr__(self):
 		return 'MyGlobalAvgPool2d(keep_dim=%s)' % self.keep_dim
 
+
 class Hswish(nn.Module):
 
     def __init__(self, inplace=True):
         super(Hswish, self).__init__()
         self.inplace = inplace
-        self.quant = torch.quantization.QuantStub()
-        self.dequant = torch.quantization.DeQuantStub()
 
     def forward(self, x):
-        x = self.dequant(x)
-        x = x * F.relu6(x + 3., inplace=self.inplace) / 6.
-        return self.quant(x)
-        #f_add = FloatFunctional()
-        #return x * F.relu6(f_add.add(x,3), inplace=self.inplace) / 6.
-
+        return x * F.relu6(x + 3., inplace=self.inplace) / 6.
 
 
 class Hsigmoid(nn.Module):
@@ -319,16 +312,9 @@ class Hsigmoid(nn.Module):
     def __init__(self, inplace=True):
         super(Hsigmoid, self).__init__()
         self.inplace = inplace
-        self.quant = torch.quantization.QuantStub()
-        self.dequant = torch.quantization.DeQuantStub()
 
     def forward(self, x):
-
-        x = self.dequant(x)
-        x = F.relu6(x + 3., inplace=self.inplace) / 6.
-        return self.quant(x)
-        #f_add = FloatFunctional()
-        #return F.relu6(f_add.add(x,3), inplace=self.inplace) / 6.
+        return F.relu6(x + 3., inplace=self.inplace) / 6.
 
 
 class SEModule(nn.Module):
