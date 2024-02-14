@@ -5,7 +5,7 @@ import argparse
 import numpy as np
 import math
 
-from ofa.elastic_nn.networks import OFAMobileNetV3, OFAEEMobileNetV3, OFAResNets, OFAResNetsHE, OFAMobileNetV3HE, OFAQuantMobileNetV3
+from ofa.elastic_nn.networks import OFAMobileNetV3, OFAEEMobileNetV3, OFAResNets, OFAResNetsHE, OFAMobileNetV3HE
 from ofa.imagenet_codebase.run_manager import RunManager
 from ofa.elastic_nn.modules.dynamic_op import DynamicSeparableConv2d
 from ofa.utils import download_url
@@ -127,7 +127,6 @@ class OFAEvaluator:
     def __init__(self,
                  n_classes=1000,
                  model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0',
-                 model_name='ofa_mbv3',
                  pretrained = False,
                  kernel_size=None, exp_ratio=None, depth=None, threshold = None):
                  
@@ -145,7 +144,8 @@ class OFAEvaluator:
         else:
             raise ValueError
 
-        if ('ofa_mbv3' in model_name) or ('ofa_cbnmbv3' in model_name):
+        if ('ofa_mbv3_d234_e346_k357_w1.0' in model_path) or ('ofa_mbv3_d234_e346_k357_w1.2' in model_path) \
+            or ('ofa_cbnmbv3' in model_path):
             self.engine = OFAMobileNetV3(
                 n_classes=n_classes,
                 dropout_rate=0, width_mult_list=self.width_mult, ks_list=self.kernel_size,
@@ -168,7 +168,7 @@ class OFAEvaluator:
 
                 self.engine.load_weights_from_net(init)
         
-        elif ('ofa_eembv3' in model_name):
+        elif ('ofa_eembv3' in model_path):
 
             self.threshold = [0.1, 0.2, 1] if threshold is None else threshold  # number of MB block repetition
 
@@ -193,30 +193,7 @@ class OFAEvaluator:
 
                 self.engine.load_weights_from_net(init)
         
-        elif ('ofa_qmbv3' in model_name):
-
-            self.engine = OFAQuantMobileNetV3(
-                n_classes=n_classes,
-                dropout_rate=0, width_mult_list=self.width_mult, ks_list=self.kernel_size,
-                expand_ratio_list=self.exp_ratio, depth_list=self.depth)
-
-            if(pretrained):
-                init = torch.load(model_path, map_location='cpu')['state_dict']
-                '''
-                url_base = 'https://hanlab.mit.edu/files/OnceForAll/ofa_nets/'
-                init = torch.load(
-                    download_url(url_base + model_path, model_dir='./ofa_nets'),
-                    map_location='cpu')['state_dict']
-                '''
-
-                ##FIX size mismatch error#####
-                init['classifier.linear.weight'] = init['classifier.linear.weight'][:n_classes]
-                init['classifier.linear.bias'] = init['classifier.linear.bias'][:n_classes]
-                ##############################
-
-                self.engine.load_weights_from_net(init)
-        
-        elif 'resnet50_he' in model_name:
+        elif 'resnet50_he' in model_path:
             # default configurations
             #ks is 3 by default for resnet
             self.kernel_size = [3] if kernel_size is None else kernel_size  # depth-wise conv kernel size
@@ -239,7 +216,7 @@ class OFAEvaluator:
             
             return 
             
-        elif 'resnet50' in model_name:
+        elif 'resnet50' in model_path:
             # default configurations
             #ks is 3 by default for resnet
             self.kernel_size = [3] if kernel_size is None else kernel_size  # depth-wise conv kernel size
