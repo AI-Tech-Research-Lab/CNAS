@@ -12,9 +12,9 @@ from torch.nn import Conv2d,ReLU,Linear,Sequential,Flatten,BatchNorm2d,AvgPool2d
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 
-from pymoo.model.mutation import Mutation
-from pymoo.model.sampling import Sampling
-from pymoo.model.crossover import Crossover
+from pymoo.core.mutation import Mutation
+from pymoo.core.sampling import Sampling
+from pymoo.core.crossover import Crossover
 
 DEFAULT_CFG = {
     'gpus': '0', 'config': None, 'init': None, 'trn_batch_size': 128, 'vld_batch_size': 250, 'num_workers': 4,

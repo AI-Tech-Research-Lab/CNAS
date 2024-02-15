@@ -8,11 +8,16 @@ import math
 import datetime
 
 from pymoo.optimize import minimize
-from pymoo.model.problem import Problem
-from pymoo.factory import get_performance_indicator
-from pymoo.algorithms.so_genetic_algorithm import GA
+from pymoo.core.problem import Problem
+#from pymoo.factory import get_performance_indicator
+from pymoo.indicators.hv import HV
+from pymoo.algorithms.soo.nonconvex.ga import GA
 from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
-from pymoo.factory import get_algorithm, get_crossover, get_mutation
+#from pymoo.factory import get_algorithm, get_crossover, get_mutation
+from pymoo.algorithms.moo.nsga2 import NSGA2
+from pymoo.operators.crossover.pntx import TwoPointCrossover
+from pymoo.operators.mutation.pm import PolynomialMutation
+
 
 from utils import get_correlation
 from ofa_evaluator import OFAEvaluator, get_net_info, get_adapt_net_info
@@ -457,8 +462,8 @@ class MSuNAS:
         method = GA(
                 pop_size=40,
                 sampling=top_K_subnets,  
-                crossover=get_crossover("int_two_point", prob=0.9),
-                mutation=get_mutation("int_pm", eta=1.0),
+                crossover=TwoPointCrossover(prob=0.9),#get_crossover("int_two_point", prob=0.9),
+                mutation=PolynomialMutation(eta=1.0),#get_mutation("int_pm", eta=1.0),
                 eliminate_duplicates=True) 
 
         # kick-off the search
@@ -501,10 +506,9 @@ class MSuNAS:
             pmax = self.pmax, fmax = self.fmax, amax = self.amax, wp = self.wp, wf = self.wf, wa = self.wa, penalty = self.penalty)
 
         # initiate a multi-objective solver to optimize the problem
-        method = get_algorithm(
-            "nsga2", pop_size=40, sampling=nd_X,  # initialize with current nd archs
-            crossover=get_crossover("int_two_point", prob=0.9),
-            mutation=get_mutation("int_pm", eta=1.0),
+        method = NSGA2(pop_size=40, sampling=nd_X,  # initialize with current nd archs
+            crossover=TwoPointCrossover(prob=0.9),
+            mutation=PolynomialMutation(eta=1.0),
             eliminate_duplicates=True)
         
         # kick-off the search
@@ -553,7 +557,7 @@ class MSuNAS:
         front = NonDominatedSorting().do(F, only_non_dominated_front=True)
         nd_F = F[front, :]
         ref_point = 1.01 * ref_pt
-        hv = get_performance_indicator("hv", ref_point=ref_point).calc(nd_F)
+        hv = HV(ref_point=ref_point).calc(nd_F) #get_performance_indicator("hv", ref_point=ref_point).calc(nd_F)
         if normalized:
             hv = hv / np.prod(ref_point)
         return hv

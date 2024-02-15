@@ -4,7 +4,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
-from pymoo.factory import get_performance_indicator
+from pymoo.indicators.hv import HV
 
 
 ## GENERAL
@@ -148,7 +148,7 @@ def calc_hv(ref_pt, F, normalized=True):
         front = NonDominatedSorting().do(F, only_non_dominated_front=True)
         nd_F = F[front, :]
         ref_point = 1.01 * ref_pt
-        hv = get_performance_indicator("hv", ref_point=ref_point).calc(nd_F)
+        hv = HV(ref_point=ref_point).calc(nd_F)
         if normalized:
             hv = hv / np.prod(ref_point)
         return hv
