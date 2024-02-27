@@ -9,11 +9,9 @@ import datetime
 
 from pymoo.optimize import minimize
 from pymoo.core.problem import Problem
-#from pymoo.factory import get_performance_indicator
 from pymoo.indicators.hv import HV
 from pymoo.algorithms.soo.nonconvex.ga import GA
 from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
-#from pymoo.factory import get_algorithm, get_crossover, get_mutation
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.operators.crossover.pntx import TwoPointCrossover
 from pymoo.operators.mutation.pm import PolynomialMutation
@@ -93,10 +91,6 @@ class MSuNAS:
         if self.sigma_max == self.sigma_min:
             sigma_step = 1
         n=round((self.sigma_max-self.sigma_min)/sigma_step)+1
-        self.sigma_list = [round(self.sigma_min + i * self.sigma_step, 2) for i in range(n)] 
-        #print("SIGMA LIST")
-        #print(self.sigma_list)
-        self.sigma_idx = 0 # idx of the sigma in sigma_list used in the current NAS iteration
 
         self.alpha_norm = 1.0 # alpha factor for entropic training
 
@@ -108,10 +102,6 @@ class MSuNAS:
         initialize_seed(self.seed)
         it_start = 1
         if self.resume:
-            #if (self.trainer_type=='entropic'):
-                #self.sigma_idx = compute_best_sigma(self.resume)[0]
-            #self.alpha_norm = self.compute_alpha_norm(self.resume)
-            #print("ALPHA NORM: ", self.alpha_norm)
             archive = self._resume_from_dir()
             split = self.resume.rsplit("_",1)
             it_start = int(split[1])
@@ -130,10 +120,6 @@ class MSuNAS:
 
             for arch, info in zip(arch_doe,stats):
                 archive.append((arch,*info))
-        
-            #if (self.trainer_type=='entropic'):
-                #self.sigma_idx=compute_best_sigma(os.path.join(self.save_path, "iter_0"))
-
 
         # reference point (nadir point) for calculating hypervolume
         if self.sec_obj is not None:
@@ -145,7 +131,6 @@ class MSuNAS:
             if self.first_obj == 'top1_robust':
               # Compute the new alpha_factor and update the archive with the new alpha_factor
               self.alpha_norm = self.compute_alpha_norm(os.path.join(self.save_path, "iter_"+str(it-1)))
-              print("ALPHA NORM: ", self.alpha_norm)
               temp=[]
               for x in archive:
                   temp.append((x[0],x[3]*self.alpha + self.alpha_norm*(1-self.alpha)*x[4],x[2],x[3],x[4]))
@@ -161,8 +146,10 @@ class MSuNAS:
             
             # search for the next set of candidates for high-fidelity evaluation (lower level)
             if self.sec_obj is None:
+                print("Optimizing for single objective")
                 candidates, c_first_err_pred = self._nextSingleObj(archive, first_predictor, self.n_iter)
             else:
+                print("Optimizing for multi-objective")
                 candidates, c_first_err_pred, c_sec_err_pred = self._nextMultiObj(archive, first_predictor, sec_predictor, self.n_iter)
 
             # high-fidelity evaluation (lower level)
@@ -216,14 +203,6 @@ class MSuNAS:
                                'model': self.sec_predictor, 'name': sec_predictor.name,
                                'winner': sec_predictor.winner if self.sec_predictor == 'as' else sec_predictor.name,
                                'rmse': rmse_c, 'rho': rho_c, 'tau': tau_c, 'phi': self.phi}
-            
-            '''
-            if (self.trainer_type=='entropic'):
-                self.sigma_idx, rmse_s, rho_s, tau_s = compute_best_sigma(os.path.join(self.save_path, "iter_"+str(it)))
-                print("sigma {}: RMSE = {:.4f}, Spearman's Rho = {:.4f}, Kendall’s Tau = {:.4f}".format(
-                    self.sigma_list[self.sigma_idx], rmse_s, rho_s, tau_s))
-                stats['sigma']={'best_value': self.sigma_list[self.sigma_idx], 'rmse': rmse_s, 'rho': rho_s, 'tau': tau_s}
-            '''
             
             if self.sec_obj is not None:
                 # calculate hypervolume
@@ -285,14 +264,6 @@ class MSuNAS:
         maxiter = int(split[1])
         path = split[0]
         
-        '''
-        ## some stats per iteration
-        acc = [0]*(maxiter+1)
-        macs = [0]*(maxiter+1)
-        n_subnets = [0]*(maxiter+1)
-        ##
-        '''
-
         for file in glob.glob(os.path.join(path + '_*', "net_*/net_*.subnet")):
             arch = json.load(open(file))
             pre,ext= os.path.splitext(file)
@@ -324,14 +295,6 @@ class MSuNAS:
 
                     first_obj = stats[self.first_obj]
                     sec_obj = stats.get(self.sec_obj, None)
-
-                    '''
-                    if self.first_obj == 'robustness':
-                        first_obj = first_obj[self.sigma_idx]
-                    
-                    if self.sec_obj == 'robustness':
-                        sec_obj = sec_obj[self.sigma_idx]
-                    '''
                     
                     if self.sec_obj is not None:
                         v = (arch, first_obj, sec_obj)
@@ -342,14 +305,6 @@ class MSuNAS:
                         v = v + (stats['top1'], stats['robustness'],)
 
                     archive.append(v)
-                    
-                    '''
-                    # update stats
-                    acc[niter]+=stats['top1']
-                    macs[niter]+=stats[self.sec_obj]
-                    n_subnets[niter]+=1
-                    ##
-                    '''
 
                 else: #failed net
                     print("FAILED NET")
@@ -365,20 +320,6 @@ class MSuNAS:
         
         print("LEN ARCHIVE")    
         print(len(archive))
-
-
-        '''
-        # print stats
-        for i in range(maxiter+1):
-            acc[i] = acc[i]/n_subnets[i]
-            macs[i] = macs[i]/n_subnets[i]
-            print("ITERATION")
-            print(i)
-            print("ACC")
-            print(acc[i])
-            print("MACS")
-            print(macs[i])
-        '''
     
         return archive
 
@@ -393,8 +334,6 @@ class MSuNAS:
             sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.res, alpha_norm=self.alpha_norm)
 
         subprocess.call("sh {}/run_bash.sh".format(gen_dir), shell=True)
-
-        #first_obj, complexity = [], []
 
         all_stats=[]
         for i in range(len(archs)):
@@ -412,23 +351,13 @@ class MSuNAS:
             s_obj=stats.get(self.sec_obj, stats['params'])
             stat=(f_obj,s_obj)
 
-            '''
-            if self.first_obj=='robustness':
-                f_obj=f_obj[self.sigma_idx]
-
-            if self.sec_obj=='robustness':
-                s_obj=s_obj[self.sigma_idx]
-            '''
             if self.first_obj=='top1_robust':
                 stat=stat+(stats['top1'], stats['robustness'],)
-            
-            #first_obj.append(f_obj)
-            #complexity.append(s_obj)
 
             all_stats.append(stat)
 
         
-        return all_stats#first_obj, complexity
+        return all_stats
         
 
     def _fit_first_predictor(self, archive):
@@ -566,7 +495,7 @@ class AuxiliarySingleObjProblem(Problem):
 
     def __init__(self, search_space, acc_predictor):
 
-        super().__init__(n_var=search_space.nvar, n_obj=1, n_constr=0, type_var=np.int)
+        super().__init__(n_var=search_space.nvar, n_obj=1, n_constr=0)
 
         self.ss=search_space
         self.acc_predictor = acc_predictor
@@ -596,7 +525,7 @@ class AuxiliarySingleLevelProblem(Problem):
     def __init__(self, search_space, acc_predictor, compl_predictor=None, sec_obj='flops', dataset='imagenet',supernet=None, pmax = 2, fmax = 100, amax = 5,
         wp = 1, wf = 1/40, wa = 1, penalty = 10**10):
         
-        super().__init__(n_var=search_space.nvar, n_obj=2, n_constr=0, type_var=np.int)
+        super().__init__(n_var=search_space.nvar, n_obj=2, n_constr=0) #type = np.int deprecated
 
         self.ss = search_space
         self.acc_predictor = acc_predictor
@@ -737,7 +666,7 @@ class SubsetProblem(Problem):
     """ select a subset to diversify the pareto front """
     def __init__(self, candidates, archive, K):
         super().__init__(n_var=len(candidates), n_obj=1,
-                         n_constr=1, xl=0, xu=1, type_var=np.bool)
+                         n_constr=1, xl=0, xu=1)#, vtype=np.bool)
         self.archive = archive
         self.candidates = candidates
         self.n_max = K

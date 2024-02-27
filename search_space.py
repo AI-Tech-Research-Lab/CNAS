@@ -182,12 +182,13 @@ class OFASearchSpace:
         assumes x = [block1, block2, ..., block5, resolution, width_mult];
         block_i = [depth, kernel_size, exp_rate]
         """
+        
+        x = x.astype(int)
 
         depth, kernel_size, exp_rate = [], [], []
         step = 1 + 2 * max(self.depth)
         if(self.supernet != 'resnet50_he'):
           for i in range(0, len(x) - 5, step):
-              #print(i)
               depth.append(self.depth[x[i]])
               kernel_size.extend(np.array(self.kernel_size)[x[i + 1:i + 1 + self.depth[x[i]]]].tolist())
               exp_rate.extend(np.array(self.exp_ratio)[x[i + 5:i + 5 + self.depth[x[i]]]].tolist())

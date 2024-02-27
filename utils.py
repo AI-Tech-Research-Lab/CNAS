@@ -245,7 +245,7 @@ def prepare_eval_folder(path, configs, gpu=2, n_gpus=8, gpu_list=None, type='sin
 class MySampling(Sampling):
 
     def _do(self, problem, n_samples, **kwargs):
-        X = np.full((n_samples, problem.n_var), False, dtype=np.bool)
+        X = np.full((n_samples, problem.n_var), False, dtype=bool)
 
         for k in range(n_samples):
             I = np.random.permutation(problem.n_var)[:problem.n_max]
