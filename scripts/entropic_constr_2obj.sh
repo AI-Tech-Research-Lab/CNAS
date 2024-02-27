@@ -28,7 +28,7 @@ python msunas.py --resume ../results/entropic-mbv3-$dataset-$optim-$first_obj-$s
         --supernet_path ./supernets/ofa_mbv3_d234_e346_k357_w1.0 \
         --pretrained --search_space mobilenetv3 --trainer_type entropic \
         --alpha $alpha --lr $lr --ur $ur --rstep $rstep --optim $optim \
-        --first_obj $first_obj --first_predictor carts \
+        --first_obj $first_obj --first_predictor rbf \
         --sigma_min $sigma --sigma_max $sigma \
         --iterations $iterations --n_epochs $n_epochs --seed $seed \
         --sec_obj $sec_obj --pmax $pmax \

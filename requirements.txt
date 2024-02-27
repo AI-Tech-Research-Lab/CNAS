@@ -1,7 +1,7 @@
 
 pymoo==0.6.1.1
 timm==0.1.30
-pySOT==0.3.3
+pySOT==0.2.3
 pydacefit==1.0.1
 filelock==3.4.1
 torchprofile==0.0.4
