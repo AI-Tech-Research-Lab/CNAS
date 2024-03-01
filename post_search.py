@@ -5,7 +5,7 @@ import argparse
 import glob
 import numpy as np
 from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
-from pymoo.model.decision_making import DecisionMaking, normalize, find_outliers_upper_tail, NeighborFinder
+from pymoo.core.decision_making import DecisionMaking, find_outliers_upper_tail, NeighborFinder
 from explainability import get_archive
 from trainers.cbn.utils import get_subnet_folder
 from search_space import OFASearchSpace
@@ -15,7 +15,6 @@ from matplotlib import pyplot as plt
 
 _DEBUG = False
                     
-
 class HighTradeoffPoints(DecisionMaking):
 
     def __init__(self, epsilon=0.125, n_survive=None, **kwargs) -> None:
@@ -26,8 +25,8 @@ class HighTradeoffPoints(DecisionMaking):
     def _do(self, F, **kwargs):
         n, m = F.shape
 
-        if self.normalize:
-            F = normalize(F, self.ideal_point, self.nadir_point, estimate_bounds_if_none=True)
+        #if self.normalize:
+        #    F = normalize(F, self.ideal_point, self.nadir_point, estimate_bounds_if_none=True)
 
         neighbors_finder = NeighborFinder(F, epsilon=0.125, n_min_neigbors="auto", consider_2d=False)
 
@@ -46,7 +45,7 @@ class HighTradeoffPoints(DecisionMaking):
             sacrifice = np.maximum(0, diff).sum(axis=1)
             gain = np.maximum(0, -diff).sum(axis=1)
 
-            np.warnings.filterwarnings('ignore')
+            #np.warnings.filterwarnings('ignore')
             tradeoff = sacrifice / gain
 
             # otherwise find the one with the smalled one
@@ -55,6 +54,7 @@ class HighTradeoffPoints(DecisionMaking):
             return np.argsort(mu)[-self.n_survive:]
         else:
             return find_outliers_upper_tail(mu)  # return points with trade-off > 2*sigma
+
 
 def main(args):
 

@@ -2,7 +2,7 @@ import csv
 import os
 import copy
 import json
-import yaml
+#import yaml
 import numpy as np
 from collections import OrderedDict
 from torchprofile import profile_macs

@@ -6,3 +6,7 @@ pydacefit==1.0.1
 filelock==3.4.1
 torchprofile==0.0.4
 Cython==3.0.8
+wand==0.6.13
+scikit-image==0.22.0
+opencv-python==4.9.0.80
+tqdm==4.66.2

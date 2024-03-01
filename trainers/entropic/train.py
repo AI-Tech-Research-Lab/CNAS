@@ -26,8 +26,9 @@ from sam import SAM
 
 from ofa_evaluator import OFAEvaluator 
 from train_utils import get_dataset, save_checkpoint, load_checkpoint, validate
-#from evaluators.evaluate_cifar10c import compute_mCE #, compute_mCE2
+from evaluators.evaluate_cifar10c import compute_mCE 
 from utils import get_net_info
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -74,10 +75,12 @@ if __name__ == "__main__":
     initialize(args, seed=42)
     
     device = args.device
+    print("torch cuda available: ", torch.cuda.is_available())
     if torch.cuda.is_available() and device != 'cpu':
         device = 'cuda:{}'.format(device)
         print("Running on GPU")
     else:
+        print("No device found")
         warnings.warn("Device not found or CUDA not available.")
     
     device = torch.device(device)

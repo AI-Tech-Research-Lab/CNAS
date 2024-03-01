@@ -12,7 +12,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets
 from torchvision.transforms import Resize, ToTensor, Normalize, Compose, \
-    RandomHorizontalFlip, RandomCrop, RandomRotation
+    RandomHorizontalFlip, RandomCrop, RandomRotation, RandomErasing
 from torch.utils.data import Dataset
 from torchvision.datasets.folder import default_loader
 
@@ -29,7 +29,7 @@ def load_checkpoint(model, optimizer, filename='checkpoint.pth'):
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     return model, optimizer
 
-def train(train_loader, val_loader, num_epochs, model, device, criterion, optimizer, print_freq=10):
+def train(train_loader, val_loader, num_epochs, model, device, criterion, optimizer, print_freq=10, ckpt='ckpt'):
 
     batch_time = AverageMeter('Time', ':6.3f')
     top1 = AverageMeter('Acc@1', ':6.2f')
@@ -66,7 +66,7 @@ def train(train_loader, val_loader, num_epochs, model, device, criterion, optimi
         print(f'Train Epoch: {epoch + 1}, Train Accuracy: {top1.avg:.2f}%, Val Accuracy: {top1_val:.2f}%')
 
     # Save the trained model weights
-    save_checkpoint(model, optimizer)
+    save_checkpoint(model, optimizer, ckpt)
 
 
 def validate(val_loader, model, device=None, print_freq=10):
@@ -483,7 +483,9 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32):
 
         if augmentation:
             tt.extend([RandomHorizontalFlip(),
-                  RandomCrop(resolution, padding=resolution//8)])
+                  RandomCrop(resolution, padding=resolution//8)#,
+                  #RandomErasing()
+                  ])
 
         tt.extend([ToTensor(),
                    Normalize([0.485, 0.456, 0.406],

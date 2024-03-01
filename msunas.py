@@ -486,7 +486,8 @@ class MSuNAS:
         front = NonDominatedSorting().do(F, only_non_dominated_front=True)
         nd_F = F[front, :]
         ref_point = 1.01 * ref_pt
-        hv = HV(ref_point=ref_point).calc(nd_F) #get_performance_indicator("hv", ref_point=ref_point).calc(nd_F)
+        ind = HV(ref_point=ref_point)
+        hv = ind(nd_F) #get_performance_indicator("hv", ref_point=ref_point).calc(nd_F)
         if normalized:
             hv = hv / np.prod(ref_point)
         return hv
