@@ -28,6 +28,8 @@ from ofa_evaluator import OFAEvaluator
 from train_utils import get_dataset, save_checkpoint, load_checkpoint, validate
 from evaluators.evaluate_cifar10c import compute_mCE 
 from utils import get_net_info
+from torchvision.transforms import v2
+import torch.nn.functional as F
 
 
 if __name__ == "__main__":
@@ -132,12 +134,23 @@ if __name__ == "__main__":
 
         # TODO: check cross-validated early stop
         # TODO: check SGD with CNAS trainer: https://github.com/matteogambella/NAS/blob/master/nsganetv2/codebase/run_manager/__init__.py
+        cutmix = v2.CutMix(num_classes=args.n_classes)
+        mixup = v2.MixUp(num_classes=args.n_classes)
+        cutmix_or_mixup = v2.RandomChoice([cutmix, mixup])
         for epoch in range(epochs):
             model.train()
             log.train(model, optimizer, len_dataset=len(train_loader))
+            total_correct = 0
+            total_samples = 0
 
             for batch in train_loader:
                 inputs, targets = (b.to(device) for b in batch)
+
+                #print(f"Before CutMix/MixUp: {inputs.shape = }, {ori_targets.shape = }")
+                #print(targets)
+                #inputs, targets = cutmix_or_mixup(inputs, ori_targets)
+                #print(f"After CutMix/MixUp: {inputs.shape = }, {targets.shape = }")
+                #print(targets)
 
                 # first forward-backward step
                 if args.optim == "SAM":
@@ -146,7 +159,11 @@ if __name__ == "__main__":
                     optimizer.zero_grad()
                     
                 predictions = model(inputs)
-                loss = smooth_crossentropy(predictions, targets, smoothing=args.label_smoothing)
+                #print(f"Predictions After CutMix/MixUp: {predictions.shape = }")
+                #loss = smooth_crossentropy(predictions, targets, smoothing=args.label_smoothing)
+                loss = F.cross_entropy(predictions, targets)
+                loss = loss.unsqueeze(0)
+                #print("LOSS:", loss)
                 loss.mean().backward()
 
                 if args.optim == "SGD":
@@ -155,11 +172,19 @@ if __name__ == "__main__":
                     optimizer.first_step(zero_grad=True)
                     # second forward-backward step
                     disable_running_stats(model)
-                    smooth_crossentropy(model(inputs), targets, smoothing=args.label_smoothing).mean().backward()
+                    #smooth_crossentropy(model(inputs), targets, smoothing=args.label_smoothing).mean().backward()
+                    F.cross_entropy(model(inputs), targets).mean().backward()
                     optimizer.second_step(zero_grad=True)
 
                 with torch.no_grad():
                     correct = torch.argmax(predictions.data, 1) == targets
+                    #_, predicted_labels = torch.max(predictions, 1)
+                    #correct = (predicted_labels == ori_targets)#.sum()
+                    #total_correct += correct.item()
+                    #total_samples += ori_targets.size(0)
+                    #print(total_correct, total_samples)
+                    #print(correct)
+                    #print("LOSS:", loss)
                     log(model, loss.cpu(), correct.cpu(), scheduler.get_lr()[0])
                     #scheduler(epoch)
                     scheduler.step()

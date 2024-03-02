@@ -12,7 +12,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets
 from torchvision.transforms import Resize, ToTensor, Normalize, Compose, \
-    RandomHorizontalFlip, RandomCrop, RandomRotation, RandomErasing
+    RandomHorizontalFlip, RandomCrop, RandomRotation, RandomErasing, TrivialAugmentWide
 from torch.utils.data import Dataset
 from torchvision.datasets.folder import default_loader
 
@@ -482,14 +482,18 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32):
         tt = [Resize((resolution, resolution))]
 
         if augmentation:
-            tt.extend([RandomHorizontalFlip(),
-                  RandomCrop(resolution, padding=resolution//8)#,
-                  #RandomErasing()
+            tt.extend([
+                  TrivialAugmentWide(),
+                  RandomHorizontalFlip(),
+                  RandomCrop(resolution, padding=resolution//8)
                   ])
 
         tt.extend([ToTensor(),
                    Normalize([0.485, 0.456, 0.406],
                              [0.229, 0.224, 0.225])])
+        
+        if augmentation:
+            tt.extend([RandomErasing(scale=(0.05,0.25))])
 
         t = [
             Resize((resolution, resolution)),
