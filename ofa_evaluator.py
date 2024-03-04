@@ -127,6 +127,7 @@ class OFAEvaluator:
     def __init__(self,
                  n_classes=1000,
                  model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0',
+                 model_name = 'ofa_mbv3',
                  pretrained = False,
                  kernel_size=None, exp_ratio=None, depth=None, threshold = None):
                  
@@ -144,8 +145,7 @@ class OFAEvaluator:
         else:
             raise ValueError
 
-        if ('ofa_mbv3_d234_e346_k357_w1.0' in model_path) or ('ofa_mbv3_d234_e346_k357_w1.2' in model_path) \
-            or ('ofa_cbnmbv3' in model_path):
+        if ('ofa_mbv3' in model_name):
             self.engine = OFAMobileNetV3(
                 n_classes=n_classes,
                 dropout_rate=0, width_mult_list=self.width_mult, ks_list=self.kernel_size,
@@ -168,7 +168,7 @@ class OFAEvaluator:
 
                 self.engine.load_weights_from_net(init)
         
-        elif ('ofa_eembv3' in model_path):
+        elif ('ofa_eembv3' in model_name):
 
             self.threshold = [0.1, 0.2, 1] if threshold is None else threshold  # number of MB block repetition
 
@@ -193,7 +193,7 @@ class OFAEvaluator:
 
                 self.engine.load_weights_from_net(init)
         
-        elif 'resnet50_he' in model_path:
+        elif 'resnet50_he' in model_name:
             # default configurations
             #ks is 3 by default for resnet
             self.kernel_size = [3] if kernel_size is None else kernel_size  # depth-wise conv kernel size
@@ -216,7 +216,7 @@ class OFAEvaluator:
             
             return 
             
-        elif 'resnet50' in model_path:
+        elif 'resnet50' in model_name:
             # default configurations
             #ks is 3 by default for resnet
             self.kernel_size = [3] if kernel_size is None else kernel_size  # depth-wise conv kernel size

@@ -15,6 +15,7 @@ from torchvision.transforms import Resize, ToTensor, Normalize, Compose, \
     RandomHorizontalFlip, RandomCrop, RandomRotation, RandomErasing, TrivialAugmentWide
 from torch.utils.data import Dataset
 from torchvision.datasets.folder import default_loader
+from torchvision.transforms import v2
 
 def save_checkpoint(model, optimizer, filename='checkpoint.pth'):
     checkpoint = {
@@ -68,6 +69,49 @@ def train(train_loader, val_loader, num_epochs, model, device, criterion, optimi
     # Save the trained model weights
     save_checkpoint(model, optimizer, ckpt)
 
+
+def train_mix(train_loader, val_loader, num_epochs, model, n_classes, device, criterion, optimizer, print_freq=10, ckpt='ckpt'):
+
+    batch_time = AverageMeter('Time', ':6.3f')
+    top1 = AverageMeter('Acc@1', ':6.2f')
+    progress = ProgressMeter(len(train_loader), [batch_time, top1], prefix='Train: ')
+    model = model.to(device)
+    cutmix = v2.CutMix(num_classes=n_classes)
+    mixup = v2.MixUp(num_classes=n_classes)
+    cutmix_or_mixup = v2.RandomChoice([cutmix, mixup])
+    for epoch in range(num_epochs):
+        # Training phase
+        model.train()
+        end = time.time()
+        for i, (images, labels) in enumerate(train_loader):
+            images, ori_labels = images.to(device), labels.to(device)
+            images, labels = cutmix_or_mixup(images, ori_labels)
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            # Update training statistics
+            acc1 = accuracy(outputs, ori_labels, topk=(1,))
+            top1.update(acc1[0].cpu().numpy()[0], images.size(0))
+
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
+
+            if i % print_freq == 0:
+                progress.display(i)
+
+        # Validation phase
+        model.eval()
+        top1_val = validate(val_loader, model, device, print_freq)  # Reuse the validate function
+
+        # Print training and validation statistics
+        print(f'Train Epoch: {epoch + 1}, Train Accuracy: {top1.avg:.2f}%, Val Accuracy: {top1_val:.2f}%')
+
+    # Save the trained model weights
+    save_checkpoint(model, optimizer, ckpt)
 
 def validate(val_loader, model, device=None, print_freq=10):
 
@@ -483,7 +527,7 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32):
 
         if augmentation:
             tt.extend([
-                  TrivialAugmentWide(),
+                  #TrivialAugmentWide(),
                   RandomHorizontalFlip(),
                   RandomCrop(resolution, padding=resolution//8)
                   ])
@@ -492,8 +536,8 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32):
                    Normalize([0.485, 0.456, 0.406],
                              [0.229, 0.224, 0.225])])
         
-        if augmentation:
-            tt.extend([RandomErasing(scale=(0.05,0.25))])
+        #if augmentation:
+        #    tt.extend([RandomErasing(scale=(0.05,0.25))])
 
         t = [
             Resize((resolution, resolution)),
