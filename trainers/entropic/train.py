@@ -132,9 +132,9 @@ if __name__ == "__main__":
 
         model, optimizer = load_checkpoint(model, optimizer, os.path.join(args.output_path,'ckpt.pth'))
         print("Loaded checkpoint")
-        top1 = validate(val_loader, model, device, print_freq=100)/100
-        print("Loaded model accuracy:", top1)
-    
+        top1 = validate(val_loader, model, device, print_freq=100)
+        print("Loaded model accuracy:", np.round(top1,2))
+        top1/=100
     else:
 
         # TODO: check cross-validated early stop
@@ -187,8 +187,6 @@ if __name__ == "__main__":
                     curr_loss+=loss.sum().item()
                 curr_loss/=len(val_loader.dataset)
                 curr_loss*=100
-
-                print("curr_loss: ", curr_loss)
                 if curr_loss < log.best_loss: 
                     best_model = copy.deepcopy({'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()})
 
