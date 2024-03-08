@@ -10,9 +10,11 @@ import torch.optim as optim
 
 import torch.nn as nn
 import torch.optim as optim
+from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
 from torchvision import datasets
 from torchvision.transforms import Resize, ToTensor, Normalize, Compose, \
-    RandomHorizontalFlip, RandomCrop, RandomRotation, RandomErasing, TrivialAugmentWide
+    RandomHorizontalFlip, RandomCrop, RandomRotation, RandomErasing, RandomResizedCrop, \
+    TrivialAugmentWide, InterpolationMode
 from torch.utils.data import Dataset
 from torchvision.datasets.folder import default_loader
 from torchvision.transforms import v2
@@ -113,7 +115,7 @@ def train_mix(train_loader, val_loader, num_epochs, model, n_classes, device, cr
     # Save the trained model weights
     save_checkpoint(model, optimizer, ckpt)
 
-def validate(val_loader, model, device=None, print_freq=10):
+def validate(val_loader, model, device=None, print_info=True, print_freq=0):
 
     batch_time = AverageMeter('Time', ':6.3f')
     top1 = AverageMeter('Acc@1', ':6.2f')
@@ -139,10 +141,11 @@ def validate(val_loader, model, device=None, print_freq=10):
             batch_time.update(time.time() - end)
             end = time.time()
 
-            if i % print_freq == 0:
+            if print_info and print_freq and i % print_freq == 0:
                 progress.display(i)
-
-        print('* Acc@1 {top1.avg:.3f} '.format(top1=top1))
+        
+        if print_info:
+            print('* Acc@1 {top1.avg:.3f} '.format(top1=top1))
 
     return top1.avg
 
@@ -523,21 +526,38 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32):
 
     elif name == 'cifar10':
 
+        '''
         tt = [Resize((resolution, resolution))]
 
+        
         if augmentation:
             tt.extend([
                   #TrivialAugmentWide(),
                   RandomHorizontalFlip(),
                   RandomCrop(resolution, padding=resolution//8)
                   ])
-
-        tt.extend([ToTensor(),
-                   Normalize([0.485, 0.456, 0.406],
-                             [0.229, 0.224, 0.225])])
+        '''
         
-        #if augmentation:
-        #    tt.extend([RandomErasing(scale=(0.05,0.25))])
+        
+        tt = [RandomResizedCrop(resolution, scale=(0.08,1.0)),
+                  RandomHorizontalFlip(),
+                  ToTensor(),
+                  Normalize([0.485, 0.456, 0.406],
+                             [0.229, 0.224, 0.225])
+                  ]
+        
+
+        '''
+        tt = [
+            TrivialAugmentWide(interpolation = InterpolationMode.BILINEAR),
+            ToTensor(), 
+            RandomErasing(scale=(0.05,0.25), value='random'),
+            RandomHorizontalFlip(),
+            RandomResizedCrop(resolution, scale=(0.08,1.0))
+            Normalize([0.485, 0.456, 0.406],
+                             [0.229, 0.224, 0.225])]
+        '''
+        
 
         t = [
             Resize((resolution, resolution)),
@@ -685,49 +705,187 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32):
 
     return train_set, test_set, input_size, classes
 
+import numpy as np
+from torch.utils.data import DataLoader, SubsetRandomSampler
+
+def get_data_loaders(dataset, batch_size=32, threads=1, val_fraction=0, img_size=32, augmentation=False, eval_test=True):
+    print(f"DATASET: {dataset}")
+    
+    # Retrieve train and test datasets
+    train_set, test_set, _, _ = get_dataset(dataset, augmentation=augmentation, resolution=img_size)
+    
+    # Split indices into training and validation sets if needed
+    if val_fraction:
+        # Calculate the number of training samples
+        num_train_samples = len(train_set)
+        
+        # Create a list of indices and shuffle them randomly
+        indices = list(range(num_train_samples))
+        np.random.shuffle(indices)
+        num_val_samples = int(val_fraction * num_train_samples)
+        train_indices = indices[num_val_samples:]
+        val_indices = indices[:num_val_samples]
+        train_sampler = SubsetRandomSampler(train_indices)
+        val_sampler = SubsetRandomSampler(val_indices)
+        train_loader = DataLoader(train_set, batch_size=batch_size, sampler=train_sampler, num_workers=threads)
+        val_loader = DataLoader(train_set, batch_size=batch_size*2, sampler=val_sampler, num_workers=threads)
+    else:
+        train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=threads)
+        val_loader = None
+    
+    # Create DataLoader for test set if args.eval_test is True
+    if eval_test:
+        test_loader = DataLoader(test_set, batch_size=batch_size*2, shuffle=False, num_workers=threads)
+    else:
+        test_loader=None
+    
+    return train_loader, val_loader, test_loader
+
+# Example usage:
+# train_loader, val_loader, test_loader = create_data_loaders(args)
+# for batch in train_loader:
+#     # Training loop
+# for batch in test_loader:
+#     # Testing loop (if args.eval_test is True)
+
+
+class SAM(torch.optim.Optimizer):
+    def __init__(self, params, base_optimizer, rho=0.05, adaptive=False, **kwargs):
+        assert rho >= 0.0, f"Invalid rho, should be non-negative: {rho}"
+
+        defaults = dict(rho=rho, adaptive=adaptive, **kwargs)
+        super(SAM, self).__init__(params, defaults)
+
+        self.base_optimizer = base_optimizer(self.param_groups, **kwargs)
+        self.param_groups = self.base_optimizer.param_groups
+        self.defaults.update(self.base_optimizer.defaults)
+
+    @torch.no_grad()
+    def first_step(self, zero_grad=False):
+        grad_norm = self._grad_norm()
+        for group in self.param_groups:
+            scale = group["rho"] / (grad_norm + 1e-12)
+
+            for p in group["params"]:
+                if p.grad is None: continue
+                self.state[p]["old_p"] = p.data.clone()
+                e_w = (torch.pow(p, 2) if group["adaptive"] else 1.0) * p.grad * scale.to(p)
+                p.add_(e_w)  # climb to the local maximum "w + e(w)"
+
+        if zero_grad: self.zero_grad()
+
+    @torch.no_grad()
+    def second_step(self, zero_grad=False):
+        for group in self.param_groups:
+            for p in group["params"]:
+                if p.grad is None: continue
+                p.data = self.state[p]["old_p"]  # get back to "w" from "w + e(w)"
+
+        self.base_optimizer.step()  # do the actual "sharpness-aware" update
+
+        if zero_grad: self.zero_grad()
+
+    @torch.no_grad()
+    def step(self, closure=None):
+        assert closure is not None, "Sharpness Aware Minimization requires closure, but it was not provided"
+        closure = torch.enable_grad()(closure)  # the closure should do a full forward-backward pass
+
+        self.first_step(zero_grad=True)
+        closure()
+        self.second_step()
+
+    def _grad_norm(self):
+        shared_device = self.param_groups[0]["params"][0].device  # put everything on the same device, in case of model parallelism
+        norm = torch.norm(
+                    torch.stack([
+                        ((torch.abs(p) if group["adaptive"] else 1.0) * p.grad).norm(p=2).to(shared_device)
+                        for group in self.param_groups for p in group["params"]
+                        if p.grad is not None
+                    ]),
+                    p=2
+               )
+        return norm
+
+    def load_state_dict(self, state_dict):
+        super().load_state_dict(state_dict)
+        self.base_optimizer.param_groups = self.param_groups
+
 
 def get_optimizer(parameters,
                   name: str,
                   lr: float,
                   momentum: float = 0.0,
-                  weight_decay: float = 0):
+                  weight_decay: float = 0,
+                  rho: float=2.0,
+                  adaptive: bool=True
+                  ): #SAM
+
     name = name.lower()
     if name == 'adam':
         return optim.Adam(parameters, lr, weight_decay=weight_decay)
     elif name == 'sgd':
         return optim.SGD(parameters, lr, momentum=momentum,
                          weight_decay=weight_decay)
+    elif name == 'sam':
+        base_optimizer = torch.optim.SGD
+        return SAM(parameters, base_optimizer, rho=rho, adaptive=adaptive, lr=lr, momentum=momentum, weight_decay=weight_decay)
     else:
-        raise ValueError('Optimizer must be adam or sgd')
+        raise ValueError('Optimizer must be adam, sgd, or SAM')
 
-def get_lr_scheduler(optimizer, args):
-    if args.droplr:
-        if args.droplr == 'cosine':
-            print("Cosine lr schedule")
-            scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=n_epochs, eta_min=0., last_epoch=-1)
-            #scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=n_epochs)
-        elif args.droplr < 1. and args.droplr != 0.:
-            scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=args.droplr)
-        else:
-            gamma_sched = 1. / args.droplr if args.droplr > 0 else 1
-            #if args.drop_mstones is not None:
-            #    mstones = [int(h) for h in args.drop_mstones.split('_')[1:]]
-            #else:
-            mstones = [args.epochs//2, args.epochs*3//4, args.epochs*15//16]
-            print("MileStones %s" % mstones)
-            scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=mstones, gamma=gamma_sched)
+def get_lr_scheduler(optimizer, name, epochs, gamma=1.0):
+    name=name.lower()
+    if name=='step':
+        return StepLR(optimizer, step_size=epochs, gamma=gamma)
+    elif name=='cosine':
+        return CosineAnnealingLR(optimizer, T_max=epochs, eta_min=0)
     else:
-        scheduler = optim.lr_scheduler.ConstantLR(optimizer, factor=1.0, total_iters=0)
-
-    #if args.warmup:
-    #    scheduler = GradualWarmupScheduler(optimizer, multiplier=args.k, total_epoch=5, 
-    #                                    after_scheduler=scheduler)
-                                        
+        raise ValueError('Scheduler must be step or cosine')                     
     return scheduler
 
-def initialize_seed(seed: int):
+def initialize_seed(seed: int, use_cuda: bool):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
+    if use_cuda:
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.enabled = True
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+""" Mixup """
+
+
+def mix_images(images, lam):
+    flipped_images = torch.flip(images, dims=[0])  # flip along the batch dimension
+    return lam * images + (1 - lam) * flipped_images
+
+
+def mix_labels(target, lam, n_classes, label_smoothing=0.1):
+    onehot_target = label_smooth(target, n_classes, label_smoothing)
+    flipped_target = torch.flip(onehot_target, dims=[0])
+    return lam * onehot_target + (1 - lam) * flipped_target
+
+
+""" Label smooth """
+
+
+def label_smooth(target, n_classes: int, label_smoothing=0.1):
+    # convert to one-hot
+    batch_size = target.size(0)
+    target = torch.unsqueeze(target, 1)
+    soft_target = torch.zeros((batch_size, n_classes), device=target.device)
+    soft_target.scatter_(1, target, 1)
+    # label smoothing
+    soft_target = soft_target * (1 - label_smoothing) + label_smoothing / n_classes
+    return soft_target
+
+
+def cross_entropy_loss_with_soft_target(pred, soft_target):
+    logsoftmax = nn.LogSoftmax()
+    return torch.mean(torch.sum(-soft_target * logsoftmax(pred), 1))
+
+
+def cross_entropy_with_label_smoothing(pred, target, label_smoothing=0.1):
+    soft_target = label_smooth(target, pred.size(1), label_smoothing)
+    return cross_entropy_loss_with_soft_target(pred, soft_target)

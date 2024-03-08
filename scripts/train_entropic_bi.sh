@@ -7,7 +7,7 @@ device=0
 #optim=SGD; folder_optim=SGD; epochs_optim=6; first_obj=top1; folder=""
 #optim=SAM; folder_optim=SGD; epochs_optim=6; first_obj=top1; folder="/sgd_with_sam"
 optim=SAM; folder_optim=SAM; epochs_optim=6; first_obj=top1_robust; folder=""
-epochs=6
+epochs=5
 #
 #first_obj=robustness
 sec_obj=c_params
@@ -24,8 +24,8 @@ python trainers/entropic/train.py --dataset $dataset \
     --model_path ../results/entropic-mbv3-$dataset-${folder_optim}-$first_obj-$sec_obj-max$pmax-alpha$alpha-sigma$sigma-ep$epochs_optim-multires/final/net-trade-off_0/net.subnet \
     --output_path ../results/entropic-mbv3-$dataset-${folder_optim}-$first_obj-$sec_obj-max$pmax-alpha$alpha-sigma$sigma-ep$epochs_optim-multires/final/net-trade-off_0$folder \
     --pretrained --supernet_path ./supernets/ofa_mbv3_d234_e346_k357_w1.0 --n_classes 10\
-    --res $res --epochs $epochs --optim $optim --ood_eval --alpha $alpha \
-    --eval_robust
+    --res $res --epochs $epochs --optim $optim --alpha $alpha \
+    --eval_robust --val_fraction 0.1 --eval_test --save_ckpt
 
     #--model_path ../results/risultati-res32/entropic-mbv3-$dataset-${folder_optim}-$first_obj-$sec_obj-max$pmax-alpha$alpha-sigma$sigma-ep$epochs_optim-10jan/final/net-trade-off_0/net.subnet \
     #--output_path ../results/risultati-res32/entropic-mbv3-$dataset-${folder_optim}-$first_obj-$sec_obj-max$pmax-alpha$alpha-sigma$sigma-ep$epochs_optim-10jan/final/net-trade-off_0 \

@@ -16,21 +16,22 @@ from model.wide_res_net import WideResNet
 from model.smooth_cross_entropy import smooth_crossentropy
 #from dataset.cifar import Cifar
 from utility.log import Log
-from utility.initialize import initialize
+#from utility.initialize import initialize
 #from utility.step_lr import StepLR
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
+from torch.utils.data import SubsetRandomSampler, DataLoader
 from utility.bypass_bn import enable_running_stats, disable_running_stats
 from utility.perturb import get_net_info_runtime
 
-from sam import SAM
-
 from ofa_evaluator import OFAEvaluator 
-from train_utils import get_dataset, save_checkpoint, load_checkpoint, validate
+from train_utils import get_dataset, get_optimizer, get_lr_scheduler, get_data_loaders, save_checkpoint, load_checkpoint, validate, initialize_seed
 from evaluators.evaluate_cifar10c import compute_mCE 
 from utils import get_net_info
 from torchvision.transforms import v2
 import torch.nn.functional as F
 
+#--trn_batch_size 128 --vld_batch_size 200 --num_workers 4 --n_epochs 5 --resolution 224 --valid_size 5000
+#init_lr=0.01, lr_schedule_type='cosine' weight_decay=4e-5, label_smoothing=0.0
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -40,12 +41,13 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", default=0.0, type=float, help="Dropout rate.")
     parser.add_argument("--epochs", default=200, type=int, help="Total number of epochs.")
     parser.add_argument("--label_smoothing", default=0.1, type=float, help="Use 0.0 for no label smoothing.")
-    parser.add_argument("--learning_rate", default=0.1, type=float, help="Base learning rate at the start of the training.")
+    parser.add_argument("--learning_rate", default=0.01, type=float, help="Base learning rate at the start of the training.") #0.1
     parser.add_argument("--momentum", default=0.9, type=float, help="SGD Momentum.")
     parser.add_argument("--threads", default=2, type=int, help="Number of CPU threads for dataloaders.")
     parser.add_argument("--rho", default=2.0, type=int, help="Rho parameter for SAM.")
-    parser.add_argument("--weight_decay", default=0.0005, type=float, help="L2 weight decay.")
+    parser.add_argument("--weight_decay", default=0.0004, type=float, help="L2 weight decay.") #5e-5
     parser.add_argument("--width_factor", default=8, type=int, help="How many times wider compared to normal ResNet.")
+    parser.add_argument("--val_fraction", default=0.0, type=float, help="Fraction of the training set used for the validation set.")
 
     #NEW##
     parser.add_argument('--optim', type=str, default='SAM', help='algorithm to use for training')
@@ -64,6 +66,7 @@ if __name__ == "__main__":
     parser.add_argument('--ood_eval', action='store_true', default=False, help='evaluate OOD robustness')
     parser.add_argument('--save_ckpt', action='store_true', default=False, help='save checkpoint')
     parser.add_argument('--eval_robust', action='store_true', default=False, help='evaluate robustness')   
+    parser.add_argument('--eval_test', action='store_true', default=True, help='evaluate test accuracy')  
     parser.add_argument('--load_ood', action='store_true', default=False, help='load pretrained OOD folders') 
     parser.add_argument('--ood_data', type=str, default=None, help='OOD dataset')
     parser.add_argument('--alpha', default=0.5, type=float, help="weight for top1_robust")
@@ -74,18 +77,21 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    initialize(args, seed=42)
+    #initialize(args, seed=42)
     
     device = args.device
     print("torch cuda available: ", torch.cuda.is_available())
+    use_cuda=False
     if torch.cuda.is_available() and device != 'cpu':
         device = 'cuda:{}'.format(device)
         print("Running on GPU")
+        use_cuda=True
     else:
         print("No device found")
         warnings.warn("Device not found or CUDA not available.")
     
     device = torch.device(device)
+    initialize_seed(42, use_cuda)
 
     # Get the model (subnet) from the OFA supernet
 
@@ -99,36 +105,35 @@ if __name__ == "__main__":
     model_path = supernet_path,
     pretrained = True)
     #print("CONFIG:", config)
-    r=config.get("r",args.res)
+    r=224#config.get("r",args.res)
     input_shape = (3,r,r)
     print("INPUT SHAPE:", input_shape)
     model, _ = ofa.sample(config)
 
-    #dataset = Cifar(args.batch_size, args.threads, args.data)
     print(f"DATASET: {args.dataset}")
-    train_set, test_set, _, _ = get_dataset(args.dataset, augmentation=True, resolution=r)
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=args.threads)
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=args.batch_size, shuffle=False, num_workers=args.threads)
+    train_loader, val_loader, test_loader = get_data_loaders(dataset=args.dataset, batch_size=args.batch_size, threads=args.threads, 
+                                            val_fraction=args.val_fraction, img_size=r, augmentation=True, eval_test=args.eval_test)
+    
+    if val_loader is None:
+        val_loader = test_loader
 
     log = Log(log_each=10)
-    #model = WideResNet(args.depth, args.width_factor, args.dropout, in_channels=3, labels=10).to(device)
 
     print("DEVICE:", device)
 
     model.to(device)
     epochs = args.epochs
-    if args.optim == "SGD":
-        optimizer = torch.optim.SGD(model.parameters(), lr=args.learning_rate, momentum=args.momentum, weight_decay=args.weight_decay)
-    else:
-        base_optimizer = torch.optim.SGD
-        optimizer = SAM(model.parameters(), base_optimizer, rho=args.rho, adaptive=args.adaptive, lr=args.learning_rate, momentum=args.momentum, weight_decay=args.weight_decay)
+
+    optimizer = get_optimizer(model.parameters(), args.optim, args.learning_rate, args.momentum, args.weight_decay, args.rho, args.adaptive)
     
-    scheduler = StepLR(optimizer, step_size=epochs, gamma=1.0)
+    scheduler = get_lr_scheduler(optimizer, 'step', epochs=epochs)
     
     if (os.path.exists(os.path.join(args.output_path,'ckpt.pth'))):
 
         model, optimizer = load_checkpoint(model, optimizer, os.path.join(args.output_path,'ckpt.pth'))
         print("Loaded checkpoint")
+        top1 = validate(val_loader, model, device, print_freq=100)/100
+        print("Loaded model accuracy:", top1)
     
     else:
 
@@ -168,19 +173,23 @@ if __name__ == "__main__":
                     scheduler.step()
 
             model.eval()
-            log.eval(model, optimizer, len_dataset=len(test_loader))
+            log.eval(model, optimizer, len_dataset=len(val_loader))
 
             with torch.no_grad():
-                acc=0
-                for batch in test_loader:
+                #acc=0
+                curr_loss=0
+                for batch in val_loader:
                     inputs, targets = (b.to(device) for b in batch)
                     predictions = model(inputs)
                     loss = smooth_crossentropy(predictions, targets)
                     correct = torch.argmax(predictions, 1) == targets
                     log(model, loss.cpu(), correct.cpu())
-                    acc+=correct.sum().item()
-                acc/=len(test_loader.dataset)
-                if acc > log.best_accuracy:
+                    curr_loss+=loss.sum().item()
+                curr_loss/=len(val_loader.dataset)
+                curr_loss*=100
+
+                print("curr_loss: ", curr_loss)
+                if curr_loss < log.best_loss: 
                     best_model = copy.deepcopy({'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()})
 
         log.flush(model, optimizer)
@@ -189,16 +198,22 @@ if __name__ == "__main__":
         
         if (args.save_ckpt):
             save_checkpoint(model, optimizer, os.path.join(args.output_path,'ckpt.pth'))
+        
+        top1=log.best_accuracy
 
     results={}
+
+    #DICTIONARY for stats
+    top1_err = (1 - top1) * 100
+    if args.eval_test:
+        top1_test = validate(test_loader, model, device, print_freq=100)
+        print("FINAL TEST ACCURACY:", top1_test)
+        top1_test = validate(val_loader, model, device, print_freq=100)
 
     if args.ood_eval:
         
         #results['mCE'] = compute_mCE_CIFARC(args.ood_data, model, device, res=args.res)
         results['mCE2'] = compute_mCE(args.dataset, model, device, res=args.res, load_ood=args.load_ood)
-    
-    #DICTIONARY for stats
-    top1 = (1 - log.best_accuracy) * 100
 
     #Model cost
     if args.optim == 'SAM' or args.eval_robust:
@@ -208,18 +223,17 @@ if __name__ == "__main__":
         n=round((args.sigma_max-args.sigma_min)/sigma_step)+1
         sigma_list = [round(args.sigma_min + i * args.sigma_step, 2) for i in range(n)] 
 
-        info = get_net_info_runtime(device, model, train_loader, sigma_list, input_shape, print_info=True)
+        info = get_net_info_runtime(device, model, val_loader, sigma_list, input_shape, print_info=True)
         results['robustness'] = info['robustness'][0]
         print("ROBUSTNESS:", info['robustness'][0])
         alpha = args.alpha
         alpha_norm = args.alpha_norm
-        results['top1_robust'] = np.round(alpha * top1 + alpha_norm * (1-alpha) * info['robustness'][0],2)
+        results['top1_robust'] = np.round(alpha * top1_err + alpha_norm * (1-alpha) * info['robustness'][0],2)
 
     else:
         info = get_net_info(model, input_shape=input_shape)
 
-    results['top1'] = np.round(top1,2)
-    print("FINAL best acc", log.best_accuracy * 100, "\n")
+    results['top1'] = np.round(top1_err,2)
     results['macs'] = np.round(info['macs'] / 1e6, 2)
     results['params'] = np.round(info['params'] / 1e6, 2)
     results['c_params'] = results['params'] + args.p*max(0,results['params']-args.pmax)

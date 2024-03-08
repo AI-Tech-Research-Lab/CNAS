@@ -6,6 +6,8 @@ import numpy as np
 import copy
 from utils import get_net_info, get_correlation
 from explainability import get_archive
+from train_utils import validate
+
 
 def set_random_seeds(args):
     torch.manual_seed(args.seed)
@@ -103,12 +105,14 @@ def perturb(model, z, noise_ampl):
 def calculate_robustness(device, net, loader, sigma):
     M = 20
     robustness = []
-    acc0 = calc_accuracy(device, net, loader)
+
+    acc0 = validate(loader, net, device, print_info=False)
+
     for _ in range(M):
         perturbed_net = copy.deepcopy(net)
         z = create_perturb(perturbed_net)
         perturb(perturbed_net, z, sigma)
-        acc = calc_accuracy(device, perturbed_net, loader)
+        acc = validate(loader, perturbed_net, device, print_info=False)
         rob = abs(acc0 - acc) #/ acc0
         print(f"\nacc0: {acc0}; acc: {acc}; robustness: {rob}")
         robustness.append(rob)

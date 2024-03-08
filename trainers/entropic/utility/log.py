@@ -52,11 +52,11 @@ class Log:
 
             print(f"{loss:12.4f}  │{100*accuracy:10.2f} %  ┃", flush=True)
 
-            if accuracy > self.best_accuracy:
+            if loss<self.best_loss: #accuracy > self.best_accuracy:
 
                 #print('LOSS: ', loss, 'BEST LOSS: ', self.best_loss)
                 self.best_accuracy = accuracy
-                #self.best_loss = loss
+                self.best_loss = loss
                 #save the state of the best model
                 #self.best_model = {'weights_state': model.state_dict(), 'optim_state':optim.state_dict()}
 
