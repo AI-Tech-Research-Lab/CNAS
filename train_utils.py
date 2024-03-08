@@ -538,26 +538,25 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32):
                   ])
         '''
         
-        
+        '''
         tt = [RandomResizedCrop(resolution, scale=(0.08,1.0)),
                   RandomHorizontalFlip(),
                   ToTensor(),
                   Normalize([0.485, 0.456, 0.406],
                              [0.229, 0.224, 0.225])
                   ]
-        
-
         '''
+
+        
         tt = [
             TrivialAugmentWide(interpolation = InterpolationMode.BILINEAR),
             ToTensor(), 
             RandomErasing(scale=(0.05,0.25), value='random'),
             RandomHorizontalFlip(),
-            RandomResizedCrop(resolution, scale=(0.08,1.0))
+            RandomResizedCrop(resolution, scale=(0.08,1.0)),
             Normalize([0.485, 0.456, 0.406],
                              [0.229, 0.224, 0.225])]
-        '''
-        
+
 
         t = [
             Resize((resolution, resolution)),
@@ -728,6 +727,7 @@ def get_data_loaders(dataset, batch_size=32, threads=1, val_fraction=0, img_size
         train_sampler = SubsetRandomSampler(train_indices)
         val_sampler = SubsetRandomSampler(val_indices)
         train_loader = DataLoader(train_set, batch_size=batch_size, sampler=train_sampler, num_workers=threads)
+        train_set.transform = test_set.transform # Use the same transform for validation
         val_loader = DataLoader(train_set, batch_size=batch_size*2, sampler=val_sampler, num_workers=threads)
     else:
         train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=threads)
