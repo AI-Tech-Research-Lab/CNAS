@@ -41,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", default=0.0, type=float, help="Dropout rate.")
     parser.add_argument("--epochs", default=200, type=int, help="Total number of epochs.")
     parser.add_argument("--label_smoothing", default=0.1, type=float, help="Use 0.0 for no label smoothing.")
-    parser.add_argument("--learning_rate", default=0.01, type=float, help="Base learning rate at the start of the training.") #0.1
+    parser.add_argument("--learning_rate", default=0.05, type=float, help="Base learning rate at the start of the training.") #0.1
     parser.add_argument("--momentum", default=0.9, type=float, help="SGD Momentum.")
     parser.add_argument("--threads", default=2, type=int, help="Number of CPU threads for dataloaders.")
     parser.add_argument("--rho", default=2.0, type=int, help="Rho parameter for SAM.")
@@ -176,17 +176,14 @@ if __name__ == "__main__":
             log.eval(model, optimizer, len_dataset=len(val_loader))
 
             with torch.no_grad():
-                #acc=0
-                curr_loss=0
                 for batch in val_loader:
                     inputs, targets = (b.to(device) for b in batch)
                     predictions = model(inputs)
                     loss = smooth_crossentropy(predictions, targets)
                     correct = torch.argmax(predictions, 1) == targets
                     log(model, loss.cpu(), correct.cpu())
-                    curr_loss+=loss.sum().item()
-                curr_loss/=len(val_loader.dataset)
-                curr_loss*=100
+
+                curr_loss=log.epoch_state["loss"] / log.epoch_state["steps"]
                 if curr_loss < log.best_loss: 
                     best_model = copy.deepcopy({'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()})
 

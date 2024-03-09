@@ -4,7 +4,8 @@ import time
 import torch
 import numpy as np
 
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, Subset, DataLoader
+from torch.utils.data.dataset import random_split
 from torchvision.datasets.folder import default_loader
 import torch.optim as optim
 
@@ -439,7 +440,8 @@ class EarlyStopping:
             self.c = lambda a, b: a > b
 
 
-def get_dataset(name, model_name=None, augmentation=False, resolution=32):
+def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_fraction=0.0):
+
     if name == 'mnist':
         t = [Resize((32, 32)),
              ToTensor(),
@@ -538,26 +540,27 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32):
                   ])
         '''
         
-        '''
+        
+        print("Stardard Augmentation")
         tt = [RandomResizedCrop(resolution, scale=(0.08,1.0)),
                   RandomHorizontalFlip(),
                   ToTensor(),
                   Normalize([0.485, 0.456, 0.406],
                              [0.229, 0.224, 0.225])
                   ]
-        '''
 
-        
+        '''
+        print("New Augmentation")
         tt = [
             TrivialAugmentWide(interpolation = InterpolationMode.BILINEAR),
             ToTensor(), 
             RandomErasing(scale=(0.05,0.25), value='random'),
             RandomHorizontalFlip(),
             RandomResizedCrop(resolution, scale=(0.08,1.0)),
-            Normalize([0.485, 0.456, 0.406],
-                             [0.229, 0.224, 0.225])]
-
-
+            Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ]
+        '''
+        
         t = [
             Resize((resolution, resolution)),
             ToTensor(),
@@ -570,6 +573,10 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32):
         train_set = datasets.CIFAR10(
             root='~/datasets/cifar10', train=True, download=True,
             transform=train_transform)
+        
+        val_set = datasets.CIFAR10(
+        root='~/datasets/cifar10', train=True, download=True,
+        transform=transform)
 
         test_set = datasets.CIFAR10(
             root='~/datasets/cifar10', train=False, download=True,
@@ -673,69 +680,46 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32):
 
         input_size, classes = (3, resolution, resolution), 200
 
-        # train_set = TinyImageNet(
-        #     root='./datasets/tiny-imagenet-200', split='train',
-        #     transform=transform)
-        #train_set = TinyImagenet('~/datasets/tiny-imagenet-200/train',
-        #                         transform=train_transform)
-        #
-        #test_set = TinyImagenet('~/datasets/tiny-imagenet-200/eval',
-        #                        transform=transform)
-        #
-        # train_set = datasets.ImageFolder('~/datasets/tiny-imagenet-200/train',
-        #                                  transform=train_transform)
-        #
-        # # for x, y in train_set:
-        # #     if x.shape[0] == 1:
-        # #         print(x.shape[0] == 1)
-        #
-        # # test_set = TinyImageNet(
-        # #     root='./datasets/tiny-imagenet-200', split='val',
-        # #     transform=train_transform)
-        # test_set = datasets.ImageFolder('~/datasets/tiny-imagenet-200/test',
-        #                                 transform=transform)
-
-        # for x, y in test_set:
-        #     if x.shape[0] == 1:
-        #         print(x.shape[0] == 1)
-
     else:
         assert False
 
-    return train_set, test_set, input_size, classes
+    # add splitting into train and validation
+    # Split the dataset into training and validation sets
+    if val_fraction:
+        val_size = int(val_fraction * len(train_set))
+        train_size = len(train_set) - val_size
+        # Generate random indices for the entire dataset
+        indices = list(range(len(train_set)))
+        random.shuffle(indices)
+        # Split the indices into training and validation sets
+        train_indices = indices[:train_size]
+        val_indices = indices[train_size:]
+        # Create two new datasets using the random indices
+        train_set = Subset(train_set, train_indices)
+        val_set = Subset(val_set, val_indices)
+        print(f"Train size: {len(train_set)}, Val size: {len(val_set)}")
+    else:
+        val_set = None
 
-import numpy as np
-from torch.utils.data import DataLoader, SubsetRandomSampler
+    return train_set, val_set, test_set, input_size, classes
 
 def get_data_loaders(dataset, batch_size=32, threads=1, val_fraction=0, img_size=32, augmentation=False, eval_test=True):
     print(f"DATASET: {dataset}")
     
     # Retrieve train and test datasets
-    train_set, test_set, _, _ = get_dataset(dataset, augmentation=augmentation, resolution=img_size)
-    
-    # Split indices into training and validation sets if needed
+    print(f"Augmentation: {augmentation}")
+
+
+    train_set, val_test, test_set, _, _ = get_dataset(dataset, augmentation=augmentation, resolution=img_size, val_fraction=val_fraction)
+    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=threads, pin_memory=True)
     if val_fraction:
-        # Calculate the number of training samples
-        num_train_samples = len(train_set)
-        
-        # Create a list of indices and shuffle them randomly
-        indices = list(range(num_train_samples))
-        np.random.shuffle(indices)
-        num_val_samples = int(val_fraction * num_train_samples)
-        train_indices = indices[num_val_samples:]
-        val_indices = indices[:num_val_samples]
-        train_sampler = SubsetRandomSampler(train_indices)
-        val_sampler = SubsetRandomSampler(val_indices)
-        train_loader = DataLoader(train_set, batch_size=batch_size, sampler=train_sampler, num_workers=threads)
-        train_set.transform = test_set.transform # Use the same transform for validation
-        val_loader = DataLoader(train_set, batch_size=batch_size*2, sampler=val_sampler, num_workers=threads)
+        val_loader = DataLoader(train_set, batch_size=batch_size*2, shuffle=False, num_workers=threads, pin_memory=True)
     else:
-        train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=threads)
         val_loader = None
     
     # Create DataLoader for test set if args.eval_test is True
     if eval_test:
-        test_loader = DataLoader(test_set, batch_size=batch_size*2, shuffle=False, num_workers=threads)
+        test_loader = DataLoader(test_set, batch_size=batch_size*2, shuffle=False, num_workers=threads, pin_memory=True)
     else:
         test_loader=None
     
