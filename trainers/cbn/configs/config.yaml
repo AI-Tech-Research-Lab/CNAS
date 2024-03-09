@@ -1,4 +1,0 @@
-defaults:
-  - optimizer: sgd
-  - experiment: base
-  - override hydra/job_logging: dual
