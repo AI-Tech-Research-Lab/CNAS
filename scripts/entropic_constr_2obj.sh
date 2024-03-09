@@ -22,8 +22,7 @@ lr=128 #min resolution
 ur=224 #max resolution
 rstep=4 #resolution step
 
-python msunas.py --resume ../results/entropic-mbv3-$dataset-$optim-$first_obj-$sec_obj-max$pmax-alpha$alpha-sigma$sigma-ep$n_epochs-multires-balance/iter_${resume_iter} \
-        --n_gpus 1 --gpu 1 --gpu_list $gpu --n_workers 4 \
+python msunas.py --n_gpus 1 --gpu 1 --gpu_list $gpu --n_workers 4 \
         --data ../datasets/$dataset --dataset $dataset \
         --supernet_path ./supernets/ofa_mbv3_d234_e346_k357_w1.0 \
         --pretrained --search_space mobilenetv3 --trainer_type entropic \
@@ -32,6 +31,6 @@ python msunas.py --resume ../results/entropic-mbv3-$dataset-$optim-$first_obj-$s
         --sigma_min $sigma --sigma_max $sigma \
         --iterations $iterations --n_epochs $n_epochs --seed $seed \
         --sec_obj $sec_obj --pmax $pmax \
-        --save ../results/entropic-mbv3-$dataset-$optim-$first_obj-$sec_obj-max$pmax-alpha$alpha-sigma$sigma-ep$n_epochs-multires-balance #\
+        --save ../results/test-entropic-mbv3-$dataset-$optim-$first_obj-$sec_obj-max$pmax-alpha$alpha-sigma$sigma-ep$n_epochs-multires-balance #\
         #--resume ../results/entropic-mbv3-$dataset-$optim-$first_obj-$sec_obj-max$pmax-alpha$alpha-sigma$sigma-ep$n_epochs-multires-balance/iter_${resume_iter}
         #--alpha $alpha --res $res --optim $optim \ #for search with fixed resolution

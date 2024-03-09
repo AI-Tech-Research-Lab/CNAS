@@ -528,20 +528,6 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_fr
 
     elif name == 'cifar10':
 
-        '''
-        tt = [Resize((resolution, resolution))]
-
-        
-        if augmentation:
-            tt.extend([
-                  #TrivialAugmentWide(),
-                  RandomHorizontalFlip(),
-                  RandomCrop(resolution, padding=resolution//8)
-                  ])
-        '''
-        
-        
-        print("Stardard Augmentation")
         tt = [RandomResizedCrop(resolution, scale=(0.08,1.0)),
                   RandomHorizontalFlip(),
                   ToTensor(),

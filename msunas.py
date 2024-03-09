@@ -6,6 +6,7 @@ import subprocess
 import numpy as np
 import math
 import datetime
+import torch
 
 from pymoo.optimize import minimize
 from pymoo.core.problem import Problem
@@ -15,7 +16,6 @@ from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.operators.crossover.pntx import TwoPointCrossover
 from pymoo.operators.mutation.pm import PolynomialMutation
-
 
 from utils import get_correlation
 from ofa_evaluator import OFAEvaluator, get_net_info, get_adapt_net_info
@@ -99,7 +99,8 @@ class MSuNAS:
 
     def search(self):
 
-        initialize_seed(self.seed)
+        use_cuda = torch.cuda.is_available() and self.gpu_list
+        initialize_seed(self.seed, use_cuda)
         it_start = 1
         if self.resume:
             archive = self._resume_from_dir()

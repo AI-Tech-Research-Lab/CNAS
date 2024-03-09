@@ -5,10 +5,10 @@ import argparse
 import numpy as np
 import math
 
-from ofa.elastic_nn.networks import OFAMobileNetV3, OFAEEMobileNetV3, OFAResNets, OFAResNetsHE, OFAMobileNetV3HE
-from ofa.imagenet_codebase.run_manager import RunManager
-from ofa.elastic_nn.modules.dynamic_op import DynamicSeparableConv2d
-from ofa.utils import download_url
+from ofa.imagenet_classification.elastic_nn.networks import OFAMobileNetV3 #, OFAEEMobileNetV3, OFAResNets, OFAResNetsHE, OFAMobileNetV3HE
+from ofa.imagenet_classification.run_manager import RunManager
+from ofa.imagenet_classification.elastic_nn.modules.dynamic_op import DynamicSeparableConv2d
+#from ofa.utils import download_url
 
 import warnings
 warnings.simplefilter("ignore")
@@ -148,7 +148,7 @@ class OFAEvaluator:
         if ('ofa_mbv3' in model_name):
             self.engine = OFAMobileNetV3(
                 n_classes=n_classes,
-                dropout_rate=0, width_mult_list=self.width_mult, ks_list=self.kernel_size,
+                dropout_rate=0, width_mult=self.width_mult, ks_list=self.kernel_size,
                 expand_ratio_list=self.exp_ratio, depth_list=self.depth)
 
             if(pretrained):
@@ -166,7 +166,7 @@ class OFAEvaluator:
                 init['classifier.linear.bias'] = init['classifier.linear.bias'][:n_classes]
                 ##############################
 
-                self.engine.load_weights_from_net(init)
+                self.engine.load_state_dict(init)
         
         elif ('ofa_eembv3' in model_name):
 
@@ -256,9 +256,6 @@ class OFAEvaluator:
     def sample(self, config=None):
         """ randomly sample a sub-network """
         if config is not None:
-            if isinstance(self.engine,OFAEEMobileNetV3):
-              self.engine.set_active_subnet(ks=config['ks'], e=config['e'], d=config['d'], t=config['t'])
-            else:
               self.engine.set_active_subnet(ks=config['ks'], e=config['e'], d=config['d'])
         else:
             config = self.engine.sample_active_subnet()

@@ -105,7 +105,7 @@ if __name__ == "__main__":
     model_path = supernet_path,
     pretrained = True)
     #print("CONFIG:", config)
-    r=224#config.get("r",args.res)
+    r=config.get("r",args.res)
     input_shape = (3,r,r)
     print("INPUT SHAPE:", input_shape)
     model, _ = ofa.sample(config)
