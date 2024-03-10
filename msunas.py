@@ -24,8 +24,6 @@ from search_space import OFASearchSpace
 from acc_predictor.factory import get_acc_predictor
 from utils import prepare_eval_folder, MySampling, BinaryCrossover, MyMutation
 from train_utils import initialize_seed
-
-from trainers.entropic.utility.perturb import compute_best_sigma
 from explainability import get_archive
 
 _DEBUG = False

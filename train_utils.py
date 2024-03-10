@@ -3,6 +3,7 @@ import random
 import time
 import torch
 import numpy as np
+import copy
 
 from torch.utils.data import Dataset, Subset, DataLoader
 from torch.utils.data.dataset import random_split
@@ -20,6 +21,7 @@ from torch.utils.data import Dataset
 from torchvision.datasets.folder import default_loader
 from torchvision.transforms import v2
 from torch.nn.modules.batchnorm import _BatchNorm
+import torch.nn.functional as F
 
 class LoadingBar:
     def __init__(self, length: int = 40):
@@ -146,6 +148,64 @@ def load_checkpoint(model, optimizer, filename='checkpoint.pth'):
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     return model, optimizer
 
+def train(train_loader, val_loader, num_epochs, model, device, optimizer, scheduler, log, ckpt_path=None, label_smoothing=0.1, criterion=None):
+        for epoch in range(num_epochs):
+            model.train()
+            log.train(model, optimizer, len_dataset=len(train_loader))
+
+            for batch in train_loader:
+                inputs, targets = (b.to(device) for b in batch)
+
+                # first forward-backward step
+                if isinstance(optimizer, SAM):
+                    enable_running_stats(model)
+                else:
+                    optimizer.zero_grad()
+                    
+                predictions = model(inputs)
+                loss = smooth_crossentropy(predictions, targets, smoothing=label_smoothing)
+                loss.mean().backward()
+
+                if not isinstance(optimizer, SAM):
+                    optimizer.step()
+                else:
+                    optimizer.first_step(zero_grad=True)
+                    # second forward-backward step
+                    disable_running_stats(model)
+                    smooth_crossentropy(model(inputs), targets, smoothing=label_smoothing).mean().backward()
+                    optimizer.second_step(zero_grad=True)
+
+                with torch.no_grad():
+                    correct = torch.argmax(predictions.data, 1) == targets
+                    log(model, loss.cpu(), correct.cpu(), scheduler.get_lr()[0])
+                    scheduler.step()
+
+            model.eval()
+            log.eval(model, optimizer, len_dataset=len(val_loader))
+
+            with torch.no_grad():
+                for batch in val_loader:
+                    inputs, targets = (b.to(device) for b in batch)
+                    predictions = model(inputs)
+                    loss = smooth_crossentropy(predictions, targets)
+                    correct = torch.argmax(predictions, 1) == targets
+                    log(model, loss.cpu(), correct.cpu())
+                curr_loss=log.epoch_state["loss"] / log.epoch_state["steps"]
+                if curr_loss < log.best_loss: 
+                    best_model = copy.deepcopy({'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()})
+
+
+        log.flush(model, optimizer)
+        model.load_state_dict(best_model['weights_state']) # load best model for inference 
+        optimizer.load_state_dict(best_model['optim_state']) # load optim for further training 
+        
+        if ckpt_path is not None:
+            save_checkpoint(model, optimizer, os.path.join(ckpt_path,'ckpt.pth'))
+        
+        top1=log.best_accuracy
+        return top1, model, optimizer
+
+'''
 def train(train_loader, val_loader, num_epochs, model, device, criterion, optimizer, print_freq=10, ckpt='ckpt'):
 
     batch_time = AverageMeter('Time', ':6.3f')
@@ -184,6 +244,7 @@ def train(train_loader, val_loader, num_epochs, model, device, criterion, optimi
 
     # Save the trained model weights
     save_checkpoint(model, optimizer, ckpt)
+
 
 
 def train_mix(train_loader, val_loader, num_epochs, model, n_classes, device, criterion, optimizer, print_freq=10, ckpt='ckpt'):
@@ -228,6 +289,7 @@ def train_mix(train_loader, val_loader, num_epochs, model, n_classes, device, cr
 
     # Save the trained model weights
     save_checkpoint(model, optimizer, ckpt)
+'''
 
 def validate(val_loader, model, device=None, print_info=True, print_freq=0):
 
@@ -262,7 +324,6 @@ def validate(val_loader, model, device=None, print_info=True, print_freq=0):
             print('* Acc@1 {top1.avg:.3f} '.format(top1=top1))
 
     return top1.avg
-
 
 def accuracy(output, target, topk=(1,)):
     """Computes the accuracy over the k top predictions for the specified values of k"""
@@ -672,10 +733,6 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_fr
         train_set = datasets.CIFAR10(
             root='~/datasets/cifar10', train=True, download=True,
             transform=train_transform)
-        
-        val_set = datasets.CIFAR10(
-        root='~/datasets/cifar10', train=True, download=True,
-        transform=transform)
 
         test_set = datasets.CIFAR10(
             root='~/datasets/cifar10', train=False, download=True,
@@ -782,21 +839,22 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_fr
     else:
         assert False
 
-    # add splitting into train and validation
     # Split the dataset into training and validation sets
     if val_fraction:
-        val_size = int(val_fraction * len(train_set))
-        train_size = len(train_set) - val_size
-        # Generate random indices for the entire dataset
-        indices = list(range(len(train_set)))
-        random.shuffle(indices)
-        # Split the indices into training and validation sets
-        train_indices = indices[:train_size]
-        val_indices = indices[train_size:]
-        # Create two new datasets using the random indices
-        train_set = Subset(train_set, train_indices)
-        val_set = Subset(val_set, val_indices)
-        print(f"Train size: {len(train_set)}, Val size: {len(val_set)}")
+
+        train_len = len(train_set)
+        eval_len = int(train_len * val_fraction)
+        train_len = train_len - eval_len
+
+        train_set, val_set = torch.utils.data.random_split(train_set,
+                                                        [train_len,
+                                                            eval_len])
+
+        val_set = copy.deepcopy(val_set.dataset)
+        train_set = copy.deepcopy(train_set.dataset)
+
+        val_set.transform = test_set.transform
+        val_set.target_transform = test_set.target_transform
     else:
         val_set = None
 

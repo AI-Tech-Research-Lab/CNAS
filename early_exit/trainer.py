@@ -12,8 +12,8 @@ import os
 
 from evaluators import standard_eval, branches_eval, binary_eval, \
     binary_statistics
-from models.EENN.base import BranchModel
-from utils import calculate_centroids_confidences, calculate_centroids_scores, extract_balanced_subset, get_device, save_model, load_model
+from models.base import BranchModel
+from utils import calculate_centroids_confidences, calculate_centroids_scores, extract_balanced_subset, get_device, load_eenn
 from copy import deepcopy
 
 torch.autograd.set_detect_anomaly(True)

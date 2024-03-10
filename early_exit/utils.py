@@ -3,7 +3,6 @@ import json
 import random
 import os
 
-from models.EENN.alexnet import AlexNet
 import numpy as np
 from ofa_evaluator import OFAEvaluator
 
@@ -18,12 +17,12 @@ from torch.utils.data import DataLoader, Subset
 
 from train_utils import get_device    
 
-from models.EENN.base import BinaryIntermediateBranch, IntermediateBranch
-from models.EENN.mobilenet_v3 import MobileNetV3
-from models.EENN.resnet import resnet20
-
-from trainers.cbn.evaluators import binary_eval
-
+from models.base import BinaryIntermediateBranch, IntermediateBranch
+from models.mobilenet_v3 import MobileNetV3
+from models.resnet import resnet20
+from models.alexnet import AlexNet
+from models.costs import module_cost
+from evaluators import binary_eval
 
 def get_intermediate_backbone_cost(backbone, input_size):
     # Compute the MACs of the backbone up to the b-th exit for each exit
@@ -90,7 +89,6 @@ def get_backbone_i_cost(backbone,input_size,num_exit):
     return info['params']/1e6, info['macs']/1e6
 
 def get_classifier_i_cost(predictor, input_sample):
-    from models.EENN.costs import module_cost
     layers = [module for module in predictor.modules() if not isinstance(module, torch.nn.Sequential)]
     macs = 0
     for name, m_int in predictor.named_children():
@@ -531,30 +529,6 @@ def calculate_centroids_scores(dataloader, model, predictors, n_classes):
 
     return centroids
 
-def get_subnet_folder(exp_path, subnet):
-        """ search for a subnet folder in the experiment folder filtering by subnet architecture """
-        import glob
-        split = exp_path.rsplit("_",1)
-        maxiter = int(split[1])
-        path = exp_path.rsplit("/",1)[0]
-        folders=[]
-
-        for file in glob.glob(os.path.join(path + '/iter_*', "net_*/net_*.subnet")):
-            arch = json.load(open(file))  
-            pre,ext= os.path.splitext(file)
-            split = pre.rsplit("_",3)  
-            split2 = split[1].rsplit("/",1)
-            niter = int(split2[0])
-            if arch == subnet and niter <= maxiter:
-                folder_path = pre.rsplit("/",1)[0]
-                folders.append(folder_path) # add folder to list (handle duplicates)
-        
-        if(len(folders)==0):
-            print("Error: no subnet found in archive!")
-            return None
-
-        return folders[-1]
-
 def get_subnet_folder_by_backbone(exp_path, backbone, nsubnet):
         """ search for a subnet folder in the experiment folder filtering by subnet architecture """
         import glob
@@ -653,7 +627,7 @@ def OFA_MBV3(nclasses,subnet_path,supernet,pretrained):
     subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 'r': config['r']})
     return subnet
 
-def get_model(name, image_size, n_classes, get_binaries=False,
+def get_eenn(name, image_size, n_classes, get_binaries=False,
               fix_last_layer=False, model_path = None, pretrained = False, supernet=None):
     name = name.lower()
     if name == 'alexnet':
@@ -691,7 +665,7 @@ def get_model(name, image_size, n_classes, get_binaries=False,
     
     return model, classifiers
 
-def save_model(backbone, classifiers, best_backbone, best_classifiers, best_score, epoch, optimizer, ckpt_path):
+def save_eenn(backbone, classifiers, best_backbone, best_classifiers, best_score, epoch, optimizer, ckpt_path):
     checkpoint = {
         'backbone_state': backbone.state_dict(),
         'classifiers_state': classifiers.state_dict(),
@@ -702,7 +676,3 @@ def save_model(backbone, classifiers, best_backbone, best_classifiers, best_scor
         'epoch': epoch,
     }
     torch.save(checkpoint, ckpt_path)
-
-def load_model(device, ckpt_path):
-    checkpoint = torch.load(ckpt_path, map_location=device)
-    return checkpoint

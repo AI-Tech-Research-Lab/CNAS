@@ -23,96 +23,74 @@ from trainer import binary_bernulli_trainer, joint_trainer, \
 from utils import get_dataset, get_optimizer, EarlyStopping, get_net_info, get_model, get_intermediate_backbone_cost, get_intermediate_classifiers_cost, \
     get_ee_scores,get_subnet_folder_by_backbone
 
-@hydra.main(config_path="configs",
-            config_name="config")
-def my_app(cfg: DictConfig) -> None:
-    log = logging.getLogger(__name__)
-    log.info(OmegaConf.to_yaml(cfg))
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
 
-    # Get the current date and time
-    current_time = datetime.datetime.now()
+    parser.add_argument('--model', type=str, default='mobilenetv3', help='name of the model (mobilenetv3, ...)')
+    parser.add_argument("--batch_size", default=128, type=int, help="Batch size used in the training and validation loop.")
+    parser.add_argument("--epochs", default=200, type=int, help="Total number of epochs.")
+    parser.add_argument("--label_smoothing", default=0.1, type=float, help="Use 0.0 for no label smoothing.")
+    parser.add_argument("--learning_rate", default=0.05, type=float, help="Base learning rate at the start of the training.") #0.1
+    parser.add_argument("--momentum", default=0.9, type=float, help="SGD Momentum.")
+    parser.add_argument("--threads", default=2, type=int, help="Number of CPU threads for dataloaders.")
+    parser.add_argument("--weight_decay", default=0.0004, type=float, help="L2 weight decay.")
+    parser.add_argument("--val_split", default=0.0, type=float, help="Split of the training set used for the validation set.")
+    parser.add_argument('--optim', type=str, default='SGD', help='algorithm to use for training')
+    parser.add_argument("--adaptive", default=True, type=bool, help="True if you want to use the Adaptive SAM.")
+    parser.add_argument('--dataset', type=str, default='imagenet', help='name of the dataset (imagenet, cifar10, cifar100, ...)')
+    parser.add_argument("--data_aug", default=True, type=bool, help="True if you want to use data augmentation.")
+    parser.add_argument('--save_ckpt', action='store_true', default=False, help='save checkpoint')
+    parser.add_argument('--device', type=str, default='cpu', help='device to use for training / testing')
+    parser.add_argument('--n_classes', type=int, default=1000, help='number of classes of the given dataset')
+    parser.add_argument('--supernet_path', type=str, default='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0', help='file path to supernet weights')
+    parser.add_argument('--model_path', type=str, default=None, help='file path to subnet')
+    parser.add_argument('--output_path', type=str, default=None, help='file path to save results')
+    parser.add_argument('--pretrained', action='store_true', default=False, help='use pretrained weights')
+    parser.add_argument('--mmax', type=float, default=1000, help='maximum number of MACS allowed')
+    parser.add_argument('--top1min', type=float, default=0.0, help='minimum top1 accuracy allowed')
+    parser.add_argument("--use_early_stopping", default=True, type=bool, help="True if you want to use early stopping.")
+    parser.add_argument("--early_stopping_tolerance", default=5, type=int, help="Number of epochs to wait before early stopping.")
 
-    # Print the current time
-    print("Current time:", current_time)
+    '''
+    parser.add_argument('--optim', type=str, default='SAM', help='algorithm to use for training')
+    parser.add_argument("--sigma_min", default=0.05, type=float, help="min noise perturbation intensity")
+    parser.add_argument("--sigma_max", default=0.05, type=float, help="max noise perturbation intensity")
+    parser.add_argument("--sigma_step", default=0.0, type=float, help="step noise perturbation intensity")
+    parser.add_argument('--device', type=str, default='cpu', help='device to use for training / testing')
+    parser.add_argument('--data', type=str, default='/mnt/datastore/ILSVRC2012', help='location of the data corpus')
+    parser.add_argument('--dataset', type=str, default='imagenet', help='name of the dataset (imagenet, cifar10, cifar100, ...)')
+    parser.add_argument('--model', type=str, default='mobilenetv3', help='name of the model (mobilenetv3, ...)')
+    parser.add_argument('--n_classes', type=int, default=1000, help='number of classes of the given dataset')
+    parser.add_argument('--supernet_path', type=str, default='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0', help='file path to supernet weights')
+    parser.add_argument('--model_path', type=str, default=None, help='file path to subnet')
+    parser.add_argument('--output_path', type=str, default=None, help='file path to save results')
+    parser.add_argument('--pretrained', action='store_true', default=False, help='use pretrained weights')
+    parser.add_argument('--ood_eval', action='store_true', default=False, help='evaluate OOD robustness')
+    parser.add_argument('--save_ckpt', action='store_true', default=False, help='save checkpoint')
+    parser.add_argument('--eval_robust', action='store_true', default=False, help='evaluate robustness')   
+    parser.add_argument('--eval_test', action='store_true', default=True, help='evaluate test accuracy')  
+    parser.add_argument('--load_ood', action='store_true', default=False, help='load pretrained OOD folders') 
+    parser.add_argument('--ood_data', type=str, default=None, help='OOD dataset')
+    parser.add_argument('--alpha', default=0.5, type=float, help="weight for top1_robust")
+    parser.add_argument('--res', default=32, type=int, help="default resolution for training")  
+    parser.add_argument('--pmax', default=2.0, type=float, help="constraint on params")
+    parser.add_argument('--p', default=0.0, type=float, help="penalty on params")
+    parser.add_argument('--alpha_norm', default=1.0, type=float, help="weight for top1_robust normalization")
+    '''
 
-    model_cfg = cfg['model']
-    model_name = model_cfg['name']
+    args = parser.parse_args()
 
-    dataset_cfg = cfg['dataset']
-    dataset_name = dataset_cfg['name']
-    augmented_dataset = dataset_cfg.get('augment', False)
-
-    experiment_cfg = cfg['experiment']
-    load, save, path, experiments = experiment_cfg.get('load', True), \
-                                    experiment_cfg.get('save', True), \
-                                    experiment_cfg.get('path', None), \
-                                    experiment_cfg.get('experiments', 1)
-
-    plot = experiment_cfg.get('plot', False)
-
-    method_cfg = cfg['method']
-    method_name = method_cfg['name']
-
-    get_binaries = True if method_name in ['bernulli', 'adaptive'] \
-        else False
-
-    training_cfg = cfg['training']
-    epochs, batch_size, device = training_cfg['epochs'], \
-                                 training_cfg['batch_size'], \
-                                 training_cfg.get('device', 'cpu')
-    eval_percentage = training_cfg.get('eval_split', None)
-
-    use_early_stopping = training_cfg.get('use_early_stopping', False)
-    early_stopping_tolerance = training_cfg.get('early_stopping_tolerance', 5)
-
-    optimizer_cfg = cfg['optimizer']
-    optimizer_name, lr, momentum, weight_decay = optimizer_cfg.get('optimizer',
-                                                                   'sgd'), \
-                                                 optimizer_cfg.get('lr', 1e-1), \
-                                                 optimizer_cfg.get('momentum',
-                                                                   0.9), \
-                                                 optimizer_cfg.get(
-                                                     'weight_decay', 0)
-    
-    mmax = cfg.get('mmax',1000.0)
-    top1min = cfg.get('top1min', 0.0)
-
-    checkpoint = method_cfg.get('checkpoint', False)
-
-    if torch.cuda.is_available() and device != 'cpu':
-        torch.cuda.set_device(device)
-        device = 'cuda:{}'.format(device)
+    if torch.cuda.is_available() and args.device != 'cpu':
+        torch.cuda.set_device(args.device)
+        device = 'cuda:{}'.format(args.device)
         print("Running on GPU")
     else:
         warnings.warn("Device not found or CUDA not available.")
 
-    device = torch.device(device)
-
-    if not isinstance(experiments, int):
-        raise ValueError('experiments argument must be integer: {} given.'
-                         .format(experiments))
-
-    if path is None:
-        path = os.getcwd()
-    else:
-        os.chdir(path)
-        os.makedirs(path, exist_ok=True)
-
-    if use_early_stopping:
-        early_stopping = EarlyStopping(
-            tolerance=early_stopping_tolerance,
-            min=not (eval_percentage is not None and eval_percentage > 0))
-    else:
-        early_stopping = None
+    device = torch.device(args.device)
     
-    if model_name == 'mobilenetv3':
-        model_path = model_cfg['path']
-        '''
-        #extract from the model path the number of iteration
-        last_slash_index = model_path.rfind("/")
-        last_underscore_index = model_path.rfind("_", 0, last_slash_index)
-        n_iteration = int(model_path[last_underscore_index + 1:last_slash_index])
-        '''
+    if args.model_name == 'mobilenetv3':
+        model_path = args.model_path
                 
         #extract from the model path the number of subnet in the iteration
         last_underscore_index = model_path.rfind("_")
@@ -125,7 +103,7 @@ def my_app(cfg: DictConfig) -> None:
      
     log.info('Experiment path: {}'.format(path)) #1 experiment per subnet
 
-    if(checkpoint):
+    if(args.save_ckpt):
         print("Checkpointing")
         ckpt_path = os.path.join(path, 'ckpt.pt')
     else:

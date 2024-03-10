@@ -19,14 +19,11 @@ import torchvision.models
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 from torch.utils.data import DataLoader
-from trainers.entropic.utility.corruptions import ApplyDistortion
+from utility.corruptions import ApplyDistortion
 import torch.nn as nn
 import torch.optim as optim
 from train_utils import load_checkpoint, train, validate
 from PIL import Image
-
-sys.path.append(os.getcwd())
-
 
 parser = argparse.ArgumentParser(description='Evaluate models on ImageNet-C')
 parser.add_argument('--data', metavar='DIR', help='path to dataset')

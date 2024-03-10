@@ -16,6 +16,8 @@ from pymoo.core.mutation import Mutation
 from pymoo.core.sampling import Sampling
 from pymoo.core.crossover import Crossover
 
+from ofa_evaluator import OFAEvaluator  
+
 DEFAULT_CFG = {
     'gpus': '0', 'config': None, 'init': None, 'trn_batch_size': 128, 'vld_batch_size': 250, 'num_workers': 4,
     'n_epochs': 0, 'save': None, 'resolution': 224, 'valid_size': 10000, 'test': True, 'latency': None,
@@ -149,7 +151,7 @@ def bash_command_template_multi_exits(**kwargs):
 
     #+dataset=cifar10 +method=bernulli_logits method.pre_trained="$PRETRAINED" +model=mobilenetv3 +model.path="$MODEL_PATH" +training=cifar10 hydra.run.dir="$OUTPUT_PATH" training.device="$DEVICE" experiment.load=true
 
-    execution_line = "CUDA_VISIBLE_DEVICES={} python trainers/cbn/main.py".format(gpus)
+    execution_line = "CUDA_VISIBLE_DEVICES={} python early_exit/train.py".format(gpus)
     execution_line += " +{}={}".format("dataset",cfg['dataset'])
     execution_line += " +{}={}".format("method",'bernulli_logits') #Confidence Branch Network (CBN)
     execution_line += " {}={}".format("method.pre_trained", "true")
@@ -192,7 +194,7 @@ def bash_command_template_entropic(**kwargs):
     cfg['alpha_norm'] = kwargs['alpha_norm']
 
     #execution_line = "CUDA_VISIBLE_DEVICES={} python trainers/entropic/train.py".format(gpus)
-    execution_line = "python trainers/entropic/train.py".format(gpus)
+    execution_line = "python robustness/train.py".format(gpus)
     for k, v in cfg.items():
         if v is not None:
             if isinstance(v, bool):
@@ -509,23 +511,37 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
 
     return net_info 
 
-def get_net_OFAMBV3(subnet_path, n_classes=10, supernet='supernets/ofa_mbv3_d234_e346_k357_w1.0', pretrained=True):
+def get_net_from_OFA(subnet_path, n_classes=10, supernet='supernets/ofa_mbv3_d234_e346_k357_w1.0', pretrained=True):
 
-    # current path example /home/gambella/results/cifar10-mbv3-test/iter_0/net_0.stats
-    #'../results/cifar10-mbv3-test/iter_0/net_0.subnet'
-    
-    import os
-
-    #idx = subnet_path.rfind('/')
-    #path = subnet_path[(idx+1):] 
-    
-    from ofa_evaluator import OFAEvaluator
     config = json.load(open(subnet_path))
-
     ofa = OFAEvaluator(n_classes=n_classes,
     model_path=supernet,
     pretrained = pretrained)
     r=config.get("r",32)
     input_shape = (3,r,r)
     subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
-    return subnet
+    return subnet, r
+
+def get_subnet_folder(exp_path, subnet):
+    """ search for a subnet folder in the experiment folder filtering by subnet architecture """
+    import glob
+    split = exp_path.rsplit("_",1)
+    maxiter = int(split[1])
+    path = exp_path.rsplit("/",1)[0]
+    folders=[]
+
+    for file in glob.glob(os.path.join(path + '/iter_*', "net_*/net_*.subnet")):
+        arch = json.load(open(file))  
+        pre,ext= os.path.splitext(file)
+        split = pre.rsplit("_",3)  
+        split2 = split[1].rsplit("/",1)
+        niter = int(split2[0])
+        if arch == subnet and niter <= maxiter:
+            folder_path = pre.rsplit("/",1)[0]
+            folders.append(folder_path) # add folder to list (handle duplicates)
+    
+    if(len(folders)==0):
+        print("Error: no subnet found in archive!")
+        return None
+    
+    return folders[-1]

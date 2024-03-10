@@ -10,21 +10,15 @@ import math
 import copy
 
 sys.path.append(os.getcwd())
-sys.path.append('/home/gambella/EDANAS_CBN/trainers/entropic')
 
-from train_utils import smooth_crossentropy
-from utility.log import Log
 from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
 from torch.utils.data import SubsetRandomSampler, DataLoader
-from utility.bypass_bn import enable_running_stats, disable_running_stats
 from utility.perturb import get_net_info_runtime
 
 from ofa_evaluator import OFAEvaluator 
-from train_utils import get_dataset, get_optimizer, get_lr_scheduler, get_data_loaders, save_checkpoint, load_checkpoint, validate, initialize_seed
-from evaluators.evaluate_cifar10c import compute_mCE 
-from utils import get_net_info
-from torchvision.transforms import v2
-import torch.nn.functional as F
+from train_utils import get_dataset, get_optimizer, get_lr_scheduler, get_data_loaders, save_checkpoint, load_checkpoint, validate, initialize_seed, Log, smooth_crossentropy, train
+from evaluate_cifar10c import compute_mCE 
+from utils import get_net_info, get_net_from_OFA
 
 #--trn_batch_size 128 --vld_batch_size 200 --num_workers 4 --n_epochs 5 --resolution 224 --valid_size 5000
 #init_lr=0.01, lr_schedule_type='cosine' weight_decay=4e-5, label_smoothing=0.0
@@ -43,7 +37,7 @@ if __name__ == "__main__":
     parser.add_argument("--rho", default=2.0, type=int, help="Rho parameter for SAM.")
     parser.add_argument("--weight_decay", default=0.0004, type=float, help="L2 weight decay.") #5e-5
     parser.add_argument("--width_factor", default=8, type=int, help="How many times wider compared to normal ResNet.")
-    parser.add_argument("--val_fraction", default=0.0, type=float, help="Fraction of the training set used for the validation set.")
+    parser.add_argument("--val_fraction", default=0.1, type=float, help="Fraction of the training set used for the validation set.")
 
     #NEW##
     parser.add_argument('--optim', type=str, default='SAM', help='algorithm to use for training')
@@ -72,8 +66,6 @@ if __name__ == "__main__":
     parser.add_argument('--alpha_norm', default=1.0, type=float, help="weight for top1_robust normalization")
 
     args = parser.parse_args()
-
-    #initialize(args, seed=42)
     
     device = args.device
     print("torch cuda available: ", torch.cuda.is_available())
@@ -89,26 +81,16 @@ if __name__ == "__main__":
     device = torch.device(device)
     initialize_seed(42, use_cuda)
 
-    # Get the model (subnet) from the OFA supernet
-
     supernet_path = args.supernet_path
     if args.model_path is not None:
         model_path = args.model_path
     print("Model path: ", model_path)
-    config = json.load(open(args.model_path))
 
-    ofa = OFAEvaluator(n_classes=args.n_classes,
-    model_path = supernet_path,
-    pretrained = True)
-    #print("CONFIG:", config)
-    r=config.get("r",args.res)
-    input_shape = (3,r,r)
-    print("INPUT SHAPE:", input_shape)
-    model, _ = ofa.sample(config)
+    model, res = get_net_from_OFA(model_path, args.n_classes, args.supernet_path, pretrained=True)
 
     print(f"DATASET: {args.dataset}")
     train_loader, val_loader, test_loader = get_data_loaders(dataset=args.dataset, batch_size=args.batch_size, threads=args.threads, 
-                                            val_fraction=args.val_fraction, img_size=r, augmentation=True, eval_test=args.eval_test)
+                                            val_fraction=args.val_fraction, img_size=res, augmentation=True, eval_test=args.eval_test)
     
     if val_loader is None:
         val_loader = test_loader
@@ -131,66 +113,10 @@ if __name__ == "__main__":
         top1 = validate(val_loader, model, device, print_freq=100)
         print("Loaded model accuracy:", np.round(top1,2))
         top1/=100
+
     else:
-
-        # TODO: check cross-validated early stop
-        # TODO: check SGD with CNAS trainer: https://github.com/matteogambella/NAS/blob/master/nsganetv2/codebase/run_manager/__init__.py
-
-        for epoch in range(epochs):
-            model.train()
-            log.train(model, optimizer, len_dataset=len(train_loader))
-
-            for batch in train_loader:
-                inputs, targets = (b.to(device) for b in batch)
-
-                # first forward-backward step
-                if args.optim == "SAM":
-                    enable_running_stats(model)
-                elif args.optim == "SGD":
-                    optimizer.zero_grad()
-                    
-                predictions = model(inputs)
-                #print(f"Predictions After CutMix/MixUp: {predictions.shape = }")
-                loss = smooth_crossentropy(predictions, targets, smoothing=args.label_smoothing)
-                loss.mean().backward()
-
-                if args.optim == "SGD":
-                    optimizer.step()
-                elif args.optim == "SAM":
-                    optimizer.first_step(zero_grad=True)
-                    # second forward-backward step
-                    disable_running_stats(model)
-                    smooth_crossentropy(model(inputs), targets, smoothing=args.label_smoothing).mean().backward()
-                    optimizer.second_step(zero_grad=True)
-
-                with torch.no_grad():
-                    correct = torch.argmax(predictions.data, 1) == targets
-                    log(model, loss.cpu(), correct.cpu(), scheduler.get_lr()[0])
-                    scheduler.step()
-
-            model.eval()
-            log.eval(model, optimizer, len_dataset=len(val_loader))
-
-            with torch.no_grad():
-                for batch in val_loader:
-                    inputs, targets = (b.to(device) for b in batch)
-                    predictions = model(inputs)
-                    loss = smooth_crossentropy(predictions, targets)
-                    correct = torch.argmax(predictions, 1) == targets
-                    log(model, loss.cpu(), correct.cpu())
-
-                curr_loss=log.epoch_state["loss"] / log.epoch_state["steps"]
-                if curr_loss < log.best_loss: 
-                    best_model = copy.deepcopy({'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()})
-
-        log.flush(model, optimizer)
-        model.load_state_dict(best_model['state_dict']) # load best model for inference 
-        optimizer.load_state_dict(best_model['optimizer']) # load optim for further training 
         
-        if (args.save_ckpt):
-            save_checkpoint(model, optimizer, os.path.join(args.output_path,'ckpt.pth'))
-        
-        top1=log.best_accuracy
+        top1, model, optimizer = train(train_loader, val_loader, epochs, model, device, optimizer, scheduler, log, ckpt_path=args.output_path)
 
     results={}
 
