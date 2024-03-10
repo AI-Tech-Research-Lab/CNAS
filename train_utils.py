@@ -19,6 +19,119 @@ from torchvision.transforms import Resize, ToTensor, Normalize, Compose, \
 from torch.utils.data import Dataset
 from torchvision.datasets.folder import default_loader
 from torchvision.transforms import v2
+from torch.nn.modules.batchnorm import _BatchNorm
+
+class LoadingBar:
+    def __init__(self, length: int = 40):
+        self.length = length
+        self.symbols = ['┈', '░', '▒', '▓']
+
+    def __call__(self, progress: float) -> str:
+        p = int(progress * self.length*4 + 0.5)
+        d, r = p // 4, p % 4
+        return '┠┈' + d * '█' + ((self.symbols[r]) + max(0, self.length-1-d) * '┈' if p < self.length*4 else '') + "┈┨"
+
+class Log:
+    def __init__(self, log_each: int, initial_epoch=-1):
+        self.loading_bar = LoadingBar(length=27)
+        self.best_accuracy = 0.0
+        self.log_each = log_each
+        self.epoch = initial_epoch
+
+        self.best_model = None
+        self.best_loss = float('inf')
+
+
+    def train(self, model, optim, len_dataset: int) -> None:
+        self.epoch += 1
+        if self.epoch == 0:
+            self._print_header()
+        else:
+            self.flush(model, optim)
+
+        self.is_train = True
+        self.last_steps_state = {"loss": 0.0, "accuracy": 0.0, "steps": 0}
+        self._reset(len_dataset)
+
+    def eval(self, model, optim, len_dataset: int) -> None:
+        self.flush(model, optim)
+        self.is_train = False
+        self._reset(len_dataset)
+
+    def __call__(self, model, loss, accuracy, learning_rate: float = None) -> None:
+        if self.is_train:
+            self._train_step(model, loss, accuracy, learning_rate)
+        else:
+            self._eval_step(loss, accuracy)
+
+    def flush(self, model, optim) -> None:
+        if self.is_train:
+            loss = self.epoch_state["loss"] / self.epoch_state["steps"]
+            accuracy = self.epoch_state["accuracy"] / self.epoch_state["steps"]
+
+            print(
+                f"\r┃{self.epoch:12d}  ┃{loss:12.4f}  │{100*accuracy:10.2f} %  ┃{self.learning_rate:12.3e}  │{self._time():>12}  ┃",
+                end="",
+                flush=True,
+            )
+
+        else:
+            loss = self.epoch_state["loss"] / self.epoch_state["steps"]
+            accuracy = self.epoch_state["accuracy"] / self.epoch_state["steps"]
+
+            print(f"{loss:12.4f}  │{100*accuracy:10.2f} %  ┃", flush=True)
+
+            if loss<self.best_loss: #accuracy > self.best_accuracy:
+
+                #print('LOSS: ', loss, 'BEST LOSS: ', self.best_loss)
+                self.best_accuracy = accuracy
+                self.best_loss = loss
+                #save the state of the best model
+                #self.best_model = {'weights_state': model.state_dict(), 'optim_state':optim.state_dict()}
+
+    def _train_step(self, model, loss, accuracy, learning_rate: float) -> None:
+        self.learning_rate = learning_rate
+        self.last_steps_state["loss"] += loss.sum().item()
+        self.last_steps_state["accuracy"] += accuracy.sum().item()
+        self.last_steps_state["steps"] += loss.size(0)
+        self.epoch_state["loss"] += loss.sum().item()
+        self.epoch_state["accuracy"] += accuracy.sum().item()
+        self.epoch_state["steps"] += loss.size(0)
+        self.step += 1
+
+        if self.step % self.log_each == self.log_each - 1:
+            loss = self.last_steps_state["loss"] / self.last_steps_state["steps"]
+            accuracy = self.last_steps_state["accuracy"] / self.last_steps_state["steps"]
+
+            self.last_steps_state = {"loss": 0.0, "accuracy": 0.0, "steps": 0}
+            progress = self.step / self.len_dataset
+
+            print(
+                f"\r┃{self.epoch:12d}  ┃{loss:12.4f}  │{100*accuracy:10.2f} %  ┃{learning_rate:12.3e}  │{self._time():>12}  {self.loading_bar(progress)}",
+                end="",
+                flush=True,
+            )
+
+    def _eval_step(self, loss, accuracy) -> None:
+        self.epoch_state["loss"] += loss.sum().item()
+        self.epoch_state["accuracy"] += accuracy.sum().item()
+        self.epoch_state["steps"] += loss.size(0)
+
+    def _reset(self, len_dataset: int) -> None:
+        self.start_time = time.time()
+        self.step = 0
+        self.len_dataset = len_dataset
+        self.epoch_state = {"loss": 0.0, "accuracy": 0.0, "steps": 0}
+
+    def _time(self) -> str:
+        time_seconds = int(time.time() - self.start_time)
+        return f"{time_seconds // 60:02d}:{time_seconds % 60:02d} min"
+
+    def _print_header(self) -> None:
+        print(f"┏━━━━━━━━━━━━━━┳━━━━━━━╸T╺╸R╺╸A╺╸I╺╸N╺━━━━━━━┳━━━━━━━╸S╺╸T╺╸A╺╸T╺╸S╺━━━━━━━┳━━━━━━━╸V╺╸A╺╸L╺╸I╺╸D╺━━━━━━━┓")
+        print(f"┃              ┃              ╷              ┃              ╷              ┃              ╷              ┃")
+        print(f"┃       epoch  ┃        loss  │    accuracy  ┃        l.r.  │     elapsed  ┃        loss  │    accuracy  ┃")
+        print(f"┠──────────────╂──────────────┼──────────────╂──────────────┼──────────────╂──────────────┼──────────────┨")
 
 def save_checkpoint(model, optimizer, filename='checkpoint.pth'):
     checkpoint = {
@@ -839,6 +952,14 @@ def mix_labels(target, lam, n_classes, label_smoothing=0.1):
 
 """ Label smooth """
 
+def smooth_crossentropy(pred, gold, smoothing=0.1):
+    n_class = pred.size(1)
+
+    one_hot = torch.full_like(pred, fill_value=smoothing / (n_class - 1))
+    one_hot.scatter_(dim=1, index=gold.unsqueeze(1), value=1.0 - smoothing)
+    log_prob = F.log_softmax(pred, dim=1)
+
+    return F.kl_div(input=log_prob, target=one_hot, reduction='none').sum(-1)
 
 def label_smooth(target, n_classes: int, label_smoothing=0.1):
     # convert to one-hot
@@ -859,3 +980,81 @@ def cross_entropy_loss_with_soft_target(pred, soft_target):
 def cross_entropy_with_label_smoothing(pred, target, label_smoothing=0.1):
     soft_target = label_smooth(target, pred.size(1), label_smoothing)
     return cross_entropy_loss_with_soft_target(pred, soft_target)
+
+def disable_running_stats(model):
+    def _disable(module):
+        if isinstance(module, _BatchNorm):
+            module.backup_momentum = module.momentum
+            module.momentum = 0
+
+    model.apply(_disable)
+
+def enable_running_stats(model):
+    def _enable(module):
+        if isinstance(module, _BatchNorm) and hasattr(module, "backup_momentum"):
+            module.momentum = module.backup_momentum
+
+    model.apply(_enable)
+
+# Optimizers
+
+class SAM(torch.optim.Optimizer):
+    def __init__(self, params, base_optimizer, rho=0.05, adaptive=False, **kwargs):
+        assert rho >= 0.0, f"Invalid rho, should be non-negative: {rho}"
+
+        defaults = dict(rho=rho, adaptive=adaptive, **kwargs)
+        super(SAM, self).__init__(params, defaults)
+
+        self.base_optimizer = base_optimizer(self.param_groups, **kwargs)
+        self.param_groups = self.base_optimizer.param_groups
+        self.defaults.update(self.base_optimizer.defaults)
+
+    @torch.no_grad()
+    def first_step(self, zero_grad=False):
+        grad_norm = self._grad_norm()
+        for group in self.param_groups:
+            scale = group["rho"] / (grad_norm + 1e-12)
+
+            for p in group["params"]:
+                if p.grad is None: continue
+                self.state[p]["old_p"] = p.data.clone()
+                e_w = (torch.pow(p, 2) if group["adaptive"] else 1.0) * p.grad * scale.to(p)
+                p.add_(e_w)  # climb to the local maximum "w + e(w)"
+
+        if zero_grad: self.zero_grad()
+
+    @torch.no_grad()
+    def second_step(self, zero_grad=False):
+        for group in self.param_groups:
+            for p in group["params"]:
+                if p.grad is None: continue
+                p.data = self.state[p]["old_p"]  # get back to "w" from "w + e(w)"
+
+        self.base_optimizer.step()  # do the actual "sharpness-aware" update
+
+        if zero_grad: self.zero_grad()
+
+    @torch.no_grad()
+    def step(self, closure=None):
+        assert closure is not None, "Sharpness Aware Minimization requires closure, but it was not provided"
+        closure = torch.enable_grad()(closure)  # the closure should do a full forward-backward pass
+
+        self.first_step(zero_grad=True)
+        closure()
+        self.second_step()
+
+    def _grad_norm(self):
+        shared_device = self.param_groups[0]["params"][0].device  # put everything on the same device, in case of model parallelism
+        norm = torch.norm(
+                    torch.stack([
+                        ((torch.abs(p) if group["adaptive"] else 1.0) * p.grad).norm(p=2).to(shared_device)
+                        for group in self.param_groups for p in group["params"]
+                        if p.grad is not None
+                    ]),
+                    p=2
+               )
+        return norm
+
+    def load_state_dict(self, state_dict):
+        super().load_state_dict(state_dict)
+        self.base_optimizer.param_groups = self.param_groups
