@@ -317,32 +317,6 @@ def get_intermediate_classifiers_adaptive(model,
 
     return predictors
 
-#OFA
-
-def mobilenetv3(n_classes, subnet_path, supernet, pretrained):
-
-    # current path example /home/gambella/results/cifar10-mbv3-test/iter_0/net_0.stats
-    #'../results/cifar10-mbv3-test/iter_0/net_0.subnet'
-    
-    import os
-
-    #idx = subnet_path.rfind('/')
-    #path = subnet_path[(idx+1):] 
-    
-    from ofa_evaluator import OFAEvaluator
-    config = json.load(open(subnet_path))
-
-    ofa = OFAEvaluator(n_classes=n_classes,
-    model_path=supernet,
-    pretrained = pretrained)
-    r=config.get("r",32)
-    input_shape = (3,r,r)
-    subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
-    
-    net = MobileNetV3(subnet.first_conv, subnet.blocks, config['b'], config['d']) # Branch MobileNetV3
-
-    return net
-
 def extract_balanced_subset(train_loader, subset_percentage, n_classes):
 
     # Determine the percentage of the total dataset to extract as a subset
@@ -616,52 +590,16 @@ def ece_score(method, dataset, bins=30):
 
     return ece, prob_pred, prob_true, mce
 
-def OFA_MBV3(nclasses,subnet_path,supernet,pretrained):
+def get_eenn(subnet_path, supernet, n_classes, get_binaries=False,
+              fix_last_layer=False, pretrained = False):
 
-    #supernet = './../../../../EDANAS_CBN/ofa_nets/ofa_cbnmbv3'
-    config = json.load(open(subnet_path))
-
-    ofa = OFAEvaluator(n_classes=nclasses,
-    model_path=supernet,
-    pretrained = pretrained)
-    subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 'r': config['r']})
-    return subnet
-
-def get_eenn(name, image_size, n_classes, get_binaries=False,
-              fix_last_layer=False, model_path = None, pretrained = False, supernet=None):
-    name = name.lower()
-    if name == 'alexnet':
-        model = AlexNet(image_size[0])
-    elif 'vgg' in name:
-        if name == 'vgg11':
-            model = vgg11()
-        else:
-            assert False
-    elif 'resnet' in name:
-        if name == 'resnet20':
-            model = resnet20()
-        else:
-            assert False
-    
-    elif 'mobilenet' in name:
-        if name == 'mobilenetv3':
-            model = mobilenetv3(n_classes, model_path, supernet, pretrained)
-            classifiers = get_intermediate_classifiers_adaptive(model,
-                                               image_size,
-                                               n_classes,
-                                               binary_branch=get_binaries,
-                                               fix_last_layer=fix_last_layer)
-            return model, classifiers
-        else:
-            assert False
-    else:
-        assert False
-    
-    classifiers = get_intermediate_classifiers_static(model,
-                                               image_size,
-                                               n_classes,
-                                               binary_branch=get_binaries,
-                                               fix_last_layer=fix_last_layer)
+    model, res = get_net_from_OFA(subnet_path, n_classes, supernet, pretrained)
+    img_size = (3, res, res)
+    classifiers = get_intermediate_classifiers_adaptive(model,
+                                        img_size,
+                                        n_classes,
+                                        binary_branch=get_binaries,
+                                        fix_last_layer=fix_last_layer)
     
     return model, classifiers
 
