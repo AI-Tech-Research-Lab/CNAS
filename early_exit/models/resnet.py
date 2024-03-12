@@ -29,8 +29,8 @@ from torch import nn
 from torch.nn import init
 import torch.nn.functional as F
 
-from models.EENN.base import BranchModel
-from models.EENN.costs import module_cost
+from models.base import BranchModel
+from models.costs import module_cost
 
 
 def _weights_init(m):

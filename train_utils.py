@@ -4,6 +4,7 @@ import time
 import torch
 import numpy as np
 import copy
+import os
 
 from torch.utils.data import Dataset, Subset, DataLoader
 from torch.utils.data.dataset import random_split
@@ -149,6 +150,7 @@ def load_checkpoint(model, optimizer, filename='checkpoint.pth'):
     return model, optimizer
 
 def train(train_loader, val_loader, num_epochs, model, device, optimizer, scheduler, log, ckpt_path=None, label_smoothing=0.1, criterion=None):
+        model.to(device)
         for epoch in range(num_epochs):
             model.train()
             log.train(model, optimizer, len_dataset=len(train_loader))
@@ -196,8 +198,8 @@ def train(train_loader, val_loader, num_epochs, model, device, optimizer, schedu
 
 
         log.flush(model, optimizer)
-        model.load_state_dict(best_model['weights_state']) # load best model for inference 
-        optimizer.load_state_dict(best_model['optim_state']) # load optim for further training 
+        model.load_state_dict(best_model['state_dict']) # load best model for inference 
+        optimizer.load_state_dict(best_model['optimizer']) # load optim for further training 
         
         if ckpt_path is not None:
             save_checkpoint(model, optimizer, os.path.join(ckpt_path,'ckpt.pth'))

@@ -4,8 +4,11 @@ import torch
 from torch import nn
 import torch.nn.utils as utils
 
-from models.EENN.base import BranchModel
+from models.base import BranchModel
+from ofa.imagenet_classification.networks import MobileNetV3
+from ofa.utils import MyGlobalAvgPool2d
 
+'''
 def find_equidistant_points(N, M, start):
 
     #if M > N:
@@ -61,12 +64,31 @@ def find_equidistant_points_v2(N, M): #returns M intermediate equidistant points
     indexes.append(N-1) #include last idx
 
     return indexes
+'''
 
-class MobileNetV3(BranchModel,nn.Module):
+class FinalClassifier(nn.Module):
+          
+        def __init__(self, final_expand_layer, feature_mix_layer, classifier):
+            super(FinalClassifier, self).__init__()
+            self.final_expand_layer = final_expand_layer
+            self.feature_mix_layer = feature_mix_layer
+            self.global_avg_pool = MyGlobalAvgPool2d(keep_dim=True)
+            self.classifier = classifier
+            
+        def forward(self, x):
+            x = self.final_expand_layer(x)
+            x = self.global_avg_pool(x)  # global average pooling
+            x = self.feature_mix_layer(x)
+            x = x.view(x.size(0), -1)
+            print(x.shape)
+            x = self.classifier(x)
+            return x 
 
-    def __init__(self, first_conv, blocks, branches, depth):# final_expand_layer, feature_mix_layer, b)
+class EEMobileNetV3(BranchModel,nn.Module):
 
-        super(MobileNetV3, self).__init__()
+    def __init__(self, first_conv, blocks, branches, depth): #, final_expand_layer, feature_mix_layer, classifier):
+
+        super(EEMobileNetV3, self).__init__()
 
         #self.b = b #b (or ne = num exits) includes the final exit
         self.b = sum(branches)+1 #+1=last exit
@@ -81,7 +103,8 @@ class MobileNetV3(BranchModel,nn.Module):
         self.blocks = nn.ModuleList(blocks)
         exit_list.append(sum(depth)) #LAST EXIT
         self.exit_idxs=exit_list #= find_equidistant_points_v2(len(blocks),b-1)#exit_idxs 
-    
+        #self.final_classifier=FinalClassifier(final_expand_layer, feature_mix_layer, classifier)
+
     def n_branches(self):
         return self.b
 
@@ -95,7 +118,10 @@ class MobileNetV3(BranchModel,nn.Module):
                     x = block(x)
                     if (idx==self.exit_idxs[i]): #early exit
                                 intermediate_layers.append(x)
+                                #if (i==self.b-1):
+                                #    x = self.final_classifier(x)
                                 i+=1
+        
         return intermediate_layers
 
     

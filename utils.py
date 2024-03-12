@@ -17,6 +17,7 @@ from pymoo.core.sampling import Sampling
 from pymoo.core.crossover import Crossover
 
 from ofa_evaluator import OFAEvaluator  
+from early_exit.models.mobilenet_v3 import EEMobileNetV3
 
 DEFAULT_CFG = {
     'gpus': '0', 'config': None, 'init': None, 'trn_batch_size': 128, 'vld_batch_size': 250, 'num_workers': 4,
@@ -407,7 +408,7 @@ def get_net_info(net, input_shape=(3, 224, 224), print_info=False):
     Modified from https://github.com/mit-han-lab/once-for-all/blob/
     35ddcb9ca30905829480770a6a282d49685aa282/ofa/imagenet_codebase/utils/pytorch_utils.py#L139
     """
-    from ofa.imagenet_codebase.utils.pytorch_utils import count_parameters
+    from ofa.utils.pytorch_utils import count_parameters
 
     # artificial input data
     inputs = torch.randn(1, 3, input_shape[-2], input_shape[-1])
@@ -520,6 +521,8 @@ def get_net_from_OFA(subnet_path, n_classes=10, supernet='supernets/ofa_mbv3_d23
     r=config.get("r",32)
     input_shape = (3,r,r)
     subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
+    #if early_exit:
+    #    subnet = EEMobileNetV3(subnet.first_conv, subnet.blocks, config['b'], config['d'])
     return subnet, r
 
 def get_subnet_folder(exp_path, subnet):

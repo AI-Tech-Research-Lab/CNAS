@@ -13,7 +13,7 @@ import os
 from evaluators import standard_eval, branches_eval, binary_eval, \
     binary_statistics
 from models.base import BranchModel
-from utils import calculate_centroids_confidences, calculate_centroids_scores, extract_balanced_subset, get_device, load_eenn
+from utils_ee import calculate_centroids_confidences, calculate_centroids_scores, extract_balanced_subset, get_device
 from copy import deepcopy
 
 torch.autograd.set_detect_anomaly(True)

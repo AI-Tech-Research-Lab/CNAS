@@ -18,11 +18,12 @@ from torch.utils.data import DataLoader, Subset
 from train_utils import get_device    
 
 from models.base import BinaryIntermediateBranch, IntermediateBranch
-from models.mobilenet_v3 import MobileNetV3
+from models.mobilenet_v3 import EEMobileNetV3, FinalClassifier
 from models.resnet import resnet20
 from models.alexnet import AlexNet
 from models.costs import module_cost
 from evaluators import binary_eval
+
 
 def get_intermediate_backbone_cost(backbone, input_size):
     # Compute the MACs of the backbone up to the b-th exit for each exit
@@ -43,7 +44,7 @@ def get_net_info(net, input_shape=(3, 224, 224), print_info=False):
     Modified from https://github.com/mit-han-lab/once-for-all/blob/
     35ddcb9ca30905829480770a6a282d49685aa282/ofa/imagenet_codebase/utils/pytorch_utils.py#L139
     """
-    from ofa.imagenet_codebase.utils.pytorch_utils import count_parameters
+    from ofa.utils.pytorch_utils import count_parameters
 
     # artificial input data
     inputs = torch.randn(1, 3, input_shape[-2], input_shape[-1])
@@ -159,6 +160,7 @@ def calculate_maxpool_kernel_size(num_channels):
         else:
             return 1
         
+'''
 def get_intermediate_classifiers_static(model,
                                  image_size,
                                  n_classes,
@@ -239,23 +241,37 @@ def get_intermediate_classifiers_static(model,
             predictors[-1](o)
 
     return predictors
+'''
 
-def get_intermediate_classifiers_adaptive(model,
+def get_intermediate_classifiers_adaptive(model, final_classifier,
                                  image_size,
                                  n_classes,
-                                 binary_branch=False,
-                                 fix_last_layer=False):
+                                 binary_branch=False):
+                                 #fix_last_layer=False):
     
     predictors = nn.ModuleList()
+    model = copy.deepcopy(model)
+    final_classifier = copy.deepcopy(final_classifier)
     x = torch.randn((1,) + image_size)
+    print("X shape: ", x.shape)
     model.eval() # this avoids batch norm error https://discuss.pytorch.org/t/error-expected-more-than-1-value-per-channel-when-training/26274
     #outputs = get_blocks_mbv3(num_classes,x)
-    outputs = model(x)
+    #device of the model
+    # Move the model to the CPU
+    device = torch.device("cpu")
+    model = model.to(device)
+    final_classifier = final_classifier.to(device)
+    # Move the input tensor to the same device as the model
+    x = x.to(device)
+    outputs = model(x) 
+    for i in outputs:
+        print("shape of output", i.shape)
     filters = [32,64,128]
-
-    for i, o in enumerate(reversed(outputs)):
+    predictors.append(final_classifier)
+    outputs_ee = outputs[:-1]
+    for i, o in enumerate(reversed(outputs_ee)):
         
-        i = len(outputs) - i - 1 
+        i = len(outputs) - i - 2
 
         chs = o.shape[1]
 
@@ -286,29 +302,29 @@ def get_intermediate_classifiers_adaptive(model,
         pred = BinaryIntermediateBranch(preprocessing=seq,
                                         classifier=linear_layers,
                                         )
-        
-        if(i != (len(outputs)-1) ):
 
-            _, b_macs_i = get_backbone_i_cost(model, image_size, i)
+        _, b_macs_i = get_backbone_i_cost(model, image_size, i)
+        _, c_macs_i = get_classifier_i_cost(pred, o)
+        _, b_macs_next = get_backbone_i_cost(model, image_size, i+1)
+        print("Output shape: ", outputs[i+1].shape)
+        print(predictors[-1])
+        _, c_macs_next = get_classifier_i_cost(predictors[-1], outputs[i+1])
+        max_ks = calculate_maxpool_kernel_size(chs)
+        ks = 1
+        while((b_macs_i + c_macs_i) >= (b_macs_next + c_macs_next) 
+                and ks <= max_ks):
+            max_pool = nn.MaxPool2d(kernel_size=ks, stride=ks)
+            new_seq = nn.Sequential(max_pool,*seq)
+            output = new_seq(o)
+            output = torch.flatten(output, 1)
+            od = output.shape[-1]
+            linear_layers = nn.Sequential(*[nn.ReLU(),
+                                            nn.Linear(od, n_classes + 1)])
+            pred = BinaryIntermediateBranch(preprocessing=new_seq,
+                                        classifier=linear_layers,
+                                        )
             _, c_macs_i = get_classifier_i_cost(pred, o)
-            _, b_macs_next = get_backbone_i_cost(model, image_size, i+1)
-            _, c_macs_next = get_classifier_i_cost(predictors[-1], outputs[i+1])
-            max_ks = calculate_maxpool_kernel_size(chs)
-            ks = 1
-            while((b_macs_i + c_macs_i) >= (b_macs_next + c_macs_next) 
-                  and ks <= max_ks):
-                max_pool = nn.MaxPool2d(kernel_size=ks, stride=ks)
-                new_seq = nn.Sequential(max_pool,*seq)
-                output = new_seq(o)
-                output = torch.flatten(output, 1)
-                od = output.shape[-1]
-                linear_layers = nn.Sequential(*[nn.ReLU(),
-                                                nn.Linear(od, n_classes + 1)])
-                pred = BinaryIntermediateBranch(preprocessing=new_seq,
-                                            classifier=linear_layers,
-                                            )
-                _, c_macs_i = get_classifier_i_cost(pred, o)
-                ks = ks * 2
+            ks = ks * 2
 
         predictors.append(pred)
         #else add max pool
@@ -590,18 +606,20 @@ def ece_score(method, dataset, bins=30):
 
     return ece, prob_pred, prob_true, mce
 
-def get_eenn(subnet_path, supernet, n_classes, get_binaries=False,
-              fix_last_layer=False, pretrained = False):
+def get_eenn(subnet, subnet_path, res, n_classes, get_binaries=False):
 
-    model, res = get_net_from_OFA(subnet_path, n_classes, supernet, pretrained)
+    #model, res = get_eenn_from_OFA(subnet_path, n_classes, supernet, pretrained)
+    config = json.load(open(subnet_path))
+    backbone = EEMobileNetV3(subnet.first_conv, subnet.blocks, config['b'], config['d'])
+    final_classifier = FinalClassifier(subnet.final_expand_layer, subnet.feature_mix_layer, subnet.classifier)
     img_size = (3, res, res)
-    classifiers = get_intermediate_classifiers_adaptive(model,
+    classifiers = get_intermediate_classifiers_adaptive(backbone,
+                                        final_classifier,
                                         img_size,
                                         n_classes,
-                                        binary_branch=get_binaries,
-                                        fix_last_layer=fix_last_layer)
+                                        binary_branch=get_binaries)
     
-    return model, classifiers
+    return backbone, classifiers
 
 def save_eenn(backbone, classifiers, best_backbone, best_classifiers, best_score, epoch, optimizer, ckpt_path):
     checkpoint = {
@@ -614,3 +632,18 @@ def save_eenn(backbone, classifiers, best_backbone, best_classifiers, best_score
         'epoch': epoch,
     }
     torch.save(checkpoint, ckpt_path)
+
+'''
+def get_eenn_from_OFA(subnet_path, n_classes=10, supernet='supernets/ofa_mbv3_d234_e346_k357_w1.0', pretrained=True, early_exit=False):
+
+    print("SUBNET PATH: ", subnet_path)
+    config = json.load(open(subnet_path))
+    ofa = OFAEvaluator(n_classes=n_classes,
+    model_path=supernet,
+    pretrained = pretrained)
+    r=config.get("r",32)
+    input_shape = (3,r,r)
+    subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
+    subnet = EEMobileNetV3(subnet.first_conv, subnet.blocks, config['b'], config['d'], subnet.final_expand_layer, subnet.feature_mix_layer, subnet.classifier)
+    return subnet, r
+'''

@@ -3,8 +3,8 @@ from collections import defaultdict
 import torch
 from torch import nn
 
-from models.EENN.base import BranchModel
-from models.EENN.costs import module_cost
+from models.base import BranchModel
+from models.costs import module_cost
 
 class AlexNet(BranchModel, nn.Module):
 

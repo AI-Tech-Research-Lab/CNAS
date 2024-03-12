@@ -8,7 +8,7 @@ from torch import nn
 import os, sys
 sys.path.append(os.getcwd())
 
-from models.EENN.base import BranchModel, IntermediateBranch
+from models.base import BranchModel, IntermediateBranch
 from train_utils import get_device
 
 
