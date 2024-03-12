@@ -1,6 +1,7 @@
 This repository contains the code for a Neural Architecture Search framework, based on MSUNAS[1], supporting for:
 - technological and functional constraints (introduced in CNAS[2])
-- early exit classifiers on top of OFA[3] backbones (introduced in EDANAS[4])
+- Early Exit classifiers on top of OFA[3] backbones (introduced in EDANAS[4]) and constrained in their number of MAC operations (introduced in NACHOS)
+- Out-Of-Distribution robustness optimization (introduced in FLATNAS)
 
 ## Requirements
 
@@ -10,7 +11,6 @@ This repository contains the code for a Neural Architecture Search framework, ba
 
 - `scripts` contains the scripts needed to perform a search using NAS
 - `results` contains the architecture found by search procedure (if any)
-- `benchmarks` contains the architectures used for benchmarking (scroll down to see the benchmarks) found by search procedure. This folder is not created by the NAS procedure, it is only used to prove the results.
 
 ## Dataset
 Download the dataset from the link embedded in the name.
@@ -106,3 +106,7 @@ Syntax: python train_cifar.py \
 [3] ONCE-FOR-ALL: TRAIN ONE NETWORK AND SPECIALIZE IT FOR EFFICIENT DEPLOYMENT, ICLR 2019 (https://openreview.net/pdf?id=HylxE1HKwS)
 
 [4] EDANAS: Adaptive Neural Architecture Search for Early Exit Neural Networks, IJCNN 2023 (https://ieeexplore.ieee.org/document/10191876)
+
+[5] NACHOS: Neural Architecture Search for Hardware Constrained Early Exit Neural Networks (https://arxiv.org/abs/2401.13330)
+
+[6] FlatNAS: optimizing Flatness in Neural Architecture Search for Out-of-Distribution Robustness (https://arxiv.org/abs/2402.19102)
