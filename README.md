@@ -1,7 +1,7 @@
 This repository contains the code for a Neural Architecture Search framework, based on MSUNAS[1], supporting for:
 - technological and functional constraints (introduced in CNAS[2])
 - Early Exit classifiers on top of OFA[3] backbones (introduced in EDANAS[4]) and constrained in their number of MAC operations (introduced in NACHOS)
-- Out-Of-Distribution robustness optimization (introduced in FLATNAS)
+- Out-Of-Distribution robustness optimization accounting for the flatness of the loss landscape (introduced in FLATNAS)
 
 ## Requirements
 
@@ -9,8 +9,12 @@ This repository contains the code for a Neural Architecture Search framework, ba
 
 ## Contents
 
-- `scripts` contains the scripts needed to perform a search using NAS
-- `results` contains the architecture found by search procedure (if any)
+- `scripts` contains the scripts needed to perform a search using NAS.
+- `results` contains the architecture found by search procedure (if any).
+- `supernets` contains the pretrained weights of the OFA supernets. Currently, we provide only the OFA MobilenetV3-based supernet.
+- `acc_predictor` contains the accuracy predictors used to evaluate candidate networks in the NAS search.
+- `early_exit` contains the trainer and the utilities for early exit
+- `robustness` contains the trainer and the utilities for robustness optimization
 
 ## Dataset
 Download the dataset from the link embedded in the name.
