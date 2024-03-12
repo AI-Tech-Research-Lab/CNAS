@@ -3,8 +3,9 @@ from collections import defaultdict
 import torch
 from torch import nn
 import torch.nn.utils as utils
+import os
 
-from models.base import BranchModel
+from early_exit.models.base import BranchModel
 from ofa.imagenet_classification.networks import MobileNetV3
 from ofa.utils import MyGlobalAvgPool2d
 
@@ -80,7 +81,6 @@ class FinalClassifier(nn.Module):
             x = self.global_avg_pool(x)  # global average pooling
             x = self.feature_mix_layer(x)
             x = x.view(x.size(0), -1)
-            print(x.shape)
             x = self.classifier(x)
             return x 
 

@@ -5,9 +5,10 @@ import os
 
 import numpy as np
 from ofa_evaluator import OFAEvaluator
+from ofa.utils.pytorch_utils import count_parameters
 
 import torch
-from torch.nn import Conv2d,ReLU,Linear,Sequential,Flatten,BatchNorm2d,AvgPool2d,MaxPool2d
+from torch.nn import Conv2d,ReLU,Linear,Sequential,Flatten,BatchNorm2d,AvgPool2d,MaxPool2d, Identity
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torchprofile import profile_macs
@@ -44,7 +45,6 @@ def get_net_info(net, input_shape=(3, 224, 224), print_info=False):
     Modified from https://github.com/mit-han-lab/once-for-all/blob/
     35ddcb9ca30905829480770a6a282d49685aa282/ofa/imagenet_codebase/utils/pytorch_utils.py#L139
     """
-    from ofa.utils.pytorch_utils import count_parameters
 
     # artificial input data
     inputs = torch.randn(1, 3, input_shape[-2], input_shape[-1])
@@ -90,12 +90,17 @@ def get_backbone_i_cost(backbone,input_size,num_exit):
     return info['params']/1e6, info['macs']/1e6
 
 def get_classifier_i_cost(predictor, input_sample):
+    #print("PREDICTOR",predictor)
     layers = [module for module in predictor.modules() if not isinstance(module, torch.nn.Sequential)]
     macs = 0
     for name, m_int in predictor.named_children():
+        #print("NAME",name)
         c = module_cost(input_sample, m_int)
+        #print("INPUT SAMPLE ", input_sample.shape)
         input_sample = m_int(input_sample)
+        #print("OUTPUT SAMPLE ", input_sample.shape)
         macs += c
+        #print("MACS",macs)
     params = 0
     for l in layers:
         params += sum(p.numel() for p in l.parameters() if p.requires_grad)
@@ -112,6 +117,7 @@ def get_intermediate_classifiers_cost(model, predictors, image_size):
     device = get_device(model)
 
     model.to(device)
+    predictors.to(device)
     x=x.to(device)
 
     model.eval() # this avoids batch norm error https://discuss.pytorch.org/t/error-expected-more-than-1-value-per-channel-when-training/26274
@@ -253,20 +259,22 @@ def get_intermediate_classifiers_adaptive(model, final_classifier,
     model = copy.deepcopy(model)
     final_classifier = copy.deepcopy(final_classifier)
     x = torch.randn((1,) + image_size)
-    print("X shape: ", x.shape)
     model.eval() # this avoids batch norm error https://discuss.pytorch.org/t/error-expected-more-than-1-value-per-channel-when-training/26274
     #outputs = get_blocks_mbv3(num_classes,x)
     #device of the model
     # Move the model to the CPU
     device = torch.device("cpu")
     model = model.to(device)
-    final_classifier = final_classifier.to(device)
+    fc = final_classifier.to(device)
     # Move the input tensor to the same device as the model
     x = x.to(device)
     outputs = model(x) 
-    for i in outputs:
-        print("shape of output", i.shape)
     filters = [32,64,128]
+    seq = nn.Sequential(fc.final_expand_layer, fc.global_avg_pool, fc.feature_mix_layer, nn.Flatten())
+    cl = fc.classifier
+    final_classifier = BinaryIntermediateBranch(preprocessing=seq,
+                                                 classifier=cl,
+                                                 return_one=True)
     predictors.append(final_classifier)
     outputs_ee = outputs[:-1]
     for i, o in enumerate(reversed(outputs_ee)):
@@ -306,9 +314,11 @@ def get_intermediate_classifiers_adaptive(model, final_classifier,
         _, b_macs_i = get_backbone_i_cost(model, image_size, i)
         _, c_macs_i = get_classifier_i_cost(pred, o)
         _, b_macs_next = get_backbone_i_cost(model, image_size, i+1)
-        print("Output shape: ", outputs[i+1].shape)
-        print(predictors[-1])
+        #if len(predictors) == 1: #compute the macs of the final classifier         
+        #    c_macs_next = int(profile_macs(predictors[-1], outputs[i+1]))/1e6 #get_net_info(predictors[-1], (input_sample[-3],input_sample[-2],input_sample[-1]))['macs']
+        #else:
         _, c_macs_next = get_classifier_i_cost(predictors[-1], outputs[i+1])
+        print("MACS:", c_macs_next)
         max_ks = calculate_maxpool_kernel_size(chs)
         ks = 1
         while((b_macs_i + c_macs_i) >= (b_macs_next + c_macs_next) 

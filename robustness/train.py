@@ -37,7 +37,7 @@ if __name__ == "__main__":
     parser.add_argument("--rho", default=2.0, type=int, help="Rho parameter for SAM.")
     parser.add_argument("--weight_decay", default=0.0004, type=float, help="L2 weight decay.") #5e-5
     parser.add_argument("--width_factor", default=8, type=int, help="How many times wider compared to normal ResNet.")
-    parser.add_argument("--val_fraction", default=0.1, type=float, help="Fraction of the training set used for the validation set.")
+    parser.add_argument("--val_split", default=0.1, type=float, help="Fraction of the training set used for the validation set.")
 
     #NEW##
     parser.add_argument('--optim', type=str, default='SAM', help='algorithm to use for training')
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     print(f"DATASET: {args.dataset}")
     train_loader, val_loader, test_loader = get_data_loaders(dataset=args.dataset, batch_size=args.batch_size, threads=args.threads, 
-                                            val_fraction=args.val_fraction, img_size=res, augmentation=True, eval_test=args.eval_test)
+                                            val_split=args.val_split, img_size=res, augmentation=True, eval_test=args.eval_test)
     
     if val_loader is None:
         val_loader = test_loader

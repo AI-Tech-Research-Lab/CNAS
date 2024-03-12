@@ -4,6 +4,11 @@ from operator import mul
 import torch
 from torch import nn
 
+from ofa.utils.layers import (
+    ConvLayer,
+    LinearLayer,
+)
+
 
 #Compute the cost as the number of MACs
 
@@ -63,6 +68,7 @@ def dense_cost(hparams, m):
 
 
 def module_cost(input_sample, m):
+    #print("Evaluate cost for module", m)
     image_shape = input_sample.shape[1:]
 
     if isinstance(m, nn.Conv2d):
@@ -73,7 +79,7 @@ def module_cost(input_sample, m):
         cost = avgpool_cost(image_shape, m)
     elif isinstance(m, nn.Linear):
         cost = dense_cost(image_shape, m)
-    elif isinstance(m, nn.Sequential):  # == ['Sequential', 'BasicBlock']:
+    elif isinstance(m, nn.Sequential) or isinstance(m, ConvLayer) or isinstance(m, LinearLayer):  # == ['Sequential', 'BasicBlock']:
         cost = sequential_cost(input_sample, m)
     else:
         cost = 0

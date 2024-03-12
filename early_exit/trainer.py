@@ -13,7 +13,9 @@ import os
 from evaluators import standard_eval, branches_eval, binary_eval, \
     binary_statistics
 from models.base import BranchModel
-from utils_ee import calculate_centroids_confidences, calculate_centroids_scores, extract_balanced_subset, get_device
+from models.mobilenet_v3 import EEMobileNetV3
+from utils_ee import calculate_centroids_confidences, calculate_centroids_scores, extract_balanced_subset, get_device, \
+ get_intermediate_backbone_cost, get_intermediate_classifiers_cost
 from copy import deepcopy
 
 torch.autograd.set_detect_anomaly(True)
@@ -327,7 +329,7 @@ def binary_bernulli_trainer(model: BranchModel,
                             early_stopping=None,
                             test_loader=None,
                             eval_loader=None,
-                            recursive=False,
+                            #recursive=False,
                             fix_last_layer=False,
                             normalize_weights=True,
                             prior_mode='ones',
@@ -472,15 +474,10 @@ def binary_bernulli_trainer(model: BranchModel,
         return norm_loss
 
     log = logging.getLogger(__name__)
-
-    #### Compute costs of the EENN
-
-    from utils import get_intermediate_backbone_cost, get_intermediate_classifiers_cost
-    from models.EENN.mobilenet_v3 import MobileNetV3
     
     input_size = (3,32,32)
 
-    if(isinstance(model,MobileNetV3)):
+    if(isinstance(model,EEMobileNetV3)):
        _, b_macs = get_intermediate_backbone_cost(model, input_size)
     else:
        dict_macs = model.computational_cost(torch.randn((1, 3, 32, 32)))
@@ -529,7 +526,7 @@ def binary_bernulli_trainer(model: BranchModel,
 
     # epochs = epochs + backbone_epochs
 
-    print("Checkpoint path: ", ckpt_path)
+    #print("Checkpoint path: ", ckpt_path)
     save_interval = 5
 
     if(ckpt_path is not None and os.path.exists(ckpt_path)):
@@ -544,7 +541,7 @@ def binary_bernulli_trainer(model: BranchModel,
         bar = range(epoch+1,epochs)
         print("Resume from epoch: ", epoch)
     else: 
-        print("No checkpoint found")
+        #print("No checkpoint found")
         bar = tqdm(range(epochs), leave=True)
 
     bar = range(epochs)#tqdm(range(epochs), leave=True)
@@ -922,7 +919,7 @@ def binary_bernulli_trainer(model: BranchModel,
                     't': current_temperature, 'w': current_prior_w,
                     #'Train score': train_scores, 'Test score': test_scores,
                     'Eval score': eval_scores if eval_scores != 0 else 0,
-                    'Global gate': sigma,
+                    #'Global gate': sigma,
                     'Mean loss': mean_loss, 'Gate loss': mean_gate_loss, 'Energy loss': mean_energy_loss,
                     'Support loss': mean_support_loss, 'Mean kl loss': mean_kl_loss
                 })
@@ -932,7 +929,7 @@ def binary_bernulli_trainer(model: BranchModel,
                     't': current_temperature, 'w': current_prior_w,
                     #'Train score': train_scores, 'Test score': test_scores,
                     'Eval score': eval_scores if eval_scores != 0 else 0,
-                    'Global gate': sigma,
+                    #'Global gate': sigma,
                     'Mean loss': mean_loss, 'Gate loss': mean_gate_loss, 'Energy loss': mean_energy_loss,
                     'Mean kl loss': mean_kl_loss
                 })

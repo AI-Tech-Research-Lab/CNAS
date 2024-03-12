@@ -616,7 +616,7 @@ class EarlyStopping:
             self.c = lambda a, b: a > b
 
 
-def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_fraction=0.0):
+def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_split=0.0):
 
     if name == 'mnist':
         t = [Resize((32, 32)),
@@ -842,10 +842,10 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_fr
         assert False
 
     # Split the dataset into training and validation sets
-    if val_fraction:
+    if val_split:
 
         train_len = len(train_set)
-        eval_len = int(train_len * val_fraction)
+        eval_len = int(train_len * val_split)
         train_len = train_len - eval_len
 
         train_set, val_set = torch.utils.data.random_split(train_set,
@@ -862,16 +862,11 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_fr
 
     return train_set, val_set, test_set, input_size, classes
 
-def get_data_loaders(dataset, batch_size=32, threads=1, val_fraction=0, img_size=32, augmentation=False, eval_test=True):
-    print(f"DATASET: {dataset}")
-    
-    # Retrieve train and test datasets
-    print(f"Augmentation: {augmentation}")
+def get_data_loaders(dataset, batch_size=32, threads=1, val_split=0, img_size=32, augmentation=False, eval_test=True):
 
-
-    train_set, val_test, test_set, _, _ = get_dataset(dataset, augmentation=augmentation, resolution=img_size, val_fraction=val_fraction)
+    train_set, val_test, test_set, _, _ = get_dataset(dataset, augmentation=augmentation, resolution=img_size, val_split=val_split)
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=threads, pin_memory=True)
-    if val_fraction:
+    if val_split:
         val_loader = DataLoader(train_set, batch_size=batch_size*2, shuffle=False, num_workers=threads, pin_memory=True)
     else:
         val_loader = None
@@ -883,14 +878,6 @@ def get_data_loaders(dataset, batch_size=32, threads=1, val_fraction=0, img_size
         test_loader=None
     
     return train_loader, val_loader, test_loader
-
-# Example usage:
-# train_loader, val_loader, test_loader = create_data_loaders(args)
-# for batch in train_loader:
-#     # Training loop
-# for batch in test_loader:
-#     # Testing loop (if args.eval_test is True)
-
 
 class SAM(torch.optim.Optimizer):
     def __init__(self, params, base_optimizer, rho=0.05, adaptive=False, **kwargs):

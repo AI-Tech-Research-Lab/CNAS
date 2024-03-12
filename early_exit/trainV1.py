@@ -38,7 +38,7 @@ if __name__ == "__main__":
     parser.add_argument("--adaptive", default=True, type=bool, help="True if you want to use the Adaptive SAM.")
     parser.add_argument('--dataset', type=str, default='imagenet', help='name of the dataset (imagenet, cifar10, cifar100, ...)')
     parser.add_argument("--data_aug", default=True, type=bool, help="True if you want to use data augmentation.")
-    parser.add_argument('--save', action='store_true', default=False, help='save checkpoint')
+    parser.add_argument('--save_ckpt', action='store_true', default=False, help='save checkpoint')
     parser.add_argument('--device', type=str, default='cpu', help='device to use for training / testing')
     parser.add_argument('--n_classes', type=int, default=10, help='number of classes of the given dataset')
     parser.add_argument('--supernet_path', type=str, default='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0', help='file path to supernet weights')
@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     #method: bernulli
     parser.add_argument("--method", type=str, default='bernulli', help="Method to use for training: bernulli or joint")
-    parser.add_argument("--fix_last_layer", default=True, action='store_true', help="True if you want to fix the last layer of the backbone.")
+    #parser.add_argument("--fix_last_layer", default=False, action='store_true', help="True if you want to fix the last layer of the backbone.")
     parser.add_argument("--gg_on", default=False, action='store_true', help="True if you want to use the global gate.")
     parser.add_argument("--load_backbone_from_archive", default=False, action='store_true', help="True if you want to use a pre-trained backbone from archive")
     parser.add_argument('--eval_test', action='store_true', default=True, help='evaluate test accuracy')
@@ -60,7 +60,7 @@ if __name__ == "__main__":
     parser.add_argument("--warmup_ee_epochs", default=2, type=int, help="Number of epochs to warmup the EENN")
     parser.add_argument("--ee_epochs", default=3, type=int, help="Number of epochs to train the EENN")
     parser.add_argument("--priors", default=0.5, type=float, help="Prior probability for the Bernoulli distribution.")
-    parser.add_argument("--joint_type", default='logits', type=str, help="Type of joint training: logits, predictions or losses.")
+    parser.add_argument("--joint_type", default='logits', type=str, help="Type of joint training: logits or losses.")
     parser.add_argument("--beta", default=1, type=float, help="Beta parameter for the Bernoulli distribution.")
     parser.add_argument("--sample", default=False, type=bool, help="True if you want to sample from the Bernoulli distribution.")
     #parser.add_argument("--recursive", default=True, type=bool, help="True if you want to use recursive training.") #not used
@@ -74,12 +74,35 @@ if __name__ == "__main__":
     parser.add_argument("--w_alpha", default=1.0, type=float, help="Weight for the accuracy loss.")
     parser.add_argument("--w_beta", default=0.0, type=float, help="Weight for the MACs loss.")
     parser.add_argument("--w_gamma", default=0.0, type=float, help="Weight for the calibration loss.")
-    parser.add_argument("--train_weights", default=True, action='store_true', help="True if you want to train the weights.")
+
+    '''
+    parser.add_argument('--optim', type=str, default='SAM', help='algorithm to use for training')
+    parser.add_argument("--sigma_min", default=0.05, type=float, help="min noise perturbation intensity")
+    parser.add_argument("--sigma_max", default=0.05, type=float, help="max noise perturbation intensity")
+    parser.add_argument("--sigma_step", default=0.0, type=float, help="step noise perturbation intensity")
+    parser.add_argument('--device', type=str, default='cpu', help='device to use for training / testing')
+    parser.add_argument('--data', type=str, default='/mnt/datastore/ILSVRC2012', help='location of the data corpus')
+    parser.add_argument('--dataset', type=str, default='imagenet', help='name of the dataset (imagenet, cifar10, cifar100, ...)')
+    parser.add_argument('--model', type=str, default='mobilenetv3', help='name of the model (mobilenetv3, ...)')
+    parser.add_argument('--n_classes', type=int, default=1000, help='number of classes of the given dataset')
+    parser.add_argument('--supernet_path', type=str, default='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0', help='file path to supernet weights')
+    parser.add_argument('--model_path', type=str, default=None, help='file path to subnet')
+    parser.add_argument('--output_path', type=str, default=None, help='file path to save results')
+    parser.add_argument('--pretrained', action='store_true', default=False, help='use pretrained weights')
+    parser.add_argument('--ood_eval', action='store_true', default=False, help='evaluate OOD robustness')
+    parser.add_argument('--save_ckpt', action='store_true', default=False, help='save checkpoint')
+    parser.add_argument('--eval_robust', action='store_true', default=False, help='evaluate robustness')   
+    parser.add_argument('--eval_test', action='store_true', default=True, help='evaluate test accuracy')  
+    parser.add_argument('--load_ood', action='store_true', default=False, help='load pretrained OOD folders') 
+    parser.add_argument('--ood_data', type=str, default=None, help='OOD dataset')
+    parser.add_argument('--alpha', default=0.5, type=float, help="weight for top1_robust")
+    parser.add_argument('--res', default=32, type=int, help="default resolution for training")  
+    parser.add_argument('--pmax', default=2.0, type=float, help="constraint on params")
+    parser.add_argument('--p', default=0.0, type=float, help="penalty on params")
+    parser.add_argument('--alpha_norm', default=1.0, type=float, help="weight for top1_robust normalization")
+    '''
 
     args = parser.parse_args()
-
-    #log = logging.getLogger(__name__)
-    #log.info(" message ")
 
     device = args.device
     print("torch cuda available: ", torch.cuda.is_available())
@@ -105,12 +128,11 @@ if __name__ == "__main__":
     else:
         get_binaries = False
 
-    early_stopping = None
-
+    '''
     fix_last_layer = False
     if get_binaries:
         fix_last_layer = args.fix_last_layer
-    
+    '''
     backbone, res = get_net_from_OFA(subnet_path=args.model_path, 
                                 supernet=args.supernet_path, 
                                 n_classes=args.n_classes, 
@@ -124,7 +146,7 @@ if __name__ == "__main__":
     if val_loader is None:
         val_loader = test_loader
 
-    train_log = Log(log_each=10)
+    log = Log(log_each=10)
 
     #parameters = chain(backbone.parameters(), classifiers.parameters())
 
@@ -142,7 +164,7 @@ if __name__ == "__main__":
 
     else:
         
-        top1, backbone, optimizer = train(train_loader, val_loader, args.backbone_epochs, backbone, device, optimizer, scheduler, train_log, ckpt_path=args.output_path)
+        top1, backbone, optimizer = train(train_loader, val_loader, args.backbone_epochs, backbone, device, optimizer, scheduler, log, ckpt_path=args.output_path)
 
     #Create the EENN on top of the trained backbone
 
@@ -203,6 +225,94 @@ if __name__ == "__main__":
             print("LOADED BACKBONE FROM " + backbone_dir)
     '''
 
+    pre_trained_model_path = os.path.join(args.output_path, 'bb_s.pt')
+    pre_trained_classifier_path = os.path.join(args.output_path, 'c_s.pt')
+            
+    if os.path.exists(pre_trained_model_path) and \
+            os.path.exists(pre_trained_classifier_path):
+        #log.info('Pre trained model loaded')
+        
+        backbone.load_state_dict(
+            torch.load(pre_trained_model_path,
+                        map_location=device))
+        
+        state_dict = torch.load(pre_trained_classifier_path,
+                        map_location=device)
+
+        # Define a prefix for the weights you want to filter (e.g., "1.classifier.1")
+        #prefix = str(backbone.n_branches()-1)
+
+        prefix=0
+        for el in state_dict.keys():
+            prefix=max(prefix,int(el.split('.')[0]))
+        prefix=str(prefix)
+        
+        # Filter the state_dict to select only the weights with the specified prefix and remove it 
+        filtered_state_dict = {key[len(prefix)+1:]: value for key, value in state_dict.items() if key.startswith(prefix)}
+        
+        classifiers[-1].load_state_dict(filtered_state_dict)
+                
+    else:
+            
+        #os.makedirs(pre_trained_path, exist_ok=True)
+
+        print('Training the base model')
+
+        backbone.to(device)
+        classifiers.to(device)
+
+        train_loader, val_loader, test_loader = get_data_loaders(dataset=args.dataset, batch_size=args.batch_size, threads=args.threads, 
+                                            val_fraction=args.val_split, img_size=res, augmentation=True, eval_test=args.eval_test)
+
+        #parameters = chain(backbone.parameters(), classifiers.parameters())
+
+        optimizer = get_optimizer(backbone.parameters(), args.optim, args.learning_rate, args.momentum, args.weight_decay)
+        
+        scheduler = get_lr_scheduler(optimizer, 'step', epochs=args.epochs)
+
+        top1, backbone, optimizer = train(train_loader=train_loader, 
+              val_loader=val_loader, 
+              num_epochs=args.epochs, 
+              model=backbone, 
+              device=device, 
+              optimizer=optimizer, 
+              scheduler=scheduler, 
+              log=log, 
+              ckpt_path=args.output_path)
+
+        
+        res = standard_trainer(model=backbone,
+                                predictors=classifiers,
+                                optimizer=optimizer,
+                                train_loader=train_loader,
+                                epochs=args.epochs,
+                                scheduler=scheduler,
+                                early_stopping=None,
+                                test_loader=test_loader,
+                                eval_loader=val_loader,
+                                ckpt_path = None
+                                )[0]
+        
+
+        backbone_dict, classifiers_dict = res
+        # classifiers.load_state_dict(classifiers_dict)
+        
+        torch.save(backbone_dict,
+                    pre_trained_model_path)
+        torch.save(classifiers_dict,
+                    pre_trained_classifier_path)
+        
+        classifiers.load_state_dict(classifiers_dict)
+        backbone.load_state_dict(backbone_dict)
+
+        print('Pre trained model Saved.')
+    
+
+    # train_scores = standard_eval(model=backbone,
+    #                              dataset_loader=trainloader,
+    #                              classifier=pretrained_classifiers[
+    #                                  -1])
+
     test_scores = standard_eval(model=backbone,
                                 dataset_loader=test_loader,
                                 classifier=classifiers[
@@ -258,12 +368,20 @@ if __name__ == "__main__":
         backbone.to(device)
         classifiers.to(device)
 
+        # optimizer = optim.SGD(chain(backbone1.parameters(),
+        #                             backbone2.parameters(),
+        #                             backbone3.parameters(),
+        #                             classifier.parameters()), lr=0.01,
+        #                       momentum=0.9)
+        #log.info('Training started.')
+
         parameters = chain(backbone.parameters(),
                             classifiers.parameters())
 
         optimizer = get_optimizer(parameters, args.optim, args.learning_rate, args.momentum, args.weight_decay)
 
         # load weights from previous optimizer
+
 
         if args.method == 'bernulli':
 
@@ -282,7 +400,7 @@ if __name__ == "__main__":
                                             eval_loader=val_loader,
                                             #recursive=args.recursive,
                                             test_loader=test_loader,
-                                            fix_last_layer=fix_last_layer,
+                                            #fix_last_layer=fix_last_layer,
                                             normalize_weights=
                                             args.normalize_weights,
                                             temperature_scaling=
@@ -293,7 +411,7 @@ if __name__ == "__main__":
                                             args.regularization_scaling,
                                             dropout=args.dropout,
                                             #backbone_epochs=backbone_epochs,
-                                            early_stopping=early_stopping,
+                                            early_stopping=None,#args.early_stopping,
                                             gg_on=args.gg_on,
                                             support_set=args.support_set,
                                             mmax = args.mmax,
@@ -312,13 +430,16 @@ if __name__ == "__main__":
             backbone.load_state_dict(backbone_dict)
             classifiers.load_state_dict(classifiers_dict)
 
-        elif args.method == 'joint':
-            weights = torch.tensor([1.0] * backbone.n_branches(), device=device)
+        elif method_name == 'joint':
+            joint_type = method_cfg.get('joint_type', 'losses')
+            weights = method_cfg.get('weights', None)
+            train_weights = method_cfg.get('train_weights', False)
 
-            if args.train_weights:
-                #weights = torch.tensor(weights, device=device, dtype=torch.float)
+            if train_weights:
+                weights = torch.tensor(weights, device=device,
+                                        dtype=torch.float)
 
-                if args.joint_type == 'predictions':
+                if joint_type == 'predictions':
                     weights = weights.unsqueeze(-1)
                     weights = weights.unsqueeze(-1)
 
@@ -328,18 +449,18 @@ if __name__ == "__main__":
                                     [weights])
 
                 optimizer = get_optimizer(parameters=parameters,
-                                            name=args.optim,
-                                            lr=args.lr,
-                                            momentum=args.momentum,
-                                            weight_decay=args.weight_decay)
+                                            name=optimizer_name,
+                                            lr=lr,
+                                            momentum=momentum,
+                                            weight_decay=weight_decay)
 
             res = joint_trainer(model=backbone, predictors=classifiers,
-                                optimizer=args.optim,
-                                weights=weights, train_loader=train_loader,
-                                epochs=args.ee_epochs,
-                                scheduler=None, joint_type=args.joint_type,
-                                test_loader=test_loader,
-                                eval_loader=val_loader,
+                                optimizer=optimizer,
+                                weights=weights, train_loader=trainloader,
+                                epochs=epochs,
+                                scheduler=None, joint_type=joint_type,
+                                test_loader=testloader,
+                                eval_loader=eval_loader,
                                 early_stopping=early_stopping)[0]
 
             backbone_dict, classifiers_dict = res
@@ -351,12 +472,12 @@ if __name__ == "__main__":
 
             res = standard_trainer(model=backbone,
                                     predictors=classifiers,
-                                    optimizer=args.optimizer,
-                                    train_loader=train_loader,
-                                    epochs=args.ee_epochs,
+                                    optimizer=optimizer,
+                                    train_loader=trainloader,
+                                    epochs=epochs,
                                     scheduler=None,
-                                    test_loader=test_loader,
-                                    eval_loader=val_loader,
+                                    test_loader=testloader,
+                                    eval_loader=eval_loader,
                                     early_stopping=early_stopping)[0]
 
             backbone_dict, classifiers_dict = res
@@ -367,7 +488,7 @@ if __name__ == "__main__":
         else:
             assert False
 
-        if args.save:
+        if save:
             torch.save(backbone.state_dict(), os.path.join(path,
                                                             'bb.pt'))
             torch.save(classifiers.state_dict(),
@@ -394,7 +515,7 @@ if __name__ == "__main__":
 
         ## ECE SCORE ##
 
-        stats_ece = ece_score(model=backbone,predictors=classifiers, dataset_loader=test_loader)
+        stats_ece = ece_score(model=backbone,predictors=classifiers, dataset_loader=testloader)
         ece_scores={}
         for i,k in enumerate(stats_ece):
             ece_scores[i]=k[0]
@@ -412,7 +533,7 @@ if __name__ == "__main__":
 
         for epsilon in [0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8]:#, 0.9, 0.95, 0.98]:
             a, b = binary_eval(model=backbone,
-                                dataset_loader=test_loader,
+                                dataset_loader=testloader,
                                 predictors=classifiers,
                                 epsilon=[
                                             0.7 if epsilon <= 0.7 else epsilon] +
@@ -532,11 +653,11 @@ if __name__ == "__main__":
 
     #log.info('Best epsilon: {}'.format(best_epsilon))
     #log.info('Best cumulative threshold: {}'.format(best_cumulative))
-    #log.info('Branches scores on exiting samples: {}'.format(best_scores))
-    #log.info('Exit ratios: {}'.format(weights))
-    #log.info('Average MACS: {:.2f}'.format(avg_macs))
+    log.info('Branches scores on exiting samples: {}'.format(best_scores))
+    log.info('Exit ratios: {}'.format(weights))
+    log.info('Average MACS: {:.2f}'.format(avg_macs))
     
-    if args.save:
+    if save:
         save_path = os.path.join(path, 'net_{}.stats'.format(n_subnet)) # #exp__path = ..iter_x/exp_y 
 
         with open(save_path, 'w') as handle:
@@ -548,5 +669,5 @@ if __name__ == "__main__":
     # Print the current time
     print("Current time:", current_time)
 
-    #log.info('#' * 100)
+    log.info('#' * 100)
     
