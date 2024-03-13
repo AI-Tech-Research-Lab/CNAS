@@ -1,4 +1,4 @@
-python msunas.py  --sec_obj avg_macs \
+python cnas.py  --sec_obj avg_macs \
               --n_gpus 1 --gpu 1 --n_workers 4 \
               --dataset cifar100 \
               --predictor as --search_space cbnmobilenetv3 \

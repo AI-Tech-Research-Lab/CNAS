@@ -1,4 +1,4 @@
-python msunas.py --sec_obj macs --n_doe 1 \
+python cnas.py --sec_obj macs --n_doe 1 \
               --n_gpus 8 --gpu 1 --n_workers 4 --n_epochs 5 \
               --dataset cifar10 --n_classes 10 \
               --data ../data/cifar10 \

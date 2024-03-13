@@ -1,4 +1,4 @@
-python msunas.py --resume ../results/cifar10-cbn-mbv3-8sept-nocalibration/iter_2 --sec_obj avg_macs \
+python cnas.py --resume ../results/cifar10-cbn-mbv3-8sept-nocalibration/iter_2 --sec_obj avg_macs \
               --n_gpus 1 --gpu 1 --n_workers 4 \
               --dataset cifar10 \
               --predictor as --supernet_path ./ofa_nets/ofa_cbnmbv3 --pretrained  \

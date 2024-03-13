@@ -5,7 +5,7 @@ seed=1
 first_obj=top1
 #first_obj=robustness
 
-python msunas.py --gpu 1 --gpu_list 0 2 \
+python cnas.py --gpu 1 --gpu_list 0 2 \
         --n_workers 4 \
         --first_obj robustness --first_predictor mlp \
         --data ../datasets/$dataset --dataset $dataset \

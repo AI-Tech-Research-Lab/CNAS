@@ -24,7 +24,7 @@ n_epochs=10
 
 
 
-python trainers/entropic/train.py --dataset $dataset --ood_data $ood_data --ood_eval \
+python robustness/train.py --dataset $dataset --ood_data $ood_data --ood_eval \
     --data ../datasets/$dataset --model $model --device $device \
     --model_path ../results/entropic-mbv3-$dataset-$optim-$first_obj-alpha$alpha-sigma$sigma-ep$n_epochs-10jan/final/net-top1_0/net.subnet \
     --output_path ../results/entropic-mbv3-$dataset-$optim-$first_obj-alpha$alpha-sigma$sigma-ep$n_epochs-10jan/final/net-top1_0 \
