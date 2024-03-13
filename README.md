@@ -1,4 +1,4 @@
-This repository contains the code for a Neural Architecture Search framework supporting for:
+This repository contains the code for a Neural Architecture Search (NAS) framework supporting for:
 - technological and functional constraints (introduced in CNAS[1])
 - Early Exit classifiers on top of OFA[2] backbones (introduced in EDANAS[3]) and constrained in their number of MAC operations (introduced in NACHOS [4])
 - Out-Of-Distribution (OOD) robustness optimization accounting for the flatness of the loss landscape (introduced in FLATNAS [5])
