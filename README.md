@@ -20,7 +20,12 @@ This repository contains the code for a Neural Architecture Search framework, ba
 Download the dataset from the link embedded in the name.
 | Dataset | Type | Train Size | Test Size | #Classes |
 |:-:|:-:|:-:|:-:|:-:|
-| [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html)* |  | 50,000 | 10,000 | 10 |
+| [ImageNet](http://www.image-net.org/) | multi-class | 1,281,167 | 50,000 | 1,000 |
+| [CINIC-10](https://github.com/BayesWatch/cinic-10) |  | 180,000 | 9,000 | 10 |
+| [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html)* | | 50,000 | 10,000 | 10 |
+| [CIFAR-100](https://www.cs.toronto.edu/~kriz/cifar.html)* |  | 50,000 | 10,000 | 100 |
+| [SVHN] (http://ufldl.stanford.edu/housenumbers) | 73257 | 26032 | 10 |
+
 
 ## How to launch the search
 ```python
