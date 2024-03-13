@@ -1,7 +1,7 @@
 This repository contains the code for a Neural Architecture Search framework, based on MSUNAS[1], supporting for:
 - technological and functional constraints (introduced in CNAS[2])
 - Early Exit classifiers on top of OFA[3] backbones (introduced in EDANAS[4]) and constrained in their number of MAC operations (introduced in NACHOS [5])
-- Out-Of-Distribution robustness optimization accounting for the flatness of the loss landscape (introduced in FLATNAS [6])
+- Out-Of-Distribution (OOD) robustness optimization accounting for the flatness of the loss landscape (introduced in FLATNAS [6])
 
 ## Requirements
 
@@ -75,7 +75,6 @@ Syntax: python msunas.py \
   - In case any architectures failed to evaluate during search, you may re-visit them in `failed` sub-dir under experiment dir. 
 - You can resume the search from a specific previously performed iteration using the `resume` option and specifying the path to the `iter_x.stats` file.
 - `--search_space` is used to select whether to search single-exit MobileNets (`mobilenetv3`) or multi-exits (i.e., Early Exit Neural Networks) Mobilenets (`eemobilenetv3`).
-- 
 ## How to choose architectures
 Once the search is completed, you can choose suitable architectures by:
 - You have preferences, e.g. architectures with xx.x% top-1 acc. and xxxM FLOPs, etc.
