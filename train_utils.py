@@ -616,13 +616,14 @@ class EarlyStopping:
             self.c = lambda a, b: a > b
 
 
-def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_split=0.0):
+def get_dataset(name, model_name=None, augmentation=False, resolution=32, use_val=False):
 
     if name == 'mnist':
         t = [Resize((32, 32)),
              ToTensor(),
              Normalize((0.1307,), (0.3081,)),
              ]
+
         if model_name == 'lenet-300-100':
             t.append(torch.nn.Flatten())
 
@@ -741,6 +742,7 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_sp
             transform=transform)
 
         input_size, classes = (3, resolution, resolution), 10
+        val_split=0.2
 
     elif name == 'cifar100':
 
@@ -775,6 +777,7 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_sp
             transform=transform)
 
         input_size, classes = (3, resolution, resolution), 100
+        val_split=0.2
     
     elif name == 'cinic10':
 
@@ -842,7 +845,7 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_sp
         assert False
 
     # Split the dataset into training and validation sets
-    if val_split:
+    if use_val:
 
         train_len = len(train_set)
         eval_len = int(train_len * val_split)
@@ -862,11 +865,13 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_sp
 
     return train_set, val_set, test_set, input_size, classes
 
-def get_data_loaders(dataset, batch_size=32, threads=1, val_split=0, img_size=32, augmentation=False, eval_test=True):
+def get_data_loaders(dataset, batch_size=32, threads=1, img_size=32, augmentation=False, use_val=False, eval_test=True):
 
-    train_set, val_test, test_set, _, _ = get_dataset(dataset, augmentation=augmentation, resolution=img_size, val_split=val_split)
+    train_set, val_test, test_set, _, _ = get_dataset(dataset, augmentation=augmentation, resolution=img_size, use_val=use_val)
+
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=threads, pin_memory=True)
-    if val_split:
+    
+    if use_val:
         val_loader = DataLoader(train_set, batch_size=batch_size*2, shuffle=False, num_workers=threads, pin_memory=True)
     else:
         val_loader = None

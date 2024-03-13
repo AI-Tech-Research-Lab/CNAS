@@ -33,7 +33,7 @@ if __name__ == "__main__":
     parser.add_argument("--momentum", default=0.9, type=float, help="SGD Momentum.")
     parser.add_argument("--threads", default=2, type=int, help="Number of CPU threads for dataloaders.")
     parser.add_argument("--weight_decay", default=0.0004, type=float, help="L2 weight decay.")
-    parser.add_argument("--val_split", default=0.0, type=float, help="Split of the training set used for the validation set.")
+    parser.add_argument('--use_val', action='store_true', default=False, help='use validation set')
     parser.add_argument('--optim', type=str, default='SGD', help='algorithm to use for training')
     parser.add_argument("--adaptive", default=True, type=bool, help="True if you want to use the Adaptive SAM.")
     parser.add_argument('--dataset', type=str, default='imagenet', help='name of the dataset (imagenet, cifar10, cifar100, ...)')
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     print("Resolution: ", res)
 
     train_loader, val_loader, test_loader = get_data_loaders(dataset=args.dataset, batch_size=args.batch_size, threads=args.threads, 
-                                            val_fraction=args.val_split, img_size=res, augmentation=True, eval_test=args.eval_test)
+                                            use_val=args.use_val, img_size=res, augmentation=True, eval_test=args.eval_test)
     
     if val_loader is None:
         val_loader = test_loader
