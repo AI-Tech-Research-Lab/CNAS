@@ -28,7 +28,7 @@ Download the dataset from the link embedded in the name.
 | [CIFAR-10-C](https://github.com/hendrycks/robustness) | OOD| 50,000 | 10,000 | 10 |
 | [CIFAR-100-C](https://github.com/hendrycks/robustness) | | 50,000 | 10,000 | 100 |
 
-- The OOD datasets are perturbed versions of the IID counterparts. 15 types of distortions are available. 
+- The OOD datasets are perturbed versions of the IID counterparts. 15 types of distortions (e.g., Gaussian Noise and Impulse Noise) are available. 
 
 ## How to launch the search
 ```python
