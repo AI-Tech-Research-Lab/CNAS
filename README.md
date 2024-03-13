@@ -11,10 +11,10 @@ This repository contains the code for a Neural Architecture Search framework, ba
 
 - `scripts` contains the scripts needed to perform a search using NAS.
 - `results` contains the architecture found by search procedure (if any).
-- `supernets` contains the pretrained weights of the OFA supernets. Currently, we provide only the OFA MobilenetV3-based supernet.
+- `supernets` contains the pretrained weights of the OFA supernets.
 - `acc_predictor` contains the accuracy predictors used to evaluate candidate networks in the NAS search.
-- `early_exit` contains the trainer and the utilities for early exit
-- `robustness` contains the trainer and the utilities for robustness optimization
+- `early_exit` contains the trainer and the utilities for early exit.
+- `robustness` contains the trainer and the utilities for robustness optimization.
 
 ## Dataset
 Download the dataset from the link embedded in the name.
