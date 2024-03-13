@@ -1,7 +1,7 @@
-This repository contains the code for a Neural Architecture Search framework, based on MSUNAS[1], supporting for:
-- technological and functional constraints (introduced in CNAS[2])
-- Early Exit classifiers on top of OFA[3] backbones (introduced in EDANAS[4]) and constrained in their number of MAC operations (introduced in NACHOS [5])
-- Out-Of-Distribution (OOD) robustness optimization accounting for the flatness of the loss landscape (introduced in FLATNAS [6])
+This repository contains the code for a Neural Architecture Search framework supporting for:
+- technological and functional constraints (introduced in CNAS[1])
+- Early Exit classifiers on top of OFA[2] backbones (introduced in EDANAS[3]) and constrained in their number of MAC operations (introduced in NACHOS [4])
+- Out-Of-Distribution (OOD) robustness optimization accounting for the flatness of the loss landscape (introduced in FLATNAS [5])
 
 ## Requirements
 
@@ -102,14 +102,12 @@ To realize the full potential of the searched architectures, we further train th
 
 ## References
 
-[1] NSGANetV2: Evolutionary Multi-Objective Surrogate-Assisted Neural Architecture Search, ECCV 2020 (https://www.ecva.net/papers/eccv_2020/papers_ECCV/papers/123460035.pdf)
+[1] CNAS: Constrained Neural Architecture Search, SMC 2022 (https://ieeexplore.ieee.org/document/9945080)
 
-[2] CNAS: Constrained Neural Architecture Search, SMC 2022 (https://ieeexplore.ieee.org/document/9945080)
+[2] ONCE-FOR-ALL: TRAIN ONE NETWORK AND SPECIALIZE IT FOR EFFICIENT DEPLOYMENT, ICLR 2019 (https://openreview.net/pdf?id=HylxE1HKwS)
 
-[3] ONCE-FOR-ALL: TRAIN ONE NETWORK AND SPECIALIZE IT FOR EFFICIENT DEPLOYMENT, ICLR 2019 (https://openreview.net/pdf?id=HylxE1HKwS)
+[3] EDANAS: Adaptive Neural Architecture Search for Early Exit Neural Networks, IJCNN 2023 (https://ieeexplore.ieee.org/document/10191876)
 
-[4] EDANAS: Adaptive Neural Architecture Search for Early Exit Neural Networks, IJCNN 2023 (https://ieeexplore.ieee.org/document/10191876)
+[4] NACHOS: Neural Architecture Search for Hardware Constrained Early Exit Neural Networks (https://arxiv.org/abs/2401.13330)
 
-[5] NACHOS: Neural Architecture Search for Hardware Constrained Early Exit Neural Networks (https://arxiv.org/abs/2401.13330)
-
-[6] FlatNAS: optimizing Flatness in Neural Architecture Search for Out-of-Distribution Robustness (https://arxiv.org/abs/2402.19102)
+[5] FlatNAS: optimizing Flatness in Neural Architecture Search for Out-of-Distribution Robustness (https://arxiv.org/abs/2402.19102)
