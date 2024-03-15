@@ -34,28 +34,21 @@ Download the dataset from the link embedded in the name.
 ```python
 Syntax: python msunas.py \
     --resume /path/to/iter/stats \ # iter stats file path
-    --sec_obj [params/macs/activations/tiny_ml/avg_macs] \ # objective (in addition to top-1 acc)
     --n_gpus 8 \ # number of available gpus
     --gpu 1 \ # required number of gpus per evaluation job
     --n_workers 0 \ # number of threads for dataloader
-    --n_epochs 5 \ # number of epochs to SGD training. 5 is the suggested value.
+    --n_epochs 5 \ # number of epochs of training of a candidate network. 5 is the suggested value.
     --dataset [cifar10/cifar100/imagenet] \ # dataset 
     --n_classes [10/100/1000] \ # number of classes
     --data /path/to/data/ \ # dataset folder path
-    --predictor [as/carts/rbf/mlp/gp] \ # type of accuracy predictor. 'as' stands for Adaptive Switching
+    --first_obj [top1/top1_robust] \ #first objective of the NAS optimization
+    --sec_obj [params/macs/activations/tiny_ml/avg_macs/top1_robust] \ # second objective of the NAS optimization (optional)
+    --first_predictor [as/carts/rbf/mlp/gp] \ # type of the predictor for the first objective. 'as' stands for Adaptive Switching
+    --sec_predictor [as/carts/rbf/mlp/gp] \ # type of the predictor for the second objective. 'as' stands for Adaptive Switching
     --supernet_path /path/to/supernet/weights \ # supernet model path
     --search_space \ # ['mobilenetv3', 'eemobilenetv3']
-    --pretrained \ # flag to use the supernet pretrained weights
     --save /path/to/results/folder \ # results folder path
     --iterations [30] \ # number of NAS iterations
-    --vld_size [10000/5000/...] \ # number of subset images from training set to guide search 
-    --pmax [2] \ # max number of params for candidate architecture
-    --mmax [100] \ # max number of macs for candidate architecture
-    --amax [5] \ # max number of activations for candidate architecture
-    --wp [1] \ # weight for params
-    --wm [1/40] \ # weight for macs
-    --wa [1] \ # weight for activations
-    --penalty [10**10] # penalty factor
     --lr [192] \ # minimum resolution of the search
     --ur [256] # maximum resolution of the search
     -- # Other parameters specific to the task (e.g., the intensity of the perturbation of the weights to study the flatness of the loss landscape)
@@ -67,7 +60,6 @@ Syntax: python msunas.py \
 - *tiny_ml* is a figure of merit, introduced in CBNAS, accounting jointly for *params*, *macs*, *activations* and the related constraints.
 - *avg_macs* is a figure of merit, introduced in EDANAS, for Early Exit Neural Networks accounting for the sum of the number of MACs of each exit of an EENN weighted by the exit ratios of the data. It is different from *macs* which accounts for the number of MACs of the backbone network (i.e., considering the network with a single exit, the final classifier).
 - *top1_robust* is a figure of merit, introduced in FLATNAS, accounting jointly for top1 accuracy and the flatness of the loss landscape. It is a metric for OOD generalization.
-- Choose an appropriate `--vld_size` to guide the search, e.g. 5,000 for CIFAR-10.
 - To launch the search you can simply run a file in the `scripts` folder.
 - Output file structure:
   - Every architecture sampled during search has `net.subnet` and `net.stats` stored in the corresponding iteration dir. 
