@@ -18,7 +18,7 @@ from evaluators import binary_eval, entropy_eval, standard_eval, \
     branches_eval, binary_statistics, binary_statistics_cumulative, ece_score
 from trainer import binary_bernulli_trainer, joint_trainer, \
     standard_trainer
-from train_utils import get_data_loaders, get_optimizer, get_lr_scheduler, initialize_seed, train, validate, load_checkpoint, Log
+from train_utils import get_data_loaders, get_optimizer, get_loss, get_lr_scheduler, initialize_seed, train, validate, load_checkpoint, Log
 from utils_ee import get_intermediate_backbone_cost, get_intermediate_classifiers_cost, get_ee_scores, get_subnet_folder_by_backbone, get_net_info, get_eenn
 from utils import get_net_from_OFA
 
@@ -29,10 +29,10 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=128, type=int, help="Batch size used in the training and validation loop.")
     #parser.add_argument("--epochs", default=200, type=int, help="Total number of epochs.")
     parser.add_argument("--label_smoothing", default=0.1, type=float, help="Use 0.0 for no label smoothing.")
-    parser.add_argument("--learning_rate", default=0.05, type=float, help="Base learning rate at the start of the training.") #0.1
+    parser.add_argument("--learning_rate", default=0.1, type=float, help="Base learning rate at the start of the training.") #0.1
     parser.add_argument("--momentum", default=0.9, type=float, help="SGD Momentum.")
     parser.add_argument("--threads", default=2, type=int, help="Number of CPU threads for dataloaders.")
-    parser.add_argument("--weight_decay", default=0.0004, type=float, help="L2 weight decay.")
+    parser.add_argument("--weight_decay", default=5e-5, type=float, help="L2 weight decay.")
     parser.add_argument('--use_val', action='store_true', default=False, help='use validation set')
     parser.add_argument('--optim', type=str, default='SGD', help='algorithm to use for training')
     parser.add_argument("--adaptive", default=True, type=bool, help="True if you want to use the Adaptive SAM.")
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     parser.add_argument('--eval_test', action='store_true', default=True, help='evaluate test accuracy')
     parser.add_argument("--backbone_epochs", default=5, type=int, help="Number of epochs to train the backbone.")
     parser.add_argument("--warmup_ee_epochs", default=2, type=int, help="Number of epochs to warmup the EENN")
-    parser.add_argument("--ee_epochs", default=3, type=int, help="Number of epochs to train the EENN")
+    parser.add_argument("--ee_epochs", default=0, type=int, help="Number of epochs to train the EENN using the support set")
     parser.add_argument("--priors", default=0.5, type=float, help="Prior probability for the Bernoulli distribution.")
     parser.add_argument("--joint_type", default='logits', type=str, help="Type of joint training: logits, predictions or losses.")
     parser.add_argument("--beta", default=1, type=float, help="Beta parameter for the Bernoulli distribution.")
@@ -70,27 +70,35 @@ if __name__ == "__main__":
     parser.add_argument("--temperature_scaling", default=True, type=bool, help="True if you want to use temperature scaling.")
     parser.add_argument("--regularization_scaling", default=False, type=bool, help="True if you want to use regularization scaling.")
     parser.add_argument("--dropout", default=0.0, type=float, help="Dropout probability.")
-    parser.add_argument("--support_set", default=False, type=bool, help="True if you want to use the support set.")
+    parser.add_argument("--support_set", default=False, action='store_true', help="True if you want to use the support set.")
     parser.add_argument("--w_alpha", default=1.0, type=float, help="Weight for the accuracy loss.")
-    parser.add_argument("--w_beta", default=0.0, type=float, help="Weight for the MACs loss.")
-    parser.add_argument("--w_gamma", default=0.0, type=float, help="Weight for the calibration loss.")
+    parser.add_argument("--w_beta", default=1.0, type=float, help="Weight for the MACs loss.")
+    parser.add_argument("--w_gamma", default=1.0, type=float, help="Weight for the calibration loss.")
     parser.add_argument("--train_weights", default=True, action='store_true', help="True if you want to train the weights.")
 
     args = parser.parse_args()
 
-    #log = logging.getLogger(__name__)
-    #log.info(" message ")
+    log_format = '%(asctime)s %(message)s'
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO,
+                        format=log_format, datefmt='%m/%d %I:%M:%S %p')
+
+    if not os.path.exists(args.output_path):
+        os.makedirs(args.output_path, exist_ok=True)
+    logging.info('Experiment dir : {}'.format(args.output_path))
+
+    fh = logging.FileHandler(os.path.join(args.output_path, 'log.txt'))
+    fh.setFormatter(logging.Formatter(log_format))
+    logging.getLogger().addHandler(fh)
 
     device = args.device
-    print("torch cuda available: ", torch.cuda.is_available())
     use_cuda=False
     if torch.cuda.is_available() and device != 'cpu':
         device = 'cuda:{}'.format(device)
-        print("Running on GPU")
+        logging.info("Running on GPU")
         use_cuda=True
     else:
-        print("No device found")
-        warnings.warn("Device not found or CUDA not available.")
+        logging.info("No device found")
+        logging.warning("Device not found or CUDA not available.")
     
     device = torch.device(device)
     initialize_seed(42, use_cuda)
@@ -98,7 +106,7 @@ if __name__ == "__main__":
     supernet_path = args.supernet_path
     if args.model_path is not None:
         model_path = args.model_path
-    print("Model path: ", model_path)
+    logging.info("Model: %s", args.model)
 
     if args.method == 'bernulli':
         get_binaries = True
@@ -115,34 +123,44 @@ if __name__ == "__main__":
                                 supernet=args.supernet_path, 
                                 n_classes=args.n_classes, 
                                 pretrained=args.pretrained)
-    
-    print("Resolution: ", res)
+    logging.info(f"DATASET: {args.dataset}")
+    logging.info("Resolution: %s", res)
 
     train_loader, val_loader, test_loader = get_data_loaders(dataset=args.dataset, batch_size=args.batch_size, threads=args.threads, 
                                             use_val=args.use_val, img_size=res, augmentation=True, eval_test=args.eval_test)
     
-    if val_loader is None:
+    if val_loader is not None:
+        n_samples=len(val_loader.dataset)
+    else:
         val_loader = test_loader
+        n_samples=len(test_loader.dataset)
 
     train_log = Log(log_each=10)
 
     #parameters = chain(backbone.parameters(), classifiers.parameters())
 
     optimizer = get_optimizer(backbone.parameters(), args.optim, args.learning_rate, args.momentum, args.weight_decay)
+
+    criterion = get_loss('ce')
     
-    scheduler = get_lr_scheduler(optimizer, 'step', epochs=args.backbone_epochs)
+    scheduler = get_lr_scheduler(optimizer, 'cosine', epochs=args.backbone_epochs)
 
-    if (os.path.exists(os.path.join(args.output_path,'backbone.pt'))):
+    if (os.path.exists(os.path.join(args.output_path,'backbone.pth'))):
 
-        backbone, optimizer = load_checkpoint(backbone, optimizer, os.path.join(args.output_path,'backbone.pt'))
-        print("Loaded checkpoint")
-        top1 = validate(val_loader, backbone, device, print_freq=100)
-        print("Loaded model accuracy:", np.round(top1,2))
-        top1/=100
+        backbone, optimizer = load_checkpoint(backbone, optimizer, os.path.join(args.output_path,'backbone.pth'))
+        logging.info("Loaded checkpoint")
+        top1 = validate(val_loader, backbone, device, print_freq=100)/100
 
     else:
         
-        top1, backbone, optimizer = train(train_loader, val_loader, args.backbone_epochs, backbone, device, optimizer, scheduler, train_log, ckpt_path=args.output_path)
+        logging.info("Start training...")
+        top1, backbone, optimizer = train(train_loader, val_loader, args.backbone_epochs, backbone, device, optimizer, criterion, scheduler, train_log, ckpt_path=os.path.join(args.output_path,'backbone.pth'))
+        logging.info("Training finished")
+    
+    logging.info(f"VAL ACCURACY BACKBONE: {np.round(top1*100,2)}")
+    if args.eval_test:
+        top1_test = validate(test_loader, backbone, device, print_freq=100)
+        logging.info(f"TEST ACCURACY BACKBONE: {top1_test}")
 
     #Create the EENN on top of the trained backbone
 
@@ -157,13 +175,19 @@ if __name__ == "__main__":
         net.exit_idxs=[net.exit_idxs[-1]] #take only the final exit
         b_params, b_macs = get_intermediate_backbone_cost(backbone, input_size)
     else:
-        dict_macs = net.computational_cost(torch.randn((1, 3, 32, 32)))
+        dict_macs = net.computational_cost(torch.randn((1, 3, res, res)))
         b_macs = []
         for m in dict_macs.values():
                 b_macs.append(m/1e6)
         b_params=[] #Not implemented
         
     c_params, c_macs = get_intermediate_classifiers_cost(backbone, classifiers, input_size)
+
+    max_cost = b_macs[-1] + c_macs[-1]
+
+    if args.mmax is not None and max_cost < args.mmax:
+        logging.warning("The maximum cost is lower than the constraint")
+        sys.exit()
 
     results = {}
 
@@ -177,31 +201,31 @@ if __name__ == "__main__":
     print("Backbone params: ", b_params)
     print("Classifiers params: ", c_params)
       
-    # GLOBAL GATE to switch on/off the EECs (not used)
-    if(args.gg_on):
-        print("Training with global gate")
-    else: 
-        print("Training without global gate")
     
-    results = {}
-
+    # GLOBAL GATE to switch on/off the EECs (not used)
     '''
+    if(args.gg_on):
+        logging.info("Training with global gate")
+    else: 
+        logging.info("Training without global gate")
+    '''
+    
     if args.load_backbone_from_archive: 
   
-        iter_path = path.rsplit("/",1)[0] 
+        iter_path = args.output_path.rsplit("/",1)[0] 
         
         #CHECK BACKBONE IN ARCHIVE
-        arch = json.load(open(os.path.join(path,'net_'+str(n_subnet)+'.subnet')))
+        arch = json.load(open(os.path.join(args.outputpath,'net.subnet')))
         arch_b={'ks':arch['ks'],'e':arch['e'],'d':arch['d']}
-        backbone_dir=get_subnet_folder_by_backbone(iter_path,arch_b,n_subnet)
+        backbone_dir=get_subnet_folder_by_backbone(iter_path,arch_b)
 
         if backbone_dir is None:
-            pre_trained_model_path = os.path.join(path, 'bb_s.pt')
-            pre_trained_classifier_path = os.path.join(path, 'c_s.pt')
-            backbone_dir = path
+            pre_trained_model_path = os.path.join(args.output_path, 'bb_s.pt')
+            pre_trained_classifier_path = os.path.join(args.output_path, 'c_s.pt')
+            backbone_dir = args.output_path
         else:
             print("LOADED BACKBONE FROM " + backbone_dir)
-    '''
+    
 
     test_scores = standard_eval(model=backbone,
                                 dataset_loader=test_loader,
@@ -210,20 +234,20 @@ if __name__ == "__main__":
     
     results['backbone_top1'] = test_scores * 100
 
-    print('Pre trained model scores : {}, {}'.format(-1,test_scores))
+    logging.info('Pre trained model scores : {}, {}'.format(-1,test_scores))
     
     if os.path.exists(os.path.join(args.output_path, 'bb.pt')): # and load:
         
-        #log.info('Model loaded')
+        logging.info('Model loaded')
 
         backbone.to(device)
         classifiers.to(device)
 
         backbone.load_state_dict(torch.load(
-            os.path.join(path, 'bb.pt'), map_location=device))
+            os.path.join(args.output_path, 'bb.pt'), map_location=device))
 
         loaded_state_dict = torch.load(os.path.join(
-            path, 'classifiers.pt'), map_location=device)
+            args.output_path, 'classifiers.pt'), map_location=device)
 
         # old code compatibility
         loaded_state_dict = {k: v for k, v in
@@ -232,15 +256,7 @@ if __name__ == "__main__":
 
         classifiers.load_state_dict(loaded_state_dict)
 
-        stats_ece = ece_score(model=backbone,predictors=classifiers, dataset_loader=testloader)
-        ece_scores={}
-        for i,k in enumerate(stats_ece):
-            scores = stats_ece[i]
-            ece_scores[i]=scores[0]
-        results['ece_scores']=ece_scores
-        #pre_trained_path = os.path.join('~/branch_models/','{}'.format(dataset_name),'{}'.format(model_name))
-        # Construct the file path using the same format as when the file was saved
-        save_path = os.path.join(path, 'net_{}.stats'.format(n_subnet))
+        save_path = os.path.join(args.output_path, 'net.stats')
 
         # Load the JSON data from the file
         with open(save_path, 'r') as handle:
@@ -248,13 +264,14 @@ if __name__ == "__main__":
 
         # Access the "support_conf" field directly
         support_conf = json_data["support_conf"]
-        sigma = json_data["global_gate"]
+        #sigma = json_data["global_gate"]
 
         # Now you can use the 'support_conf_value' variable, which contains the value of "support_conf"
         #print("Support Confidence:", support_conf)
         
     else:
-
+        
+        logging.info("Start training of the EENN...")
         backbone.to(device)
         classifiers.to(device)
 
@@ -263,14 +280,22 @@ if __name__ == "__main__":
 
         optimizer = get_optimizer(parameters, args.optim, args.learning_rate, args.momentum, args.weight_decay)
 
+        epochs = args.warmup_ee_epochs + args.ee_epochs # Total number of epochs
+        scheduler = get_lr_scheduler(optimizer, 'step', epochs=epochs)
+        if args.support_set: 
+            n_epoch_gamma = epochs 
+        else:
+            n_epoch_gamma = args.warmup_ee_epochs
+
         # load weights from previous optimizer
 
         if args.method == 'bernulli':
 
-            epochs = args.warmup_ee_epochs + args.ee_epochs # Total number of epochs
             res = binary_bernulli_trainer(model=backbone,
                                             predictors=classifiers,
                                             optimizer=optimizer,
+                                            scheduler= scheduler, 
+                                            resolution=res,
                                             train_loader=train_loader,
                                             epochs=epochs,
                                             prior_parameters=args.priors,
@@ -300,17 +325,15 @@ if __name__ == "__main__":
                                             w_alpha=args.w_alpha,
                                             w_beta=args.w_beta,
                                             w_gamma=args.w_gamma,
-                                            n_epoch_gamma=args.ee_epochs,
-                                            n_classes=args.n_classes
+                                            n_epoch_gamma=n_epoch_gamma,
+                                            n_classes=args.n_classes,
+                                            n_workers=args.threads
                                             )[0]
 
             backbone_dict, classifiers_dict, support_conf, global_gate = res
             if support_conf is not None:
                 support_conf = torch.mean(support_conf, dim=0).tolist() # compute the average on the n_classes dimension
-            sigma=torch.nn.Sigmoid()(global_gate).tolist()
-
-            backbone.load_state_dict(backbone_dict)
-            classifiers.load_state_dict(classifiers_dict)
+            #sigma=torch.nn.Sigmoid()(global_gate).tolist()
 
         elif args.method == 'joint':
             weights = torch.tensor([1.0] * backbone.n_branches(), device=device)
@@ -337,68 +360,55 @@ if __name__ == "__main__":
                                 optimizer=args.optim,
                                 weights=weights, train_loader=train_loader,
                                 epochs=args.ee_epochs,
-                                scheduler=None, joint_type=args.joint_type,
+                                scheduler=scheduler, joint_type=args.joint_type,
                                 test_loader=test_loader,
                                 eval_loader=val_loader,
                                 early_stopping=early_stopping)[0]
 
             backbone_dict, classifiers_dict = res
 
-            backbone.load_state_dict(backbone_dict)
-            classifiers.load_state_dict(classifiers_dict)
-
-        elif method_name == 'standard':
+            '''
+        elif args.method == 'standard':
 
             res = standard_trainer(model=backbone,
                                     predictors=classifiers,
                                     optimizer=args.optimizer,
                                     train_loader=train_loader,
                                     epochs=args.ee_epochs,
-                                    scheduler=None,
+                                    scheduler=scheduler,
                                     test_loader=test_loader,
                                     eval_loader=val_loader,
                                     early_stopping=early_stopping)[0]
+            '''
 
             backbone_dict, classifiers_dict = res
-
-            backbone.load_state_dict(backbone_dict)
-            classifiers.load_state_dict(classifiers_dict)
 
         else:
             assert False
 
+        backbone.load_state_dict(backbone_dict)
+        classifiers.load_state_dict(classifiers_dict)
+
         if args.save:
-            torch.save(backbone.state_dict(), os.path.join(path,
+            torch.save(backbone.state_dict(), os.path.join(args.output_path,
                                                             'bb.pt'))
             torch.save(classifiers.state_dict(),
-                        os.path.join(path,
+                        os.path.join(args.output_path,
                                     'classifiers.pt'))
 
 
-    train_scores = standard_eval(model=backbone,
-                                    dataset_loader=trainloader,
-                                    classifier=classifiers[-1])
+    #train_scores = standard_eval(model=backbone, dataset_loader=train_loader, classifier=classifiers[-1])
 
-    test_scores = standard_eval(model=backbone,
-                                dataset_loader=testloader,
-                                classifier=classifiers[-1])
+    #test_scores = standard_eval(model=backbone, dataset_loader=test_loader, classifier=classifiers[-1])
 
-    log.info('Last layer train and test scores : {}, {}'.format(train_scores,test_scores))
+    #logging.info('Last layer train and test scores : {}, {}'.format(train_scores,test_scores))
 
-    if method_name != 'standard':
+    if args.method != 'standard':
 
         results['support_conf']=support_conf#.tolist()
-        results['global_gate']=sigma#.tolist()
+        #results['global_gate']=sigma#.tolist()
 
-    if 'bernulli' in method_name:
-
-        ## ECE SCORE ##
-
-        stats_ece = ece_score(model=backbone,predictors=classifiers, dataset_loader=test_loader)
-        ece_scores={}
-        for i,k in enumerate(stats_ece):
-            ece_scores[i]=k[0]
-        results['ece_scores']=ece_scores
+    if 'bernulli' in args.method:
 
         ## TUNING THRESHOLDS ##
         
@@ -412,7 +422,7 @@ if __name__ == "__main__":
 
         for epsilon in [0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8]:#, 0.9, 0.95, 0.98]:
             a, b = binary_eval(model=backbone,
-                                dataset_loader=test_loader,
+                                dataset_loader=val_loader,
                                 predictors=classifiers,
                                 epsilon=[
                                             0.7 if epsilon <= 0.7 else epsilon] +
@@ -453,12 +463,10 @@ if __name__ == "__main__":
         
 
         #results['cumulative_results'] = cumulative_threshold_scores
-
-    n_samples = len(test_set)
+                
     weights = []
     for ex in best_counters.values():
             weights.append(ex/n_samples)
-    
     
     # For each b-th exit the avg_macs is the percentage of samples exiting from the exit 
     # multiplied by the sum of the MACs of the backbone up to the b-th exit + MACs of the b-th exit 
@@ -473,8 +481,8 @@ if __name__ == "__main__":
         avg_macs += weights[b] * (b_macs[b] + c_macs[b])
 
     # Repair action: adjust the thresholds to make the network fit in terms of MACs
-    constraint_compl = mmax
-    constraint_acc = top1min
+    constraint_compl = args.mmax
+    constraint_acc = args.top1min
     i=backbone.b-2#cycle from the second last elem
     repaired = False
     epsilon=[ 0.7 if best_epsilon <= 0.7 else best_epsilon] + [best_epsilon] * (backbone.n_branches() - 1)
@@ -484,7 +492,7 @@ if __name__ == "__main__":
             #print("CONSTRAINT MACS VIOLATED: REPAIR ACTION ON BRANCH {}".format(i))
             epsilon[i] = epsilon[i] - 0.1 
             a, b = binary_eval(model=backbone,
-                                dataset_loader=testloader,
+                                dataset_loader=val_loader,
                                 predictors=classifiers,
                                 epsilon=epsilon,
                                 # epsilon=[epsilon] *
@@ -501,8 +509,7 @@ if __name__ == "__main__":
                 else:
                     break
             best_epsilon = epsilon
-            #print("Evaluating config {}".format(str(epsilon)))
-            n_samples = len(test_set) #len of cifar10 eval dataset
+
             weights = []
             for ex in b.values():
                     weights.append(ex/n_samples)
@@ -510,6 +517,7 @@ if __name__ == "__main__":
             for b in range(backbone.b):
                 avg_macs += weights[b] * (b_macs[b] + c_macs[b])
             best_scores=a
+            best_counters=b
             
             if(avg_macs<=constraint_compl):
                 repaired=True
@@ -535,18 +543,20 @@ if __name__ == "__main__":
     #log.info('Branches scores on exiting samples: {}'.format(best_scores))
     #log.info('Exit ratios: {}'.format(weights))
     #log.info('Average MACS: {:.2f}'.format(avg_macs))
+
+    #COMPUTE ECE SCORES FOR CALIBRATION EVALUATION
+    stats_ece = ece_score(model=backbone,predictors=classifiers, dataset_loader=val_loader)
+    ece_scores={}
+    for i,k in enumerate(stats_ece):
+        scores = stats_ece[i]
+        ece_scores[i]=scores[0]
+    results['ece_scores']=ece_scores
     
     if args.save:
-        save_path = os.path.join(path, 'net_{}.stats'.format(n_subnet)) # #exp__path = ..iter_x/exp_y 
+        save_path = os.path.join(args.output_path, 'net.stats') # #exp__path = ..iter_x/exp_y 
 
         with open(save_path, 'w') as handle:
             json.dump(results, handle)
-    
-    # Get the current date and time
-    current_time = datetime.datetime.now()
-
-    # Print the current time
-    print("Current time:", current_time)
 
     #log.info('#' * 100)
     

@@ -1,5 +1,5 @@
-optim=SGD; n_epochs=6; first_obj=top1
-#optim=SAM; n_epochs=6; first_obj=top1_robust
+#optim=SGD; n_epochs=6; first_obj=top1
+optim=SAM; n_epochs=6; first_obj=top1_robust
 gpu=0
 #
 dataset=cifar10

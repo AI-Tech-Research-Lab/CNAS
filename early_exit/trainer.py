@@ -1,3 +1,4 @@
+import copy
 import logging
 
 import numpy as np
@@ -15,7 +16,7 @@ from evaluators import standard_eval, branches_eval, binary_eval, \
 from models.base import BranchModel
 from models.mobilenet_v3 import EEMobileNetV3
 from utils_ee import calculate_centroids_confidences, calculate_centroids_scores, extract_balanced_subset, get_device, \
- get_intermediate_backbone_cost, get_intermediate_classifiers_cost
+ get_intermediate_backbone_cost, get_intermediate_classifiers_cost, save_eenn
 from copy import deepcopy
 
 torch.autograd.set_detect_anomaly(True)
@@ -319,6 +320,7 @@ def binary_bernulli_trainer(model: BranchModel,
                             predictors: nn.ModuleList,
                             optimizer,
                             train_loader,
+                            resolution,
                             epochs,
                             prior_parameters,
                             ckpt_path=None,
@@ -340,12 +342,13 @@ def binary_bernulli_trainer(model: BranchModel,
                             backbone_epochs=0,
                             gg_on=False, #global gate on
                             support_set=False, #not used actually
-                            mmax=1000,
+                            mmax=None,
                             w_alpha=1.0,
                             w_beta=1.0,
                             w_gamma=1.0,
                             n_epoch_gamma=0,
                             n_classes=10,
+                            n_workers=2
                             ):
     
     def energy_loss(exits_costs, confidence_scores): 
@@ -369,10 +372,8 @@ def binary_bernulli_trainer(model: BranchModel,
         w = torch.tensor(exits_costs).to(device)
 
         # Perform weighted sum and compute mean
-        constraint=mmax
-        #weighted_sum_result = []
 
-        if(exits_costs[-1]>constraint):
+        if(mmax is not None and exits_costs[-1]>mmax):
             macs_list = []
             for row in confidence_scores:
                 m = torch.dot(row, w)
@@ -383,7 +384,7 @@ def binary_bernulli_trainer(model: BranchModel,
             avg_macs = torch.mean(torch.stack(macs_list))
 
             # Compute the loss as the squared constraint violation
-            normalized_cv = max(0,avg_macs.item()-constraint)/abs(exits_costs[-1]-constraint)
+            normalized_cv = max(0,avg_macs.item()-mmax)/abs(exits_costs[-1]-mmax)
             loss = torch.Tensor([normalized_cv]).to(device)
         else:
             loss= torch.Tensor([0.0]).to(device)
@@ -475,12 +476,12 @@ def binary_bernulli_trainer(model: BranchModel,
 
     log = logging.getLogger(__name__)
     
-    input_size = (3,32,32)
+    input_size = (3,resolution,resolution)
 
     if(isinstance(model,EEMobileNetV3)):
        _, b_macs = get_intermediate_backbone_cost(model, input_size)
     else:
-       dict_macs = model.computational_cost(torch.randn((1, 3, 32, 32)))
+       dict_macs = model.computational_cost(torch.randn((1, 3, resolution, resolution)))
        b_macs = []
        for m in dict_macs.values():
             b_macs.append(m/1e6)
@@ -572,11 +573,15 @@ def binary_bernulli_trainer(model: BranchModel,
 
     support_matrix = None
 
+    '''
     for p in predictors[:-1]: #switch on all the classifiers before the last one
         for param in p.parameters():
             if not param.requires_grad:
                 print("The predictor is frozen")
                 param.requires_grad = True
+    '''
+
+    ori_train_loader = copy.deepcopy(train_loader)
     
     for epoch in bar:
 
@@ -609,10 +614,9 @@ def binary_bernulli_trainer(model: BranchModel,
 
         if epoch >= n_epoch_gamma:
             
-            support_loader, train_loader = extract_balanced_subset(train_loader, subset_percentage=0.1, n_classes=n_classes)
+            support_loader, train_loader = extract_balanced_subset(ori_train_loader, subset_percentage=0.1, n_classes=n_classes, n_workers=n_workers)
             support_matrix = calculate_centroids_scores(support_loader, model, predictors, n_classes=n_classes)
             
-
         for bi, (x, y) in tqdm(enumerate(train_loader), leave=False,
                                total=len(train_loader)):
 
@@ -847,8 +851,7 @@ def binary_bernulli_trainer(model: BranchModel,
 
         #Save the checkpoint every x epoch
         if ckpt_path is not None and (epoch+1)%save_interval == 0:
-            save_model(model, predictors, best_model,
-                       best_predictors, best_eval_score, epoch, optimizer, ckpt_path)
+            save_eenn(model, predictors, best_model, best_predictors, best_eval_score, epoch, optimizer, ckpt_path)
             #print("Checkpoint saved")
         
         '''
@@ -920,7 +923,8 @@ def binary_bernulli_trainer(model: BranchModel,
                     #'Train score': train_scores, 'Test score': test_scores,
                     'Eval score': eval_scores if eval_scores != 0 else 0,
                     #'Global gate': sigma,
-                    'Mean loss': mean_loss, 'Gate loss': mean_gate_loss, 'Energy loss': mean_energy_loss,
+                    'Mean loss': mean_loss, #'Gate loss': mean_gate_loss, 
+                    'Energy loss': mean_energy_loss,
                     'Support loss': mean_support_loss, 'Mean kl loss': mean_kl_loss
                 })
         else:
@@ -930,15 +934,17 @@ def binary_bernulli_trainer(model: BranchModel,
                     #'Train score': train_scores, 'Test score': test_scores,
                     'Eval score': eval_scores if eval_scores != 0 else 0,
                     #'Global gate': sigma,
-                    'Mean loss': mean_loss, 'Gate loss': mean_gate_loss, 'Energy loss': mean_energy_loss,
+                    'Mean loss': mean_loss, #'Gate loss': mean_gate_loss, 
+                    'Energy loss': mean_energy_loss,
                     'Mean kl loss': mean_kl_loss
                 })
             
-    # Remove checkpoint 
-    if os.path.exists(ckpt_path):
-      os.remove(ckpt_path)
+    # Remove temporary checkpoint 
+    #if ckpt_path is not None and os.path.exists(ckpt_path):
+      #os.remove(ckpt_path)
 
     return (best_model, best_predictors, support_matrix, global_gate), \
-           scores, scores[best_model_i], mean_losses, mean_gate_losses, mean_energy_losses, mean_support_losses
+           mean_losses, mean_gate_losses, mean_energy_losses, mean_support_losses
+           #scores, scores[best_model_i], 
            
                

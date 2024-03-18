@@ -94,12 +94,12 @@ class Log:
 
     def _train_step(self, model, loss, accuracy, learning_rate: float) -> None:
         self.learning_rate = learning_rate
-        self.last_steps_state["loss"] += loss.sum().item()
+        self.last_steps_state["loss"] += (loss.item() * accuracy.size(0)) #sum().item()
         self.last_steps_state["accuracy"] += accuracy.sum().item()
-        self.last_steps_state["steps"] += loss.size(0)
-        self.epoch_state["loss"] += loss.sum().item()
+        self.last_steps_state["steps"] += accuracy.size(0) #loss.size(0)
+        self.epoch_state["loss"] += (loss.item() * accuracy.size(0)) #sum().item()
         self.epoch_state["accuracy"] += accuracy.sum().item()
-        self.epoch_state["steps"] += loss.size(0)
+        self.epoch_state["steps"] += accuracy.size(0) #loss.size(0)
         self.step += 1
 
         if self.step % self.log_each == self.log_each - 1:
@@ -116,9 +116,9 @@ class Log:
             )
 
     def _eval_step(self, loss, accuracy) -> None:
-        self.epoch_state["loss"] += loss.sum().item()
+        self.epoch_state["loss"] += (loss.item() * accuracy.size(0)) #sum().item()
         self.epoch_state["accuracy"] += accuracy.sum().item()
-        self.epoch_state["steps"] += loss.size(0)
+        self.epoch_state["steps"] += accuracy.size(0) #loss.size(0) 
 
     def _reset(self, len_dataset: int) -> None:
         self.start_time = time.time()
@@ -149,14 +149,15 @@ def load_checkpoint(model, optimizer, filename='checkpoint.pth'):
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     return model, optimizer
 
-def train(train_loader, val_loader, num_epochs, model, device, optimizer, scheduler, log, ckpt_path=None, label_smoothing=0.1, criterion=None):
+def train(train_loader, val_loader, num_epochs, model, device, optimizer, criterion, scheduler, log, ckpt_path=None, label_smoothing=0.1):
         model.to(device)
         for epoch in range(num_epochs):
             model.train()
             log.train(model, optimizer, len_dataset=len(train_loader))
 
-            for batch in train_loader:
-                inputs, targets = (b.to(device) for b in batch)
+            for (inputs,targets) in train_loader:
+                #inputs = F.interpolate(inputs, size=180, mode='bicubic', align_corners=False)
+                inputs, targets = inputs.to(device), targets.to(device)
 
                 # first forward-backward step
                 if isinstance(optimizer, SAM):
@@ -165,8 +166,8 @@ def train(train_loader, val_loader, num_epochs, model, device, optimizer, schedu
                     optimizer.zero_grad()
                     
                 predictions = model(inputs)
-                loss = smooth_crossentropy(predictions, targets, smoothing=label_smoothing)
-                loss.mean().backward()
+                loss = criterion(predictions, targets)
+                loss.backward()
 
                 if not isinstance(optimizer, SAM):
                     optimizer.step()
@@ -174,7 +175,7 @@ def train(train_loader, val_loader, num_epochs, model, device, optimizer, schedu
                     optimizer.first_step(zero_grad=True)
                     # second forward-backward step
                     disable_running_stats(model)
-                    smooth_crossentropy(model(inputs), targets, smoothing=label_smoothing).mean().backward()
+                    criterion(model(inputs), targets).backward()
                     optimizer.second_step(zero_grad=True)
 
                 with torch.no_grad():
@@ -189,7 +190,7 @@ def train(train_loader, val_loader, num_epochs, model, device, optimizer, schedu
                 for batch in val_loader:
                     inputs, targets = (b.to(device) for b in batch)
                     predictions = model(inputs)
-                    loss = smooth_crossentropy(predictions, targets)
+                    loss = criterion(predictions, targets)
                     correct = torch.argmax(predictions, 1) == targets
                     log(model, loss.cpu(), correct.cpu())
                 curr_loss=log.epoch_state["loss"] / log.epoch_state["steps"]
@@ -202,7 +203,7 @@ def train(train_loader, val_loader, num_epochs, model, device, optimizer, schedu
         optimizer.load_state_dict(best_model['optimizer']) # load optim for further training 
         
         if ckpt_path is not None:
-            save_checkpoint(model, optimizer, os.path.join(ckpt_path,'ckpt.pth'))
+            save_checkpoint(model, optimizer, ckpt_path)
         
         top1=log.best_accuracy
         return top1, model, optimizer
@@ -615,8 +616,28 @@ class EarlyStopping:
             self.current_value = -np.inf
             self.c = lambda a, b: a > b
 
+class Cutout(object):
+    def __init__(self, length):
+        self.length = length
 
-def get_dataset(name, model_name=None, augmentation=False, resolution=32, use_val=False):
+    def __call__(self, img):
+        h, w = img.size(1), img.size(2)
+        mask = np.ones((h, w), np.float32)
+        y = np.random.randint(h)
+        x = np.random.randint(w)
+
+        y1 = np.clip(y - self.length // 2, 0, h)
+        y2 = np.clip(y + self.length // 2, 0, h)
+        x1 = np.clip(x - self.length // 2, 0, w)
+        x2 = np.clip(x + self.length // 2, 0, w)
+
+        mask[y1: y2, x1: x2] = 0.
+        mask = torch.from_numpy(mask)
+        mask = mask.expand_as(img)
+        img *= mask
+        return img
+
+def get_dataset(name, model_name=None, augmentation=False, resolution=32, use_val=False, autoaugment=True, cutout=True, cutout_length=16):
 
     if name == 'mnist':
         t = [Resize((32, 32)),
@@ -705,30 +726,38 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, use_va
 
     elif name == 'cifar10':
 
-        tt = [RandomResizedCrop(resolution, scale=(0.08,1.0)),
-                  RandomHorizontalFlip(),
-                  ToTensor(),
-                  Normalize([0.485, 0.456, 0.406],
-                             [0.229, 0.224, 0.225])
-                  ]
+        norm_mean = [0.49139968, 0.48215827, 0.44653124]
+        norm_std = [0.24703233, 0.24348505, 0.26158768]
 
-        '''
-        print("New Augmentation")
-        tt = [
-            TrivialAugmentWide(interpolation = InterpolationMode.BILINEAR),
-            ToTensor(), 
-            RandomErasing(scale=(0.05,0.25), value='random'),
-            RandomHorizontalFlip(),
-            RandomResizedCrop(resolution, scale=(0.08,1.0)),
-            Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-            ]
-        '''
         
+        tt = [RandomResizedCrop(resolution, scale=(0.08,1.0)),
+              RandomHorizontalFlip(), #p=0.5 default
+                ToTensor(),
+                Normalize(norm_mean, norm_std)
+                  ]
+                    
+        
+        '''
+        tt = [RandomResizedCrop(resolution, scale=(0.08,1.0)),
+                  #RandomCrop(32, padding=4),
+                  RandomHorizontalFlip(), #p=0.5 default
+                  #ToTensor(),
+                  #Normalize(norm_mean, norm_std)
+                  ]
+        
+        if autoaugment:
+            tt.extend([CIFAR10Policy()])
+        tt.extend([ToTensor()])
+        if cutout:
+            tt.extend([Cutout(cutout_length)])
+        tt.extend([Normalize(norm_mean, norm_std)])
+        '''
+
         t = [
-            Resize((resolution, resolution)),
+            #Resize((resolution, resolution)),
+            Resize(resolution, interpolation=3),  # BICUBIC interpolation
             ToTensor(),
-            Normalize([0.485, 0.456, 0.406],
-                      [0.229, 0.224, 0.225])]
+            Normalize(norm_mean, norm_std)]
 
         transform = Compose(t)
         train_transform = Compose(tt)
@@ -844,9 +873,10 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, use_va
     else:
         assert False
 
+    val_set = None
+
     # Split the dataset into training and validation sets
     if use_val:
-
         train_len = len(train_set)
         eval_len = int(train_len * val_split)
         train_len = train_len - eval_len
@@ -855,24 +885,21 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, use_va
                                                         [train_len,
                                                             eval_len])
 
-        val_set = copy.deepcopy(val_set.dataset)
-        train_set = copy.deepcopy(train_set.dataset)
+        val_set.dataset = copy.deepcopy(val_set.dataset)
 
-        val_set.transform = test_set.transform
-        val_set.target_transform = test_set.target_transform
-    else:
-        val_set = None
-
+        val_set.dataset.transform = test_set.transform
+        val_set.dataset.target_transform = test_set.target_transform
+        
     return train_set, val_set, test_set, input_size, classes
 
 def get_data_loaders(dataset, batch_size=32, threads=1, img_size=32, augmentation=False, use_val=False, eval_test=True):
 
-    train_set, val_test, test_set, _, _ = get_dataset(dataset, augmentation=augmentation, resolution=img_size, use_val=use_val)
+    train_set, val_set, test_set,  _, _ = get_dataset(dataset, augmentation=augmentation, resolution=img_size, use_val=use_val)
 
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=threads, pin_memory=True)
-    
+
     if use_val:
-        val_loader = DataLoader(train_set, batch_size=batch_size*2, shuffle=False, num_workers=threads, pin_memory=True)
+        val_loader = DataLoader(val_set, batch_size=batch_size*2, shuffle=False, num_workers=threads, pin_memory=True)
     else:
         val_loader = None
     
@@ -952,27 +979,34 @@ def get_optimizer(parameters,
                   momentum: float = 0.0,
                   weight_decay: float = 0,
                   rho: float=2.0,
-                  adaptive: bool=True
+                  adaptive: bool=True,
+                  nesterov: bool=False,
                   ): #SAM
 
     name = name.lower()
     if name == 'adam':
         return optim.Adam(parameters, lr, weight_decay=weight_decay)
     elif name == 'sgd':
-        return optim.SGD(parameters, lr, momentum=momentum,
-                         weight_decay=weight_decay)
+        return optim.SGD(parameters, lr, momentum=momentum, weight_decay=weight_decay, nesterov=nesterov) #nesterov?
     elif name == 'sam':
         base_optimizer = torch.optim.SGD
-        return SAM(parameters, base_optimizer, rho=rho, adaptive=adaptive, lr=lr, momentum=momentum, weight_decay=weight_decay)
+        return SAM(parameters, base_optimizer, rho=rho, adaptive=adaptive, lr=lr, momentum=momentum, weight_decay=weight_decay, nesterov=nesterov)
     else:
         raise ValueError('Optimizer must be adam, sgd, or SAM')
+
+def get_loss(name: str):
+    name = name.lower()
+    if name == 'ce':
+        return nn.CrossEntropyLoss()
+    else:
+        raise ValueError('Loss must be crossentropy or labelsmooth')
 
 def get_lr_scheduler(optimizer, name, epochs, gamma=1.0):
     name=name.lower()
     if name=='step':
         return StepLR(optimizer, step_size=epochs, gamma=gamma)
     elif name=='cosine':
-        return CosineAnnealingLR(optimizer, T_max=epochs, eta_min=0)
+        return CosineAnnealingLR(optimizer, T_max=epochs)
     else:
         raise ValueError('Scheduler must be step or cosine')                     
     return scheduler
@@ -1051,10 +1085,10 @@ def enable_running_stats(model):
 # Optimizers
 
 class SAM(torch.optim.Optimizer):
-    def __init__(self, params, base_optimizer, rho=0.05, adaptive=False, **kwargs):
+    def __init__(self, params, base_optimizer, rho=0.05, adaptive=False, nesterov=False, **kwargs):
         assert rho >= 0.0, f"Invalid rho, should be non-negative: {rho}"
 
-        defaults = dict(rho=rho, adaptive=adaptive, **kwargs)
+        defaults = dict(rho=rho, adaptive=adaptive, nesterov=nesterov, **kwargs)
         super(SAM, self).__init__(params, defaults)
 
         self.base_optimizer = base_optimizer(self.param_groups, **kwargs)
@@ -1110,3 +1144,244 @@ class SAM(torch.optim.Optimizer):
     def load_state_dict(self, state_dict):
         super().load_state_dict(state_dict)
         self.base_optimizer.param_groups = self.param_groups
+
+# Autoaugment 
+
+"""
+Taken from https://github.com/DeepVoltaire/AutoAugment/blob/master/autoaugment.py
+"""
+
+from PIL import Image, ImageEnhance, ImageOps
+import numpy as np
+import random
+
+
+class ImageNetPolicy(object):
+    """ Randomly choose one of the best 24 Sub-policies on ImageNet.
+
+        Example:
+        >>> policy = ImageNetPolicy()
+        >>> transformed = policy(image)
+
+        Example as a PyTorch Transform:
+        >>> transform=transforms.Compose([
+        >>>     transforms.Resize(256),
+        >>>     ImageNetPolicy(),
+        >>>     transforms.ToTensor()])
+    """
+    def __init__(self, fillcolor=(128, 128, 128)):
+        self.policies = [
+            SubPolicy(0.4, "posterize", 8, 0.6, "rotate", 9, fillcolor),
+            SubPolicy(0.6, "solarize", 5, 0.6, "autocontrast", 5, fillcolor),
+            SubPolicy(0.8, "equalize", 8, 0.6, "equalize", 3, fillcolor),
+            SubPolicy(0.6, "posterize", 7, 0.6, "posterize", 6, fillcolor),
+            SubPolicy(0.4, "equalize", 7, 0.2, "solarize", 4, fillcolor),
+
+            SubPolicy(0.4, "equalize", 4, 0.8, "rotate", 8, fillcolor),
+            SubPolicy(0.6, "solarize", 3, 0.6, "equalize", 7, fillcolor),
+            SubPolicy(0.8, "posterize", 5, 1.0, "equalize", 2, fillcolor),
+            SubPolicy(0.2, "rotate", 3, 0.6, "solarize", 8, fillcolor),
+            SubPolicy(0.6, "equalize", 8, 0.4, "posterize", 6, fillcolor),
+
+            SubPolicy(0.8, "rotate", 8, 0.4, "color", 0, fillcolor),
+            SubPolicy(0.4, "rotate", 9, 0.6, "equalize", 2, fillcolor),
+            SubPolicy(0.0, "equalize", 7, 0.8, "equalize", 8, fillcolor),
+            SubPolicy(0.6, "invert", 4, 1.0, "equalize", 8, fillcolor),
+            SubPolicy(0.6, "color", 4, 1.0, "contrast", 8, fillcolor),
+
+            SubPolicy(0.8, "rotate", 8, 1.0, "color", 2, fillcolor),
+            SubPolicy(0.8, "color", 8, 0.8, "solarize", 7, fillcolor),
+            SubPolicy(0.4, "sharpness", 7, 0.6, "invert", 8, fillcolor),
+            SubPolicy(0.6, "shearX", 5, 1.0, "equalize", 9, fillcolor),
+            SubPolicy(0.4, "color", 0, 0.6, "equalize", 3, fillcolor),
+
+            SubPolicy(0.4, "equalize", 7, 0.2, "solarize", 4, fillcolor),
+            SubPolicy(0.6, "solarize", 5, 0.6, "autocontrast", 5, fillcolor),
+            SubPolicy(0.6, "invert", 4, 1.0, "equalize", 8, fillcolor),
+            SubPolicy(0.6, "color", 4, 1.0, "contrast", 8, fillcolor),
+            SubPolicy(0.8, "equalize", 8, 0.6, "equalize", 3, fillcolor)
+        ]
+
+
+    def __call__(self, img):
+        policy_idx = random.randint(0, len(self.policies) - 1)
+        return self.policies[policy_idx](img)
+
+    def __repr__(self):
+        return "AutoAugment ImageNet Policy"
+
+
+class CIFAR10Policy(object):
+    """ Randomly choose one of the best 25 Sub-policies on CIFAR10.
+
+        Example:
+        >>> policy = CIFAR10Policy()
+        >>> transformed = policy(image)
+
+        Example as a PyTorch Transform:
+        >>> transform=transforms.Compose([
+        >>>     transforms.Resize(256),
+        >>>     CIFAR10Policy(),
+        >>>     transforms.ToTensor()])
+    """
+    def __init__(self, fillcolor=(128, 128, 128)):
+        self.policies = [
+            SubPolicy(0.1, "invert", 7, 0.2, "contrast", 6, fillcolor),
+            SubPolicy(0.7, "rotate", 2, 0.3, "translateX", 9, fillcolor),
+            SubPolicy(0.8, "sharpness", 1, 0.9, "sharpness", 3, fillcolor),
+            SubPolicy(0.5, "shearY", 8, 0.7, "translateY", 9, fillcolor),
+            SubPolicy(0.5, "autocontrast", 8, 0.9, "equalize", 2, fillcolor),
+
+            SubPolicy(0.2, "shearY", 7, 0.3, "posterize", 7, fillcolor),
+            SubPolicy(0.4, "color", 3, 0.6, "brightness", 7, fillcolor),
+            SubPolicy(0.3, "sharpness", 9, 0.7, "brightness", 9, fillcolor),
+            SubPolicy(0.6, "equalize", 5, 0.5, "equalize", 1, fillcolor),
+            SubPolicy(0.6, "contrast", 7, 0.6, "sharpness", 5, fillcolor),
+
+            SubPolicy(0.7, "color", 7, 0.5, "translateX", 8, fillcolor),
+            SubPolicy(0.3, "equalize", 7, 0.4, "autocontrast", 8, fillcolor),
+            SubPolicy(0.4, "translateY", 3, 0.2, "sharpness", 6, fillcolor),
+            SubPolicy(0.9, "brightness", 6, 0.2, "color", 8, fillcolor),
+            SubPolicy(0.5, "solarize", 2, 0.0, "invert", 3, fillcolor),
+
+            SubPolicy(0.2, "equalize", 0, 0.6, "autocontrast", 0, fillcolor),
+            SubPolicy(0.2, "equalize", 8, 0.6, "equalize", 4, fillcolor),
+            SubPolicy(0.9, "color", 9, 0.6, "equalize", 6, fillcolor),
+            SubPolicy(0.8, "autocontrast", 4, 0.2, "solarize", 8, fillcolor),
+            SubPolicy(0.1, "brightness", 3, 0.7, "color", 0, fillcolor),
+
+            SubPolicy(0.4, "solarize", 5, 0.9, "autocontrast", 3, fillcolor),
+            SubPolicy(0.9, "translateY", 9, 0.7, "translateY", 9, fillcolor),
+            SubPolicy(0.9, "autocontrast", 2, 0.8, "solarize", 3, fillcolor),
+            SubPolicy(0.8, "equalize", 8, 0.1, "invert", 3, fillcolor),
+            SubPolicy(0.7, "translateY", 9, 0.9, "autocontrast", 1, fillcolor)
+        ]
+
+
+    def __call__(self, img):
+        policy_idx = random.randint(0, len(self.policies) - 1)
+        return self.policies[policy_idx](img)
+
+    def __repr__(self):
+        return "AutoAugment CIFAR10 Policy"
+
+
+class SVHNPolicy(object):
+    """ Randomly choose one of the best 25 Sub-policies on SVHN.
+
+        Example:
+        >>> policy = SVHNPolicy()
+        >>> transformed = policy(image)
+
+        Example as a PyTorch Transform:
+        >>> transform=transforms.Compose([
+        >>>     transforms.Resize(256),
+        >>>     SVHNPolicy(),
+        >>>     transforms.ToTensor()])
+    """
+    def __init__(self, fillcolor=(128, 128, 128)):
+        self.policies = [
+            SubPolicy(0.9, "shearX", 4, 0.2, "invert", 3, fillcolor),
+            SubPolicy(0.9, "shearY", 8, 0.7, "invert", 5, fillcolor),
+            SubPolicy(0.6, "equalize", 5, 0.6, "solarize", 6, fillcolor),
+            SubPolicy(0.9, "invert", 3, 0.6, "equalize", 3, fillcolor),
+            SubPolicy(0.6, "equalize", 1, 0.9, "rotate", 3, fillcolor),
+
+            SubPolicy(0.9, "shearX", 4, 0.8, "autocontrast", 3, fillcolor),
+            SubPolicy(0.9, "shearY", 8, 0.4, "invert", 5, fillcolor),
+            SubPolicy(0.9, "shearY", 5, 0.2, "solarize", 6, fillcolor),
+            SubPolicy(0.9, "invert", 6, 0.8, "autocontrast", 1, fillcolor),
+            SubPolicy(0.6, "equalize", 3, 0.9, "rotate", 3, fillcolor),
+
+            SubPolicy(0.9, "shearX", 4, 0.3, "solarize", 3, fillcolor),
+            SubPolicy(0.8, "shearY", 8, 0.7, "invert", 4, fillcolor),
+            SubPolicy(0.9, "equalize", 5, 0.6, "translateY", 6, fillcolor),
+            SubPolicy(0.9, "invert", 4, 0.6, "equalize", 7, fillcolor),
+            SubPolicy(0.3, "contrast", 3, 0.8, "rotate", 4, fillcolor),
+
+            SubPolicy(0.8, "invert", 5, 0.0, "translateY", 2, fillcolor),
+            SubPolicy(0.7, "shearY", 6, 0.4, "solarize", 8, fillcolor),
+            SubPolicy(0.6, "invert", 4, 0.8, "rotate", 4, fillcolor),
+            SubPolicy(0.3, "shearY", 7, 0.9, "translateX", 3, fillcolor),
+            SubPolicy(0.1, "shearX", 6, 0.6, "invert", 5, fillcolor),
+
+            SubPolicy(0.7, "solarize", 2, 0.6, "translateY", 7, fillcolor),
+            SubPolicy(0.8, "shearY", 4, 0.8, "invert", 8, fillcolor),
+            SubPolicy(0.7, "shearX", 9, 0.8, "translateY", 3, fillcolor),
+            SubPolicy(0.8, "shearY", 5, 0.7, "autocontrast", 3, fillcolor),
+            SubPolicy(0.7, "shearX", 2, 0.1, "invert", 5, fillcolor)
+        ]
+
+
+    def __call__(self, img):
+        policy_idx = random.randint(0, len(self.policies) - 1)
+        return self.policies[policy_idx](img)
+
+    def __repr__(self):
+        return "AutoAugment SVHN Policy"
+
+
+class SubPolicy(object):
+    def __init__(self, p1, operation1, magnitude_idx1, p2, operation2, magnitude_idx2, fillcolor=(128, 128, 128)):
+        ranges = {
+            "shearX": np.linspace(0, 0.3, 10),
+            "shearY": np.linspace(0, 0.3, 10),
+            "translateX": np.linspace(0, 150 / 331, 10),
+            "translateY": np.linspace(0, 150 / 331, 10),
+            "rotate": np.linspace(0, 30, 10),
+            "color": np.linspace(0.0, 0.9, 10),
+            "posterize": np.round(np.linspace(8, 4, 10), 0).astype(int),
+            "solarize": np.linspace(256, 0, 10),
+            "contrast": np.linspace(0.0, 0.9, 10),
+            "sharpness": np.linspace(0.0, 0.9, 10),
+            "brightness": np.linspace(0.0, 0.9, 10),
+            "autocontrast": [0] * 10,
+            "equalize": [0] * 10,
+            "invert": [0] * 10
+        }
+
+        # from https://stackoverflow.com/questions/5252170/specify-image-filling-color-when-rotating-in-python-with-pil-and-setting-expand
+        def rotate_with_fill(img, magnitude):
+            rot = img.convert("RGBA").rotate(magnitude)
+            return Image.composite(rot, Image.new("RGBA", rot.size, (128,) * 4), rot).convert(img.mode)
+
+        func = {
+            "shearX": lambda img, magnitude: img.transform(
+                img.size, Image.AFFINE, (1, magnitude * random.choice([-1, 1]), 0, 0, 1, 0),
+                Image.BICUBIC, fillcolor=fillcolor),
+            "shearY": lambda img, magnitude: img.transform(
+                img.size, Image.AFFINE, (1, 0, 0, magnitude * random.choice([-1, 1]), 1, 0),
+                Image.BICUBIC, fillcolor=fillcolor),
+            "translateX": lambda img, magnitude: img.transform(
+                img.size, Image.AFFINE, (1, 0, magnitude * img.size[0] * random.choice([-1, 1]), 0, 1, 0),
+                fillcolor=fillcolor),
+            "translateY": lambda img, magnitude: img.transform(
+                img.size, Image.AFFINE, (1, 0, 0, 0, 1, magnitude * img.size[1] * random.choice([-1, 1])),
+                fillcolor=fillcolor),
+            "rotate": lambda img, magnitude: rotate_with_fill(img, magnitude),
+            "color": lambda img, magnitude: ImageEnhance.Color(img).enhance(1 + magnitude * random.choice([-1, 1])),
+            "posterize": lambda img, magnitude: ImageOps.posterize(img, magnitude),
+            "solarize": lambda img, magnitude: ImageOps.solarize(img, magnitude),
+            "contrast": lambda img, magnitude: ImageEnhance.Contrast(img).enhance(
+                1 + magnitude * random.choice([-1, 1])),
+            "sharpness": lambda img, magnitude: ImageEnhance.Sharpness(img).enhance(
+                1 + magnitude * random.choice([-1, 1])),
+            "brightness": lambda img, magnitude: ImageEnhance.Brightness(img).enhance(
+                1 + magnitude * random.choice([-1, 1])),
+            "autocontrast": lambda img, magnitude: ImageOps.autocontrast(img),
+            "equalize": lambda img, magnitude: ImageOps.equalize(img),
+            "invert": lambda img, magnitude: ImageOps.invert(img)
+        }
+
+        self.p1 = p1
+        self.operation1 = func[operation1]
+        self.magnitude1 = ranges[operation1][magnitude_idx1]
+        self.p2 = p2
+        self.operation2 = func[operation2]
+        self.magnitude2 = ranges[operation2][magnitude_idx2]
+
+
+    def __call__(self, img):
+        if random.random() < self.p1: img = self.operation1(img, self.magnitude1)
+        if random.random() < self.p2: img = self.operation2(img, self.magnitude2)
+        return img

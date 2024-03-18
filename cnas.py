@@ -48,13 +48,14 @@ class CNAS:
         self.data = kwargs.pop('data', '../data')  # location of the data files
         self.dataset = kwargs.pop('dataset', 'imagenet')  # which dataset to run search on
         self.model = kwargs.pop('model', 'mobilenetv3') 
-        self.n_classes = kwargs.pop('n_classes', 1000)  # number of classes of the given dataset
+        #self.n_classes = kwargs.pop('n_classes', 1000)  # number of classes of the given dataset
         self.n_workers = kwargs.pop('n_workers', 6)  # number of threads for dataloader
-        self.vld_size = kwargs.pop('vld_size', 10000)  # number of images from train set to validate performance
-        self.trn_batch_size = kwargs.pop('trn_batch_size', 96)  # batch size for SGD training
-        self.vld_batch_size = kwargs.pop('vld_batch_size', 250)  # batch size for validation
+        self.use_val = kwargs.pop('use_val', True)  # use validation set for training
+        #self.vld_size = kwargs.pop('vld_size', 10000)  # number of images from train set to validate performance
+        #self.trn_batch_size = kwargs.pop('trn_batch_size', 96)  # batch size for SGD training
+        #self.vld_batch_size = kwargs.pop('vld_batch_size', 250)  # batch size for validation
         self.n_epochs = kwargs.pop('n_epochs', 5)  # number of epochs to SGD training
-        self.test = kwargs.pop('test', True)  # evaluate performance on test set
+        #self.test = kwargs.pop('test', True)  # evaluate performance on test set
         self.supernet_path = kwargs.pop(
             'supernet_path', './supernets/ofa_mbv3_d234_e346_k357_w1.0')  # supernet model path
         self.search_space = kwargs.pop(
@@ -65,7 +66,7 @@ class CNAS:
         self.trainer_type = kwargs.pop('trainer_type', 'single-exit')
         # Constraint params
         self.pmax = kwargs.pop('pmax',2) #max value of params of the candidate architecture
-        self.fmax = kwargs.pop('fmax',100) #max value of flops of the candidate architecture
+        self.mmax = kwargs.pop('mmax',100) #max value of flops of the candidate architecture
         self.amax = kwargs.pop('amax',5) #max value of activations of the candidate architecture
         self.top1min = kwargs.pop('top1min', 0.1) #top1 constraint
         ##
@@ -78,7 +79,7 @@ class CNAS:
         self.rstep = kwargs.pop('rstep',4) #resolution step
         self.seed = kwargs.pop('seed', 0)  # random seed
         self.optim = kwargs.pop('optim', "SGD") # training optimizer
-        # ENTROPIC ARGUMENTS
+        # Robustness params
         self.sigma_min = kwargs.pop('sigma_min', 0.05) # min noise perturbation intensity
         self.sigma_max = kwargs.pop('sigma_max', 0.05) # max noise perturbation intensity
         self.sigma_step = kwargs.pop('sigma_step', 0) # noise perturbation intensity step
@@ -91,6 +92,13 @@ class CNAS:
         n=round((self.sigma_max-self.sigma_min)/sigma_step)+1
 
         self.alpha_norm = 1.0 # alpha factor for entropic training
+
+        # Early Exit params
+        self.w_alpha = kwargs.pop('w_alpha', 1.0) # weight for alpha factor
+        self.w_beta = kwargs.pop('w_beta', 1.0)
+        self.w_gamma = kwargs.pop('w_gamma', 1.0)
+        self.warmup_ee_epochs = kwargs.pop('warmup_ee_epochs', 5) # warmup epochs for early exit
+        self.ee_epochs = kwargs.pop('ee_epochs', 0) # early exit epochs with support set
 
         self.search_space = OFASearchSpace(self.search_space,self.lr,self.ur, self.rstep)
 
@@ -169,22 +177,6 @@ class CNAS:
             
             for arch, info in zip(candidates,stats):
                 archive.append((arch,*info))
-
-            # add to archive
-            # Algo 1 line 15 / Fig. 3(e) in the paper
-            '''
-            i=0
-            for member in stats: #zip(candidates, c_first_err, complexity):
-                    
-
-                    if self.sec_obj is None:
-                        if self.first_obj == 'top1_robust':
-                            archive.append((member[0],member[1]))
-                    else:    
-                        archive.append(member)
-                        
-                    i=i+1
-            '''
 
             if self.first_predictor is not None:
                 print("fitting {}: RMSE = {:.4f}, Spearman's Rho = {:.4f}, Kendall’s Tau = {:.4f}".format(
@@ -327,10 +319,12 @@ class CNAS:
         gen_dir = os.path.join(self.save_path, "iter_{}".format(it))
 
         prepare_eval_folder(
-            gen_dir, archs, self.gpu, self.n_gpus, self.gpu_list, self.trainer_type, data=self.data, dataset=self.dataset, model=self.model, pmax = self.pmax, 
-            mmax =self.fmax, top1min=self.top1min, penalty = self.penalty,
+            gen_dir, archs, self.gpu, self.n_gpus, self.gpu_list, self.trainer_type, n_workers = self.n_workers,
+            data=self.data, dataset=self.dataset, model=self.model, pmax = self.pmax, 
+            mmax =self.mmax, top1min=self.top1min, penalty = self.penalty,
             supernet_path=self.supernet_path, pretrained=self.pretrained, n_epochs = self.n_epochs, optim=self.optim, sigma_min=self.sigma_min,
-            sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.res, alpha_norm=self.alpha_norm)
+            sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.res, alpha_norm=self.alpha_norm, use_val=self.use_val,
+            w_alpha = self.w_alpha, w_beta = self.w_beta, w_gamma = self.w_gamma, warmup_ee_epochs = self.warmup_ee_epochs, ee_epochs = self.ee_epochs)
 
         subprocess.call("sh {}/run_bash.sh".format(gen_dir), shell=True)
 
@@ -734,6 +728,7 @@ if __name__ == '__main__':
                         help='use pretrained weights')                    
     parser.add_argument('--n_workers', type=int, default=4,
                         help='number of workers for dataloader per evaluation job')
+    parser.add_argument('--use_val', action='store_true', default=True,help='use validation set for training')
     parser.add_argument('--vld_size', type=int, default=None,
                         help='validation set size, randomly sampled from training set')
     parser.add_argument('--trn_batch_size', type=int, default=128,
@@ -756,8 +751,8 @@ if __name__ == '__main__':
                         help='trainer type (single_exit, multi_exits)')
     parser.add_argument('--pmax', type = float, default=2.0,
                         help='max value of params for candidate architecture')
-    parser.add_argument('--fmax', type = float, default=100,
-                        help='max value of flops for candidate architecture')
+    parser.add_argument('--mmax', type = float, default=100,
+                        help='max value of macs for candidate architecture')
     parser.add_argument('--amax', type = float, default=5.0,
                         help='max value of activations for candidate architecture')
     parser.add_argument('--top1min', type = float, default=0.1, help='top1 constraint')
@@ -776,6 +771,11 @@ if __name__ == '__main__':
     parser.add_argument('--sigma_step', type = float, default=0, help='noise perturbation intensity step')
     parser.add_argument('--alpha', type = float, default=0.5, help='alpha parameter for entropic figure')
     parser.add_argument('--res', type = int, default=32, help='fixed resolution for entropic training')
+    parser.add_argument('--w_alpha', type = float, default=1.0, help='weight for alpha factor')
+    parser.add_argument('--w_beta', type = float, default=1.0, help='weight for beta factor')
+    parser.add_argument('--w_gamma', type = float, default=1.0, help='weight for gamma factor')
+    parser.add_argument('--warmup_ee_epochs', type = int, default=5, help='warmup epochs for early exit')
+    parser.add_argument('--ee_epochs', type = int, default=0, help='early exit epochs with support set')
     cfgs = parser.parse_args()
     main(cfgs)
 

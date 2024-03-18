@@ -12,7 +12,7 @@ class OFASearchSpace:
             self.exp_ratio = [3, 4, 6]  # expansion rate
             self.nvar= 45 + int(lr!=ur) # length of the encoding 45 if fix_res else 46
             self.depth = [2, 3, 4]  # number of Inverted Residual Bottleneck layers repetition 
-        elif(supernet == 'eemobilenetv3'): # Early Exit Mbv3
+        elif(supernet == 'eemobilenetv3'): # Early Exit Mbv3 (EDANAS)
             self.kernel_size = [3, 5, 7]  # depth-wise conv kernel size
             self.exp_ratio = [3, 4, 6]  # expansion rate
             self.depth = [2, 3, 4]  # number of Inverted Residual Bottleneck layers repetition
@@ -29,13 +29,13 @@ class OFASearchSpace:
             self.exp_ratio = [1]  # expansion rate
             self.depth = [2,3,4,5,6,7]  # number of BasicBlock layers repetition 
             self.nvar=46
-        elif(supernet == 'cbnmobilenetv3'):
+        elif(supernet == 'cbnmobilenetv3'): #NACHOS
             self.kernel_size = [3, 5, 7]  # depth-wise conv kernel size
             self.exp_ratio = [3, 4, 6]  # expansion rate
             self.depth = [2, 3, 4]  # number of Inverted Residual Bottleneck layers repetition
             self.num_branches=4
             self.branches = [0,1] #0=EEC, 1=No EEC
-            self.nvar=49
+            self.nvar=49 + int(lr!=ur)
         else:
             raise NotImplementedError
 

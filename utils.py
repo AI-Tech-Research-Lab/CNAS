@@ -23,6 +23,7 @@ DEFAULT_CFG = {
     'gpus': '0', 'config': None, 'init': None, 'trn_batch_size': 128, 'vld_batch_size': 250, 'num_workers': 4,
     'n_epochs': 0, 'save': None, 'resolution': 224, 'valid_size': 10000, 'test': True, 'latency': None,
     'verbose': False, 'classifier_only': False, 'reset_running_statistics': True,
+
 }
 
 target_layers = {'Conv2D':Conv2d,
@@ -149,24 +150,25 @@ def bash_command_template_multi_exits(**kwargs):
     cfg['output_path'] = kwargs['save']
     cfg['mmax'] = kwargs['mmax']
     cfg['top1min'] = kwargs['top1min']
+    cfg['method'] = kwargs['method']
+    cfg['use_val'] = kwargs['use_val']
+    cfg['w_gamma'] = kwargs['w_gamma']
+    cfg['w_beta'] = kwargs['w_beta']
+    cfg['w_alpha'] = kwargs['w_alpha']
+    cfg['support_set'] = kwargs['support_set']
+    cfg['backbone_epochs'] = kwargs['backbone_epochs']
+    cfg['warmup_ee_epochs'] = kwargs['warmup_epochs']
+    cfg['ee_epochs'] = kwargs['ee_epochs']
+    cfg['threads'] = kwargs['n_workers']
 
-    #+dataset=cifar10 +method=bernulli_logits method.pre_trained="$PRETRAINED" +model=mobilenetv3 +model.path="$MODEL_PATH" +training=cifar10 hydra.run.dir="$OUTPUT_PATH" training.device="$DEVICE" experiment.load=true
-
-    execution_line = "CUDA_VISIBLE_DEVICES={} python early_exit/train.py".format(gpus)
-    execution_line += " +{}={}".format("dataset",cfg['dataset'])
-    execution_line += " +{}={}".format("method",'bernulli_logits') #Confidence Branch Network (CBN)
-    execution_line += " {}={}".format("method.pre_trained", "true")
-    execution_line += " +{}={}".format("model",cfg['model'])
-    execution_line += " +{}={}".format("model.path",cfg['model_path'])
-    execution_line += " +{}={}".format("training",cfg['dataset'])
-    execution_line += " {}={}".format("hydra.run.dir",cfg['output_path'])
-    execution_line += " {}={}".format("training.device",cfg['device'])
-    execution_line += " {}={}".format("experiment.load","true")
-    execution_line += " +{}={}".format("mmax",cfg['mmax'])
-    execution_line += " +{}={}".format("top1min",cfg['top1min'])
-
-    #for k, v in cfg.items():
-    #    execution_line += " {}".format(v)
+    execution_line = "python early_exit/train.py".format(gpus)
+    for k, v in cfg.items():
+        if v is not None:
+            if isinstance(v, bool):
+                if v:
+                    execution_line += " --{}".format(k)
+            else:
+                execution_line += " --{} {}".format(k, v)
     execution_line += ' &'
     return execution_line
 
@@ -193,8 +195,9 @@ def bash_command_template_entropic(**kwargs):
     cfg ['pmax'] = kwargs['pmax']
     cfg['p'] = kwargs['penalty']
     cfg['alpha_norm'] = kwargs['alpha_norm']
+    cfg['use_val'] = kwargs['use_val']
+    cfg['threads'] = kwargs['n_workers']
 
-    #execution_line = "CUDA_VISIBLE_DEVICES={} python trainers/entropic/train.py".format(gpus)
     execution_line = "python robustness/train.py".format(gpus)
     for k, v in cfg.items():
         if v is not None:

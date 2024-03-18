@@ -318,7 +318,6 @@ def get_intermediate_classifiers_adaptive(model, final_classifier,
         #    c_macs_next = int(profile_macs(predictors[-1], outputs[i+1]))/1e6 #get_net_info(predictors[-1], (input_sample[-3],input_sample[-2],input_sample[-1]))['macs']
         #else:
         _, c_macs_next = get_classifier_i_cost(predictors[-1], outputs[i+1])
-        print("MACS:", c_macs_next)
         max_ks = calculate_maxpool_kernel_size(chs)
         ks = 1
         while((b_macs_i + c_macs_i) >= (b_macs_next + c_macs_next) 
@@ -343,7 +342,7 @@ def get_intermediate_classifiers_adaptive(model, final_classifier,
 
     return predictors
 
-def extract_balanced_subset(train_loader, subset_percentage, n_classes):
+def extract_balanced_subset(train_loader, subset_percentage, n_classes, n_workers):
 
     # Determine the percentage of the total dataset to extract as a subset
     # Calculate the size of the subset based on the percentage
@@ -383,7 +382,7 @@ def extract_balanced_subset(train_loader, subset_percentage, n_classes):
     # Create a Subset object and loader for the balanced subset indices
     balanced_support_dataset = Subset(train_dataset, subset_indices)
     bs = 64
-    balanced_support_loader = DataLoader(balanced_support_dataset, batch_size=bs, shuffle=True)
+    balanced_support_loader = DataLoader(balanced_support_dataset, batch_size=bs, shuffle=True, num_workers=n_workers)
     
     
     # Remove the balanced subset samples from the original dataset
@@ -391,7 +390,7 @@ def extract_balanced_subset(train_loader, subset_percentage, n_classes):
     remaining_dataset = Subset(train_dataset, remaining_indices)
 
     # Create a new train loader for the modified dataset
-    modified_train_loader = DataLoader(remaining_dataset, batch_size=bs, shuffle=True)
+    modified_train_loader = DataLoader(remaining_dataset, batch_size=bs, shuffle=True, num_workers=n_workers)
 
     return balanced_support_loader, modified_train_loader
 
@@ -529,7 +528,7 @@ def calculate_centroids_scores(dataloader, model, predictors, n_classes):
 
     return centroids
 
-def get_subnet_folder_by_backbone(exp_path, backbone, nsubnet):
+def get_subnet_folder_by_backbone(exp_path, backbone):
         """ search for a subnet folder in the experiment folder filtering by subnet architecture """
         import glob
         split = exp_path.rsplit("_",1)
@@ -537,7 +536,7 @@ def get_subnet_folder_by_backbone(exp_path, backbone, nsubnet):
         path = exp_path.rsplit("/",1)[0] 
         folder_path=None
 
-        for file in glob.glob(os.path.join(path + '/iter_*', "net_*/net_*.subnet")):
+        for file in glob.glob(os.path.join(path + '/iter_*', "net_*/net.subnet")):
             arch = json.load(open(file))  
             pre,ext= os.path.splitext(file)
             num=int(pre.rsplit("_",1)[1]) 
@@ -545,7 +544,7 @@ def get_subnet_folder_by_backbone(exp_path, backbone, nsubnet):
             split2 = split[1].rsplit("/",1)
             niter = int(split2[0])
             arch = {'ks':arch['ks'],'e':arch['e'],'d':arch['d']}
-            if arch == backbone and (niter<maxiter or (niter==maxiter and num<nsubnet)) :
+            if arch == backbone and (niter<maxiter or (niter==maxiter)) :
                 folder_path = pre.rsplit("/",1)[0]
                 return folder_path
 
