@@ -603,13 +603,15 @@ def binary_bernulli_trainer(model: BranchModel,
         if epoch == n_epoch_gamma:
             #w_gg=10
             print("SUPPORT SET ON")
-            
+
+        '''
             if (gg_on):
                 print("GLOBAL GATE ON")
                 ## Trainable paramater
                 c = 0 # Arbitrary value s.t. sigma(c) is 0.5, the maximum point of the entropy function
                 global_gate = nn.Parameter(c * torch.ones(model.n_branches()),requires_grad=True) #vector of scalars
                 optimizer.add_param_group({'params': global_gate, 'lr': 0.1})
+        '''
     
 
         if epoch >= n_epoch_gamma:

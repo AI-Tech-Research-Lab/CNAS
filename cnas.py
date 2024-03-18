@@ -94,6 +94,7 @@ class CNAS:
         self.alpha_norm = 1.0 # alpha factor for entropic training
 
         # Early Exit params
+        self.method = kwargs.pop('method', 'bernulli') # method for early exit training
         self.w_alpha = kwargs.pop('w_alpha', 1.0) # weight for alpha factor
         self.w_beta = kwargs.pop('w_beta', 1.0)
         self.w_gamma = kwargs.pop('w_gamma', 1.0)
@@ -319,12 +320,13 @@ class CNAS:
         gen_dir = os.path.join(self.save_path, "iter_{}".format(it))
 
         prepare_eval_folder(
-            gen_dir, archs, self.gpu, self.n_gpus, self.gpu_list, self.trainer_type, n_workers = self.n_workers,
+            gen_dir, archs, self.gpu, self.n_gpus, 
+            self.gpu_list, self.trainer_type, n_workers = self.n_workers,
             data=self.data, dataset=self.dataset, model=self.model, pmax = self.pmax, 
             mmax =self.mmax, top1min=self.top1min, penalty = self.penalty,
             supernet_path=self.supernet_path, pretrained=self.pretrained, n_epochs = self.n_epochs, optim=self.optim, sigma_min=self.sigma_min,
             sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.res, alpha_norm=self.alpha_norm, use_val=self.use_val,
-            w_alpha = self.w_alpha, w_beta = self.w_beta, w_gamma = self.w_gamma, warmup_ee_epochs = self.warmup_ee_epochs, ee_epochs = self.ee_epochs)
+            method = self.method, w_alpha = self.w_alpha, w_beta = self.w_beta, w_gamma = self.w_gamma, warmup_ee_epochs = self.warmup_ee_epochs, ee_epochs = self.ee_epochs)
 
         subprocess.call("sh {}/run_bash.sh".format(gen_dir), shell=True)
 
@@ -554,7 +556,7 @@ class AuxiliarySingleLevelProblem(Problem):
 
         top1_err = self.acc_predictor.predict(x)[:, 0]  # predicted top1 error
 
-        if self.compl_predictor is not None:
+        if self.compl_predictor is not None and self.ss == 'cbnmobilenetv3':
 
             compl = self.compl_predictor.predict(x)[:, 0]  # predicted compl error
             constraint = self.fmax
@@ -565,6 +567,7 @@ class AuxiliarySingleLevelProblem(Problem):
 
             for i, (_x, acc_err, ci) in enumerate(zip(x, top1_err, compl)):
 
+                '''
                 if(self.ss.supernet == 'resnet50_he'):
                     if not self._isvalid(_x):
                         f[i,0] = 10*15
@@ -576,6 +579,7 @@ class AuxiliarySingleLevelProblem(Problem):
                         f[i,0] = 10*15
                         f[i,1] = 10*15
                         continue
+                
 
                 config = self.ss.decode(_x)
 
@@ -593,10 +597,11 @@ class AuxiliarySingleLevelProblem(Problem):
                     #info['macs']=info['macs'][-1]
                 else:
                     info = get_net_info(subnet, (3, r, r), print_info=False)
+                '''
 
                 f[i, 0] = acc_err
 
-                ## Compute the normalized constraint violation (CV)
+                ## Compute the normalized constraint violation (CV) (NACHOS)
                 if(cmax!=constraint):
                     cv = max(0,(ci-constraint))/abs(cmax-constraint) 
                 else:

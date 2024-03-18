@@ -155,9 +155,9 @@ def bash_command_template_multi_exits(**kwargs):
     cfg['w_gamma'] = kwargs['w_gamma']
     cfg['w_beta'] = kwargs['w_beta']
     cfg['w_alpha'] = kwargs['w_alpha']
-    cfg['support_set'] = kwargs['support_set']
-    cfg['backbone_epochs'] = kwargs['backbone_epochs']
-    cfg['warmup_ee_epochs'] = kwargs['warmup_epochs']
+    #cfg['support_set'] = kwargs['support_set']
+    cfg['backbone_epochs'] = kwargs['n_epochs']
+    cfg['warmup_ee_epochs'] = kwargs['warmup_ee_epochs']
     cfg['ee_epochs'] = kwargs['ee_epochs']
     cfg['threads'] = kwargs['n_workers']
 
