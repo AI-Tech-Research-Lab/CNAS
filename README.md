@@ -3,16 +3,19 @@ This repository contains the code for a Neural Architecture Search (NAS) framewo
 - Early Exit classifiers on top of Once-For-All (OFA)[2] backbones (introduced in EDANAS[3]) and constrained in their number of MAC operations (introduced in NACHOS [4])
 - Out-Of-Distribution (OOD) robustness optimization accounting for the flatness of the loss landscape (introduced in FLATNAS [5])
 ## Overview
+
 The inputs of the CNAS framework consist of:
 - `Dataset`: a dataset split into a training and a validation set
 - `Eval hyperparams`: hyperparameters used for evaluating a candidate network such as the weights of the objectives and the number of epochs of different training stages
 - `Model constraints`: functional and technological constraints. The former refers to constraints on the type of processing layers and operations that are carried out in the designed neural network; the latter consists in constraints on the computational and memory demand of the designed neural network.
 - `OFA set`: a set of candidate networks sampled from the OFA supernet
 - `ADA set`: a set of hyperparameters used for enhancing an OFA backbone with adaptive capability (e.g., early exit).
+  
 The modules of CNAS framework consist of:
 - `OFA Adapter`: module that takes in input a backbone from the OFA set and a configuration from the ADA set and outputs an enhanced adaptive network.
 - `Search Space`: the search space of the NAS. In particular, the ADAOFA search space consists of all the possible configurations of enhanced adaptive networks.
 - `Search Strategy`: the search strategy of the NAS. It performs a bi-objective optimization through a genetic algorithm (NSGA-II). The first objective is the predicted accuracy (top1 accuracy or a more refined metric such as the top1_robust used for OOD evaluation) and the second objective is a measure related to the complexity of the network (e.g. the memory demand or the computational demand).
+  
 The outputs of the CNAS framework consist of:
 - `Static NN(s)`: network(s) without adaptive capability.
 - `Adaptive NN(s)`: network(s) with adaptive capability.
