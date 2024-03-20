@@ -4,7 +4,7 @@ This repository contains the code for a Neural Architecture Search (NAS) framewo
 - Out-Of-Distribution (OOD) robustness optimization accounting for the flatness of the loss landscape (introduced in FLATNAS [5])
 ## Overview
 
-<img align="top" width="600" src="assets/CNAS_scheme.png">
+<img align="top" width="1000" src="assets/CNAS_scheme.png">
 
 The inputs of the CNAS framework consist of:
 - `Dataset`: a dataset split into a training and a validation set
