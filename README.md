@@ -55,7 +55,7 @@ Syntax: python msunas.py \
     --resume /path/to/iter/stats \ # iter stats file path
     --n_gpus 8 \ # number of available gpus
     --gpu 1 \ # required number of gpus per evaluation job
-    --n_workers 0 \ # number of threads for dataloader
+    --n_workers [2] \ # number of threads for dataloader
     --n_epochs 5 \ # number of epochs of training of a candidate network. 5 is the suggested value.
     --dataset [cifar10/cifar100/imagenet] \ # dataset 
     --n_classes [10/100/1000] \ # number of classes
