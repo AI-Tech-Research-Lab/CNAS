@@ -47,7 +47,7 @@ Download the dataset from the link embedded in the name. Datasets with * can be 
 | [CIFAR-10-C](https://github.com/hendrycks/robustness) | OOD| 50,000 | 10,000 | 10 |
 | [CIFAR-100-C](https://github.com/hendrycks/robustness) | | 50,000 | 10,000 | 100 |
 
-- The OOD datasets are perturbed versions of the IID counterparts. 15 types of distortions are available (e.g., Gaussian Noise and Impulse Noise) with different levels of intensity (from 1 to 5).
+- The OOD datasets are perturbed versions of the IID counterparts. 15 types of distortions are available (e.g., Gaussian Noise and Impulse Noise) with different levels of intensity (from 1 to 5). The code for the creation of these datasets is available in the robustness/utility/ood_dataset.py. Since these datasets are available only with 32x32 resolution, we provide the code for reproducing the distortions at any resolution in robustness/evaluate_cifar10c.py.
 
 ## How to launch the search
 ```python
