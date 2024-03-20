@@ -146,6 +146,7 @@ def bash_command_template_multi_exits(**kwargs):
     cfg['dataset'] = kwargs['dataset']
     cfg['model'] = kwargs['model']
     cfg['device'] = gpus #kwargs['device']
+    cfg['resolution'] = kwargs['res']
     cfg['model_path'] = kwargs['subnet']
     cfg['output_path'] = kwargs['save']
     cfg['mmax'] = kwargs['mmax']
@@ -521,11 +522,8 @@ def get_net_from_OFA(subnet_path, n_classes=10, supernet='supernets/ofa_mbv3_d23
     ofa = OFAEvaluator(n_classes=n_classes,
     model_path=supernet,
     pretrained = pretrained)
-    r=config.get("r",32)
-    input_shape = (3,r,r)
+    r=config.get("r",None)
     subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
-    #if early_exit:
-    #    subnet = EEMobileNetV3(subnet.first_conv, subnet.blocks, config['b'], config['d'])
     return subnet, r
 
 def get_subnet_folder(exp_path, subnet):

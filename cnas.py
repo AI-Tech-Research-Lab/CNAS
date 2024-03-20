@@ -62,6 +62,12 @@ class CNAS:
             'search_space', 'mobilenetv3')  # supernet type
         self.pretrained = kwargs.pop('pretrained',True) #use pretrained weights
         #self.latency = self.sec_obj if "cpu" in self.sec_obj or "gpu" in self.sec_obj else None
+        self.lr = kwargs.pop('lr',224) #minimum resolution
+        self.ur = kwargs.pop('ur',224) #maximum resolution
+        self.rstep = kwargs.pop('rstep',4) #resolution step
+        self.seed = kwargs.pop('seed', 0)  # random seed
+        self.optim = kwargs.pop('optim', "SGD") # training optimizer
+
         # Trainer type 
         self.trainer_type = kwargs.pop('trainer_type', 'single-exit')
         # Constraint params
@@ -74,17 +80,11 @@ class CNAS:
         self.wf = kwargs.pop('fmax',1/40) #weight for flops
         self.wa = kwargs.pop('amax',1) #weight for activations
         self.penalty = kwargs.pop('amax',10**10) #static penalty factor
-        self.lr = kwargs.pop('lr',224) #minimum resolution
-        self.ur = kwargs.pop('ur',224) #maximum resolution
-        self.rstep = kwargs.pop('rstep',4) #resolution step
-        self.seed = kwargs.pop('seed', 0)  # random seed
-        self.optim = kwargs.pop('optim', "SGD") # training optimizer
         # Robustness params
         self.sigma_min = kwargs.pop('sigma_min', 0.05) # min noise perturbation intensity
         self.sigma_max = kwargs.pop('sigma_max', 0.05) # max noise perturbation intensity
         self.sigma_step = kwargs.pop('sigma_step', 0) # noise perturbation intensity step
         self.alpha = kwargs.pop('alpha', 0.5) # alpha parameter for entropic figure
-        self.res = kwargs.pop('res', 32) # fixed resolution for entropic training
 
         sigma_step=self.sigma_step
         if self.sigma_max == self.sigma_min:
@@ -102,7 +102,6 @@ class CNAS:
         self.ee_epochs = kwargs.pop('ee_epochs', 0) # early exit epochs with support set
 
         self.search_space = OFASearchSpace(self.search_space,self.lr,self.ur, self.rstep)
-
 
     def search(self):
 
@@ -325,7 +324,7 @@ class CNAS:
             data=self.data, dataset=self.dataset, model=self.model, pmax = self.pmax, 
             mmax =self.mmax, top1min=self.top1min, penalty = self.penalty,
             supernet_path=self.supernet_path, pretrained=self.pretrained, n_epochs = self.n_epochs, optim=self.optim, sigma_min=self.sigma_min,
-            sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.res, alpha_norm=self.alpha_norm, use_val=self.use_val,
+            sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.lr, alpha_norm=self.alpha_norm, use_val=self.use_val,
             method = self.method, w_alpha = self.w_alpha, w_beta = self.w_beta, w_gamma = self.w_gamma, warmup_ee_epochs = self.warmup_ee_epochs, ee_epochs = self.ee_epochs)
 
         subprocess.call("sh {}/run_bash.sh".format(gen_dir), shell=True)
@@ -350,7 +349,6 @@ class CNAS:
                 stat=stat+(stats['top1'], stats['robustness'],)
 
             all_stats.append(stat)
-
         
         return all_stats
         

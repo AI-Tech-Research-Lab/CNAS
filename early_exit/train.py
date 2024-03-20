@@ -49,6 +49,7 @@ if __name__ == "__main__":
     parser.add_argument('--top1min', type=float, default=0.0, help='minimum top1 accuracy allowed')
     parser.add_argument("--use_early_stopping", default=True, type=bool, help="True if you want to use early stopping.")
     parser.add_argument("--early_stopping_tolerance", default=5, type=int, help="Number of epochs to wait before early stopping.")
+    parser.add_argument("--resolution", default=224, type=int, help="Image resolution.")
 
     #method: bernulli
     parser.add_argument("--method", type=str, default='bernulli', help="Method to use for training: bernulli or joint")
@@ -103,6 +104,9 @@ if __name__ == "__main__":
     device = torch.device(device)
     initialize_seed(42, use_cuda)
 
+    n_subnet = args.output_path.rsplit("_", 1)[1]
+    save_path = os.path.join(args.output_path, 'net_{}.stats'.format(n_subnet))
+
     supernet_path = args.supernet_path
     if args.model_path is not None:
         model_path = args.model_path
@@ -123,6 +127,9 @@ if __name__ == "__main__":
                                 supernet=args.supernet_path, 
                                 n_classes=args.n_classes, 
                                 pretrained=args.pretrained)
+    if res is None:
+        res = args.resolution
+        
     logging.info(f"DATASET: {args.dataset}")
     logging.info("Resolution: %s", res)
 
@@ -215,7 +222,7 @@ if __name__ == "__main__":
         iter_path = args.output_path.rsplit("/",1)[0] 
         
         #CHECK BACKBONE IN ARCHIVE
-        arch = json.load(open(os.path.join(args.outputpath,'net.subnet')))
+        arch = json.load(open(os.path.join(args.output_path,'net_{}.subnet'.format(n_subnet))))
         arch_b={'ks':arch['ks'],'e':arch['e'],'d':arch['d']}
         backbone_dir=get_subnet_folder_by_backbone(iter_path,arch_b)
 
@@ -255,8 +262,6 @@ if __name__ == "__main__":
                                 if 'binary_classifier' not in k}
 
         classifiers.load_state_dict(loaded_state_dict)
-
-        save_path = os.path.join(args.output_path, 'net.stats')
 
         # Load the JSON data from the file
         with open(save_path, 'r') as handle:
@@ -553,8 +558,6 @@ if __name__ == "__main__":
     results['ece_scores']=ece_scores
     
     if args.save:
-        save_path = os.path.join(args.output_path, 'net.stats') # #exp__path = ..iter_x/exp_y 
-
         with open(save_path, 'w') as handle:
             json.dump(results, handle)
 

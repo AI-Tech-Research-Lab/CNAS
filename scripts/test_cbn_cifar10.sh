@@ -5,6 +5,7 @@ python cnas.py --sec_obj avg_macs \
               --supernet_path ./supernets/ofa_mbv3_d234_e346_k357_w1.0 --pretrained  \
               --save ../results/nachos-cifar10 --iterations 2 \
               --search_space cbnmobilenetv3 --trainer_type multi_exits \
-              --warmup_ee_epochs 2 --ee_epochs 3 \
-              --mmax 2.7 --top1min 0.65 \
-              --lr 32 --ur 32 
+              --n_epochs 10 \
+              --warmup_ee_epochs 5 --ee_epochs 5 \
+              --mmax 5 --top1min 0.65 \
+              --lr 180 --ur 180 
