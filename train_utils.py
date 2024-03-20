@@ -729,12 +729,22 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, use_va
         norm_mean = [0.49139968, 0.48215827, 0.44653124]
         norm_std = [0.24703233, 0.24348505, 0.26158768]
 
+        if resolution==32:
+            # data processing used in NACHOS
+            tt = [Resize((resolution, resolution))]
+
+            if augmentation:
+                tt.extend([RandomHorizontalFlip(),
+                    RandomCrop(resolution, padding=resolution//8)])
+
+        else:
         
-        tt = [RandomResizedCrop(resolution, scale=(0.08,1.0)),
-              RandomHorizontalFlip(), #p=0.5 default
-                ToTensor(),
-                Normalize(norm_mean, norm_std)
-                  ]
+            tt = [RandomResizedCrop(resolution, scale=(0.08,1.0)),
+                RandomHorizontalFlip()] #p=0.5 default]
+        
+        tt.extend([ ToTensor(),
+                    Normalize(norm_mean, norm_std)
+                    ])
                     
         
         '''
@@ -754,8 +764,7 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, use_va
         '''
 
         t = [
-            #Resize((resolution, resolution)),
-            Resize(resolution, interpolation=3),  # BICUBIC interpolation
+            Resize((resolution, resolution)),
             ToTensor(),
             Normalize(norm_mean, norm_std)]
 
