@@ -36,14 +36,14 @@ The outputs of the CNAS framework consist of:
 - `robustness` contains the trainer and the utilities for robustness optimization.
 
 ## Dataset
-Download the dataset from the link embedded in the name.
+Download the dataset from the link embedded in the name. Datasets with * can be automatically downloaded.
 | Dataset | Type | Train Size | Test Size | #Classes |
 |:-:|:-:|:-:|:-:|:-:|
 | [ImageNet](http://www.image-net.org/) | IID | 1,281,167 | 50,000 | 1,000 |
 | [CINIC-10](https://github.com/BayesWatch/cinic-10) |  | 180,000 | 9,000 | 10 |
 | [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html)* | | 50,000 | 10,000 | 10 |
 | [CIFAR-100](https://www.cs.toronto.edu/~kriz/cifar.html)* |  | 50,000 | 10,000 | 100 |
-| [SVHN](http://ufldl.stanford.edu/housenumbers)* | | 73,257 | 26,032 | 10 |
+| [SVHN](http://ufldl.stanford.edu/housenumbers) | | 73,257 | 26,032 | 10 |
 | [CIFAR-10-C](https://github.com/hendrycks/robustness) | OOD| 50,000 | 10,000 | 10 |
 | [CIFAR-100-C](https://github.com/hendrycks/robustness) | | 50,000 | 10,000 | 100 |
 
