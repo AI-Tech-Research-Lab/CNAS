@@ -3,6 +3,9 @@ This repository contains the code for a Neural Architecture Search (NAS) framewo
 - Early Exit classifiers on top of OFA[2] backbones (introduced in EDANAS[3]) and constrained in their number of MAC operations (introduced in NACHOS [4])
 - Out-Of-Distribution (OOD) robustness optimization accounting for the flatness of the loss landscape (introduced in FLATNAS [5])
 
+## Overview
+<img align="right" width="600" src="assets/CNAS_scheme.png">
+
 ## Requirements
 
 1. Install requirements with `pip install -r requirements.txt`
