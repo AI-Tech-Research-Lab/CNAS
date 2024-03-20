@@ -2,7 +2,6 @@ This repository contains the code for a Neural Architecture Search (NAS) framewo
 - technological and functional constraints (introduced in CNAS[1])
 - Early Exit classifiers on top of Once-For-All (OFA)[2] backbones (introduced in EDANAS[3]) and constrained in their number of MAC operations (introduced in NACHOS [4])
 - Out-Of-Distribution (OOD) robustness optimization accounting for the flatness of the loss landscape (introduced in FLATNAS [5])
-<img align="top" width="600" src="assets/CNAS_scheme.png">
 ## Overview
 The CNAS framework inputs consist of:
 - `Dataset`: a dataset split into a training and a validation set
