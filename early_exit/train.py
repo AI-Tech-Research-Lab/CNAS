@@ -129,7 +129,7 @@ if __name__ == "__main__":
                                 pretrained=args.pretrained)
     if res is None:
         res = args.resolution
-        
+
     logging.info(f"DATASET: {args.dataset}")
     logging.info("Resolution: %s", res)
 
@@ -557,8 +557,7 @@ if __name__ == "__main__":
         ece_scores[i]=scores[0]
     results['ece_scores']=ece_scores
     
-    if args.save:
-        with open(save_path, 'w') as handle:
+    with open(save_path, 'w') as handle:
             json.dump(results, handle)
 
     #log.info('#' * 100)

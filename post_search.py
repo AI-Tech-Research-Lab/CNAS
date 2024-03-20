@@ -8,7 +8,7 @@ from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 from pymoo.core.decision_making import DecisionMaking, find_outliers_upper_tail, NeighborFinder
 from explainability import get_archive
 from trainers.cbn.utils import get_subnet_folder
-from search_space import OFASearchSpace
+from ofa_evaluator import OFAEvaluator, get_net_info, get_adapt_net_info
 
 from matplotlib import pyplot as plt
 
@@ -110,9 +110,7 @@ def main(args):
     #I = np.append(I, 0)
 
     # create the supernet
-    from ofa_evaluator import OFAEvaluator, get_net_info, get_adapt_net_info
-    supernet = OFAEvaluator(n_classes = args.n_classes, model_path=args.supernet_path, pretrained = args.supernet_path)
-    #search_space = OFASearchSpace(args.search_space,args.lr,args.ur,args.rstep)
+    #supernet = OFAEvaluator(n_classes = args.n_classes, model_path=args.supernet_path, pretrained = args.supernet_path)
 
     for rank, idx in enumerate(I):
 
@@ -129,7 +127,7 @@ def main(args):
         subnet_folder = get_subnet_folder(exp_path,config)
         shutil.rmtree(save, ignore_errors=True)
         shutil.copytree(subnet_folder, save)
-        n_subnet = subnet_folder.rsplit("_", 1)[1]
+        #n_subnet = subnet_folder.rsplit("_", 1)[1]
         subnet_file = [filename for filename in os.listdir(save) if filename.endswith('.subnet')][0]
         stats_file = [filename for filename in os.listdir(save) if filename.endswith('.stats')][0]
         os.rename(os.path.join(save, subnet_file), os.path.join(save, "net.subnet"))

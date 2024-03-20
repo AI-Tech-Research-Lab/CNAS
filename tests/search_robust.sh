@@ -1,3 +1,5 @@
+# Search a MobileNetV3 on CIFAR-10 using SAM optimizer and optimizing on top1 robust and constrained params (FlatNAS)
+
 #optim=SGD; n_epochs=6; first_obj=top1
 optim=SAM; n_epochs=6; first_obj=top1_robust
 gpu=0
@@ -13,7 +15,7 @@ alpha=0.5
 sigma=0.05
 #sec_obj=macs # macs, params, activations, tinyml
 #
-iterations=26
+iterations=30
 resume_iter=1
 #
 seed=1
@@ -31,6 +33,4 @@ python cnas.py --n_gpus 1 --gpu 1 --gpu_list $gpu --n_workers 4 \
         --sigma_min $sigma --sigma_max $sigma \
         --iterations $iterations --n_epochs $n_epochs --seed $seed \
         --sec_obj $sec_obj --pmax $pmax \
-        --save ../results/test-entropic-mbv3-$dataset-$optim-$first_obj-$sec_obj-max$pmax-alpha$alpha-sigma$sigma-ep$n_epochs-multires-balance #\
-        #--resume ../results/entropic-mbv3-$dataset-$optim-$first_obj-$sec_obj-max$pmax-alpha$alpha-sigma$sigma-ep$n_epochs-multires-balance/iter_${resume_iter}
-        #--alpha $alpha --res $res --optim $optim \ #for search with fixed resolution
+        --save ../results/test-entropic-mbv3-$dataset-$optim-$first_obj-$sec_obj-max$pmax-alpha$alpha-sigma$sigma-ep$n_epochs-multires-balance

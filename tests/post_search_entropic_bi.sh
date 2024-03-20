@@ -18,8 +18,4 @@ python post_search.py \
   --get_archive --n 3 --n_classes 10 \
   --save ../results/entropic-mbv3-$dataset-$optim-$first_obj-$sec_obj-max$pmax-alpha$alpha-sigma$sigma-ep$n_epochs-multires-balance/final \
   --expr ../results/entropic-mbv3-$dataset-$optim-$first_obj-$sec_obj-max$pmax-alpha$alpha-sigma$sigma-ep$n_epochs-multires-balance/iter_$iter.stats \
-  --first_obj $first_obj --sec_obj $sec_obj #\
-  #--sec_obj robustness
-
-  #--save ../results/risultati-res32/entropic-mbv3-$dataset-$optim-$first_obj-$sec_obj-max$pmax-alpha$alpha-sigma$sigma-ep$n_epochs-10jan/final \
-  #--expr ../results/risultati-res32/entropic-mbv3-$dataset-$optim-$first_obj-$sec_obj-max$pmax-alpha$alpha-sigma$sigma-ep$n_epochs-10jan/iter_$iter.stats \
+  --first_obj $first_obj --sec_obj $sec_obj 
