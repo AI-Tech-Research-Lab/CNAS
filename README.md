@@ -1,10 +1,16 @@
 This repository contains the code for a Neural Architecture Search (NAS) framework supporting for:
 - technological and functional constraints (introduced in CNAS[1])
-- Early Exit classifiers on top of OFA[2] backbones (introduced in EDANAS[3]) and constrained in their number of MAC operations (introduced in NACHOS [4])
+- Early Exit classifiers on top of Once-For-All (OFA)[2] backbones (introduced in EDANAS[3]) and constrained in their number of MAC operations (introduced in NACHOS [4])
 - Out-Of-Distribution (OOD) robustness optimization accounting for the flatness of the loss landscape (introduced in FLATNAS [5])
 
 ## Overview
 <img align="right" width="600" src="assets/CNAS_scheme.png">
+The CNAS framework inputs consist of:
+- Dataset: a dataset split into a training and a validation set.
+- Eval hyperparams: hyperparameters used for evaluating a candidate network such as the weights of the objectives and the number of epochs of different training stages.
+- Model constraints: functional and technological constraints. The former refers to constraints on the type of processing layers and operations that are carried out in the designed neural network; the latter consists in constraints on the computational and memory demand of the designed neural network.
+- OFA set: a set of candidate networks sampled from the OFA supernet.
+- ADA set: a set of hyperparameters used for enhancing an OFA backbone with adaptive capability (e.g., early exit).
 
 ## Requirements
 
