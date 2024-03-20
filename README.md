@@ -4,7 +4,7 @@ This repository contains the code for a Neural Architecture Search (NAS) framewo
 - Out-Of-Distribution (OOD) robustness optimization accounting for the flatness of the loss landscape (introduced in FLATNAS [5])
 
 ## Overview
-<img align="right" width="600" src="assets/CNAS_scheme.png">
+<img align="top" width="600" src="assets/CNAS_scheme.png">
 The CNAS framework inputs consist of:
 - Dataset: a dataset split into a training and a validation set.
 - Eval hyperparams: hyperparameters used for evaluating a candidate network such as the weights of the objectives and the number of epochs of different training stages.
