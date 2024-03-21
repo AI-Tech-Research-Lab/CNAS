@@ -36,18 +36,18 @@ The outputs of the CNAS framework consist of:
 - `robustness` contains the trainer and the utilities for robustness optimization.
 
 ## Dataset
-Download the dataset from the link embedded in the name.
+Download the dataset from the link embedded in the name. Datasets with * can be automatically downloaded.
 | Dataset | Type | Train Size | Test Size | #Classes |
 |:-:|:-:|:-:|:-:|:-:|
 | [ImageNet](http://www.image-net.org/) | IID | 1,281,167 | 50,000 | 1,000 |
 | [CINIC-10](https://github.com/BayesWatch/cinic-10) |  | 180,000 | 9,000 | 10 |
 | [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html)* | | 50,000 | 10,000 | 10 |
 | [CIFAR-100](https://www.cs.toronto.edu/~kriz/cifar.html)* |  | 50,000 | 10,000 | 100 |
-| [SVHN](http://ufldl.stanford.edu/housenumbers)* | | 73,257 | 26,032 | 10 |
+| [SVHN](http://ufldl.stanford.edu/housenumbers) | | 73,257 | 26,032 | 10 |
 | [CIFAR-10-C](https://github.com/hendrycks/robustness) | OOD| 50,000 | 10,000 | 10 |
 | [CIFAR-100-C](https://github.com/hendrycks/robustness) | | 50,000 | 10,000 | 100 |
 
-- The OOD datasets are perturbed versions of the IID counterparts. 15 types of distortions are available (e.g., Gaussian Noise and Impulse Noise) with different levels of intensity (from 1 to 5).
+- The OOD datasets are perturbed versions of the IID counterparts. 15 types of distortions are available (e.g., Gaussian Noise and Impulse Noise) with different levels of intensity (from 1 to 5). The code for the creation of these datasets is available in the robustness/utility/ood_dataset.py. Since these datasets are available only with 32x32 resolution, we provide the code for evaluating the distortions at any resolution in robustness/evaluate_cifar10c.py.
 
 ## How to launch the search
 ```python
