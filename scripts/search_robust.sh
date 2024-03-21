@@ -1,4 +1,4 @@
-# Search a MobileNetV3 on CIFAR-10 by optimizing the top1 robust and constrained params (FlatNAS)
+# Search a MobileNetV3 on CIFAR-10 by optimizing the top1 robust and the number of params with a constraint on the number of params. (FlatNAS)
 # Use optimizer SAM in the training of a candidate network
 
 optim=SAM; n_epochs=6; first_obj=top1_robust #optim=SGD
@@ -6,8 +6,9 @@ gpu=0
 #
 dataset=cifar10
 
-sec_obj=c_params
+sec_obj=tiny_ml
 pmax=5.0
+wp=1.0
 alpha=0.5
 sigma=0.05
 
@@ -27,6 +28,6 @@ python cnas.py --n_gpus 1 --gpu 1 --gpu_list $gpu --n_workers 4 \
         --first_obj $first_obj --first_predictor as \
         --sigma_min $sigma --sigma_max $sigma \
         --iterations $iterations --n_epochs $n_epochs --seed $seed \
-        --sec_obj $sec_obj --pmax $pmax \
+        --sec_obj $sec_obj --pmax $pmax --wp $wp\
         --save ../results/search_path 
         

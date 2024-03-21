@@ -1,26 +1,24 @@
 import json
 import logging
 import os
-import warnings
-from copy import deepcopy
 from itertools import chain
-import datetime
 import copy
 import argparse
 import numpy as np
 import torch
-from torchvision.datasets import ImageFolder
 
 import sys
 sys.path.append(os.getcwd())
 
-from evaluators import binary_eval, entropy_eval, standard_eval, \
-    branches_eval, binary_statistics, binary_statistics_cumulative, ece_score
-from trainer import binary_bernulli_trainer, joint_trainer, \
-    standard_trainer
 from train_utils import get_data_loaders, get_optimizer, get_loss, get_lr_scheduler, initialize_seed, train, validate, load_checkpoint, Log
-from utils_ee import get_intermediate_backbone_cost, get_intermediate_classifiers_cost, get_ee_scores, get_subnet_folder_by_backbone, get_net_info, get_eenn
 from utils import get_net_from_OFA
+
+from early_exit.evaluators import binary_eval, standard_eval, ece_score
+from early_exit.trainer import binary_bernulli_trainer, joint_trainer
+from early_exit.utils_ee import get_intermediate_backbone_cost, get_intermediate_classifiers_cost, get_subnet_folder_by_backbone, get_eenn
+
+#--trn_batch_size 128 --vld_batch_size 200 --num_workers 4 --n_epochs 5 --resolution 224 --valid_size 5000
+#init_lr=0.01, lr_schedule_type='cosine' weight_decay=4e-5, label_smoothing=0.0
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -29,11 +27,11 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=128, type=int, help="Batch size used in the training and validation loop.")
     #parser.add_argument("--epochs", default=200, type=int, help="Total number of epochs.")
     parser.add_argument("--label_smoothing", default=0.1, type=float, help="Use 0.0 for no label smoothing.")
-    parser.add_argument("--learning_rate", default=0.1, type=float, help="Base learning rate at the start of the training.") #0.1
+    parser.add_argument("--learning_rate", default=0.01, type=float, help="Base learning rate at the start of the training.") #0.1
     parser.add_argument("--momentum", default=0.9, type=float, help="SGD Momentum.")
-    parser.add_argument("--threads", default=2, type=int, help="Number of CPU threads for dataloaders.")
+    parser.add_argument("--n_workers", default=2, type=int, help="Number of CPU threads for dataloaders.")
     parser.add_argument("--weight_decay", default=5e-5, type=float, help="L2 weight decay.")
-    parser.add_argument('--use_val', action='store_true', default=False, help='use validation set')
+    parser.add_argument('--val_split', default=0.0, type=float, help='use validation set')
     parser.add_argument('--optim', type=str, default='SGD', help='algorithm to use for training')
     parser.add_argument("--adaptive", default=True, type=bool, help="True if you want to use the Adaptive SAM.")
     parser.add_argument('--dataset', type=str, default='imagenet', help='name of the dataset (imagenet, cifar10, cifar100, ...)')
@@ -49,7 +47,7 @@ if __name__ == "__main__":
     parser.add_argument('--top1min', type=float, default=0.0, help='minimum top1 accuracy allowed')
     parser.add_argument("--use_early_stopping", default=True, type=bool, help="True if you want to use early stopping.")
     parser.add_argument("--early_stopping_tolerance", default=5, type=int, help="Number of epochs to wait before early stopping.")
-    parser.add_argument("--resolution", default=224, type=int, help="Image resolution.")
+    parser.add_argument("--resolution", default=32, type=int, help="Image resolution.")
 
     #method: bernulli
     parser.add_argument("--method", type=str, default='bernulli', help="Method to use for training: bernulli or joint")
@@ -133,8 +131,8 @@ if __name__ == "__main__":
     logging.info(f"DATASET: {args.dataset}")
     logging.info("Resolution: %s", res)
 
-    train_loader, val_loader, test_loader = get_data_loaders(dataset=args.dataset, batch_size=args.batch_size, threads=args.threads, 
-                                            use_val=args.use_val, img_size=res, augmentation=True, eval_test=args.eval_test)
+    train_loader, val_loader, test_loader = get_data_loaders(dataset=args.dataset, batch_size=args.batch_size, threads=args.n_workers, 
+                                            val_split=args.val_split, img_size=res, augmentation=True, eval_test=args.eval_test)
     
     if val_loader is not None:
         n_samples=len(val_loader.dataset)

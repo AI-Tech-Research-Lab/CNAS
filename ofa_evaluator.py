@@ -33,8 +33,8 @@ def pad_none(x, depth, max_depth):
             new_x += [None] * (max_depth - d)
     return new_x
 
-def tiny_ml(params,flops,activations,pmax,fmax,amax,wp,wf,wa,penalty):
-  output = wp*(params + penalty*max(0,params-pmax)) + wf*(flops + penalty*max(0,flops-fmax)) + wa*(activations + penalty*max(0,activations-amax))
+def tiny_ml(params,macs,activations,pmax,mmax,amax,wp,wm,wa,penalty):
+  output = wp*(params + penalty*max(0,params-pmax)) + wm*(macs + penalty*max(0,macs-mmax)) + wa*(activations + penalty*max(0,activations-amax))
   return output
 
 def c_params(params,pmax,penalty):

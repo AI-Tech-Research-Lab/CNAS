@@ -48,12 +48,11 @@ class CNAS:
         self.data = kwargs.pop('data', '../data')  # location of the data files
         self.dataset = kwargs.pop('dataset', 'imagenet')  # which dataset to run search on
         self.model = kwargs.pop('model', 'mobilenetv3') 
-        #self.n_classes = kwargs.pop('n_classes', 1000)  # number of classes of the given dataset
+        self.n_classes = kwargs.pop('n_classes', 1000)  # number of classes of the given dataset
         self.n_workers = kwargs.pop('n_workers', 6)  # number of threads for dataloader
-        self.use_val = kwargs.pop('use_val', True)  # use validation set for training
-        #self.vld_size = kwargs.pop('vld_size', 10000)  # number of images from train set to validate performance
-        #self.trn_batch_size = kwargs.pop('trn_batch_size', 96)  # batch size for SGD training
-        #self.vld_batch_size = kwargs.pop('vld_batch_size', 250)  # batch size for validation
+        self.val_split = kwargs.pop('val_split', 0.0)  # 'percentage of train set for validation'
+        self.trn_batch_size = kwargs.pop('trn_batch_size', 96)  # batch size for SGD training
+        self.vld_batch_size = kwargs.pop('vld_batch_size', 250)  # batch size for validation
         self.n_epochs = kwargs.pop('n_epochs', 5)  # number of epochs to SGD training
         #self.test = kwargs.pop('test', True)  # evaluate performance on test set
         self.supernet_path = kwargs.pop(
@@ -77,9 +76,9 @@ class CNAS:
         self.top1min = kwargs.pop('top1min', 0.1) #top1 constraint
         ##
         self.wp = kwargs.pop('pmax',1) #weight for params 
-        self.wf = kwargs.pop('fmax',1/40) #weight for flops
+        self.wm = kwargs.pop('mmax',1/40) #weight for macs
         self.wa = kwargs.pop('amax',1) #weight for activations
-        self.penalty = kwargs.pop('amax',10**10) #static penalty factor
+        self.penalty = kwargs.pop('penalty',10**10) #static penalty factor
         # Robustness params
         self.sigma_min = kwargs.pop('sigma_min', 0.05) # min noise perturbation intensity
         self.sigma_max = kwargs.pop('sigma_max', 0.05) # max noise perturbation intensity
@@ -229,7 +228,6 @@ class CNAS:
                 plot.add(F, s=20, facecolors='none', edgecolors='g', label='candidates predicted')
                 plot.save(os.path.join(self.save_path, 'iter_{}.png'.format(it)))
         
-
         return
     
     def compute_alpha_norm(self,exp_path):
@@ -278,12 +276,6 @@ class CNAS:
                     
                     stats = json.load(open(path))
 
-                    # dump the statistics
-                    with open(path, "w") as handle:
-                        params = stats['params']
-                        stats['c_params'] = params + self.penalty * max(0,params-self.pmax)
-                        json.dump(stats, handle)
-
                     first_obj = stats[self.first_obj]
                     sec_obj = stats.get(self.sec_obj, None)
                     
@@ -322,9 +314,10 @@ class CNAS:
             gen_dir, archs, self.gpu, self.n_gpus, 
             self.gpu_list, self.trainer_type, n_workers = self.n_workers,
             data=self.data, dataset=self.dataset, model=self.model, pmax = self.pmax, 
-            mmax =self.mmax, top1min=self.top1min, penalty = self.penalty,
-            supernet_path=self.supernet_path, pretrained=self.pretrained, n_epochs = self.n_epochs, optim=self.optim, sigma_min=self.sigma_min,
-            sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.lr, alpha_norm=self.alpha_norm, use_val=self.use_val,
+            mmax =self.mmax, amax = self.amax, wp=self.wp, wm=self.wm, wa=self.wa,
+            top1min=self.top1min, penalty = self.penalty, supernet_path=self.supernet_path, pretrained=self.pretrained, 
+            n_epochs = self.n_epochs, optim=self.optim, sigma_min=self.sigma_min,
+            sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.lr, alpha_norm=self.alpha_norm, val_split=self.val_split,
             method = self.method, w_alpha = self.w_alpha, w_beta = self.w_beta, w_gamma = self.w_gamma, warmup_ee_epochs = self.warmup_ee_epochs, ee_epochs = self.ee_epochs)
 
         subprocess.call("sh {}/run_bash.sh".format(gen_dir), shell=True)
@@ -425,7 +418,7 @@ class CNAS:
         problem = AuxiliarySingleLevelProblem(
             self.search_space, acc_predictor, compl_predictor, self.sec_obj, self.dataset,
             {'n_classes': self.n_classes, 'supernet_path': self.supernet_path, 'pretrained': self.pretrained},
-            pmax = self.pmax, fmax = self.fmax, amax = self.amax, wp = self.wp, wf = self.wf, wa = self.wa, penalty = self.penalty)
+            pmax = self.pmax, mmax = self.mmax, amax = self.amax, wp = self.wp, wm = self.wm, wa = self.wa, penalty = self.penalty)
 
         # initiate a multi-objective solver to optimize the problem
         method = NSGA2(pop_size=40, sampling=nd_X,  # initialize with current nd archs
@@ -435,7 +428,7 @@ class CNAS:
         
         # kick-off the search
         res = minimize(
-            problem, method, termination=('n_gen', 20), save_history=True, verbose=True) #verbose=True displays some printouts #default 20 generations
+            problem, method, termination=('n_gen', 2), save_history=True, verbose=True) #verbose=True displays some printouts #default 20 generations
 
         self.phi = problem.phi
         print("The ratio of feasible solutions (phi) is {:.2f}".format(problem.phi))
@@ -516,8 +509,8 @@ class AuxiliarySingleObjProblem(Problem):
 class AuxiliarySingleLevelProblem(Problem):
     """ The optimization problem for finding the next N candidate architectures """
 
-    def __init__(self, search_space, acc_predictor, compl_predictor=None, sec_obj='flops', dataset='imagenet',supernet=None, pmax = 2, fmax = 100, amax = 5,
-        wp = 1, wf = 1/40, wa = 1, penalty = 10**10):
+    def __init__(self, search_space, acc_predictor, compl_predictor=None, sec_obj='flops', dataset='imagenet',supernet=None, pmax = 2, mmax = 100, amax = 5,
+        wp = 1, wm = 1/40, wa = 1, penalty = 10**10):
         
         super().__init__(n_var=search_space.nvar, n_obj=2, n_constr=0) #type = np.int deprecated
 
@@ -536,10 +529,10 @@ class AuxiliarySingleLevelProblem(Problem):
         self.dataset = dataset
         self.lut = {'cpu': 'data/i7-8700K_lut.yaml'}
         self.pmax = pmax
-        self.fmax = fmax
+        self.mmax = mmax
         self.amax = amax
         self.wp = wp
-        self.wf = wf
+        self.wm = wm
         self.wa = wa
         self.penalty = penalty
         self.phi = 0
@@ -557,47 +550,13 @@ class AuxiliarySingleLevelProblem(Problem):
         if self.compl_predictor is not None and self.ss == 'cbnmobilenetv3':
 
             compl = self.compl_predictor.predict(x)[:, 0]  # predicted compl error
-            constraint = self.fmax
+            constraint = self.mmax
             #compute the ratio of feasible solutions in the population (phi)
             phi = len([el for el in compl if el <= constraint])/len(compl)
             self.phi=phi
             cmax = max(compl)
 
             for i, (_x, acc_err, ci) in enumerate(zip(x, top1_err, compl)):
-
-                '''
-                if(self.ss.supernet == 'resnet50_he'):
-                    if not self._isvalid(_x):
-                        f[i,0] = 10*15
-                        f[i,1] = 10*15
-                        continue
-
-                if(self.ss.supernet == 'cbnmobilenetv3'):
-                    if not self._isvalid(_x):
-                        f[i,0] = 10*15
-                        f[i,1] = 10*15
-                        continue
-                
-
-                config = self.ss.decode(_x)
-
-                if(self.ss.supernet == 'eemobilenetv3'):
-
-                    subnet, _ = self.engine.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't': config['t']})
-                else:
-                    subnet, _ = self.engine.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
-
-                r = config.get("r",32) #default value: 32
-
-                if(self.ss.supernet == 'eemobilenetv3'):
-                    info = get_adapt_net_info(subnet, (3, r, r),measure_latency=self.sec_obj, print_info=False, clean=True, lut=self.lut, pmax = self.pmax, fmax = self.fmax,
-                amax = self.amax, wp = self.wp, wf = self.wf, wa = self.wa, penalty = self.penalty)
-                    #info['macs']=info['macs'][-1]
-                else:
-                    info = get_net_info(subnet, (3, r, r), print_info=False)
-                '''
-
-                f[i, 0] = acc_err
 
                 ## Compute the normalized constraint violation (CV) (NACHOS)
                 if(cmax!=constraint):
@@ -636,7 +595,7 @@ class AuxiliarySingleLevelProblem(Problem):
                 r = config.get("r",32) #default value: 32
 
                 if(self.ss.supernet == 'eemobilenetv3'):
-                    info = get_adapt_net_info(subnet, (3, r, r),measure_latency=self.sec_obj, print_info=False, clean=True, lut=self.lut, pmax = self.pmax, fmax = self.fmax,
+                    info = get_adapt_net_info(subnet, (3, r, r),measure_latency=self.sec_obj, print_info=False, clean=True, lut=self.lut, pmax = self.pmax, mmax = self.mmax,
                 amax = self.amax, wp = self.wp, wf = self.wf, wa = self.wa, penalty = self.penalty)
                     #info['macs']=info['macs'][-1]
                 else:
@@ -731,9 +690,7 @@ if __name__ == '__main__':
                         help='use pretrained weights')                    
     parser.add_argument('--n_workers', type=int, default=4,
                         help='number of workers for dataloader per evaluation job')
-    parser.add_argument('--use_val', action='store_true', default=True,help='use validation set for training')
-    parser.add_argument('--vld_size', type=int, default=None,
-                        help='validation set size, randomly sampled from training set')
+    parser.add_argument('--val_split', type=float, default=0.0, help='percentage of train set for validation')
     parser.add_argument('--trn_batch_size', type=int, default=128,
                         help='train batch size for training')
     parser.add_argument('--vld_batch_size', type=int, default=200,

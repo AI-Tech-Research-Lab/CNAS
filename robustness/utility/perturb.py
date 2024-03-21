@@ -69,14 +69,11 @@ def compute_best_sigma(exp_path):
             sigma_idx = idx 
     return sigma_idx, rmse_s, rho_s, tau_s
 
-def get_net_info_runtime(device, net, loader, sigma_list, input_shape=(3, 224, 224), print_info=False):
-
-    # TODO: caricare i pesi della rete
-
-    net_info = get_net_info(net, input_shape=input_shape, print_info=print_info)
+def get_net_info_runtime(device, net, loader, sigma_list, print_info=False):
 
     # robustness
     #sigma = 0.05
+    net_info={}
     net_info['robustness'] = calculate_robustness_list(device, net, loader, sigma_list)
     net_info['robustness'] = [np.round(x, 2) for x in net_info['robustness']]
 

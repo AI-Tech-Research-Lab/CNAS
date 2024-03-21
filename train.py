@@ -8,10 +8,12 @@ import numpy as np
 import logging
 
 sys.path.append(os.getcwd())
-
-from train_utils import get_optimizer, get_loss, get_lr_scheduler, get_data_loaders, save_checkpoint, load_checkpoint, validate, initialize_seed, Log, train
+ 
+from train_utils import get_optimizer, get_loss, get_lr_scheduler, get_data_loaders, load_checkpoint, validate, initialize_seed, Log, train
 from utils import get_net_info, get_net_from_OFA
-
+from ofa_evaluator import tiny_ml
+from robustness.utility.perturb import get_net_info_runtime
+from robustness.evaluate_cifar10c import compute_mCE
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -24,13 +26,14 @@ if __name__ == "__main__":
     parser.add_argument("--label_smoothing", default=0.1, type=float, help="Use 0.0 for no label smoothing.")
     parser.add_argument("--learning_rate", default=0.1, type=float, help="Base learning rate at the start of the training.") #0.1
     parser.add_argument("--momentum", default=0.9, type=float, help="SGD Momentum.")
-    parser.add_argument("--threads", default=2, type=int, help="Number of CPU threads for dataloaders.")
-    parser.add_argument("--rho", default=2.0, type=int, help="Rho parameter for SAM.")
-    parser.add_argument("--weight_decay", default=5e-5, type=float, help="L2 weight decay.") #4e-5
-    parser.add_argument("--width_factor", default=8, type=int, help="How many times wider compared to normal ResNet.")
-    parser.add_argument('--use_val', action='store_true', default=False, help='use validation set')
+    parser.add_argument("--n_workers", default=2, type=int, help="Number of CPU threads for dataloaders.")
+    parser.add_argument("--weight_decay", default=5e-5, type=float, help="L2 weight decay.") 
+    parser.add_argument("--val_split", default=0.0, type=float, help='percentage of train set for validation')
     parser.add_argument('--save', action='store_true', default=True, help='save log of experiments')
+    parser.add_argument('--save_ckpt', action='store_true', default=False, help='save checkpoint')
     parser.add_argument('--optim', type=str, default='SAM', help='algorithm to use for training')
+    parser.add_argument("--rho", default=2.0, type=int, help="Rho parameter for SAM.")
+    parser.add_argument('--res', default=32, type=int, help="default resolution for training")
     parser.add_argument('--device', type=str, default='cpu', help='device to use for training / testing')
     parser.add_argument('--data', type=str, default='/mnt/datastore/ILSVRC2012', help='location of the data corpus')
     parser.add_argument('--dataset', type=str, default='imagenet', help='name of the dataset (imagenet, cifar10, cifar100, ...)')
@@ -40,13 +43,23 @@ if __name__ == "__main__":
     parser.add_argument('--model_path', type=str, default=None, help='file path to subnet')
     parser.add_argument('--output_path', type=str, default=None, help='file path to save results')
     parser.add_argument('--pretrained', action='store_true', default=False, help='use pretrained weights')
-    parser.add_argument('--save_ckpt', action='store_true', default=False, help='save checkpoint')  
-    parser.add_argument('--eval_test', action='store_true', default=True, help='evaluate test accuracy')  
-    parser.add_argument('--res', default=32, type=int, help="default resolution for training")  
-    parser.add_argument('--pmax', default=2.0, type=float, help="constraint on the number of params")
-    parser.add_argument('--mmax', default=0.0, type=int, help="constraint on the number of macs")
-    parser.add_argument('--amax', default=0.0, type=float, help="constraint on the activation size")
-    parser.add_argument('--p', default=0.0, type=float, help="penalty on params")
+    parser.add_argument('--eval_test', action='store_true', default=True, help='evaluate test accuracy')
+    parser.add_argument('--eval_robust', action='store_true', default=False, help='evaluate robustness')    
+    parser.add_argument("--sigma_min", default=0.05, type=float, help="min noise perturbation intensity")
+    parser.add_argument("--sigma_max", default=0.05, type=float, help="max noise perturbation intensity")
+    parser.add_argument("--sigma_step", default=0.0, type=float, help="step noise perturbation intensity")
+    parser.add_argument('--ood_eval', action='store_true', default=False, help='evaluate OOD robustness')
+    parser.add_argument('--load_ood', action='store_true', default=False, help='load pretrained OOD folders') 
+    parser.add_argument('--ood_data', type=str, default=None, help='OOD dataset')
+    parser.add_argument('--alpha', default=0.5, type=float, help="weight for top1_robust")  
+    parser.add_argument('--alpha_norm', default=1.0, type=float, help="weight for top1_robust normalization")
+    parser.add_argument('--pmax', default=300, type=float, help="constraint on params")
+    parser.add_argument('--mmax', default=300, type=float, help="constraint on macs")
+    parser.add_argument('--amax', default=300, type=float, help="constraint on activations")
+    parser.add_argument('--wp', default=0.0, type=float, help="weight for params")
+    parser.add_argument('--wm', default=0.0, type=float, help="weight for macs")
+    parser.add_argument('--wa', default=0.0, type=float, help="weight for activations")
+    parser.add_argument('--penalty', default=1e10, type=float, help="penalty for constraint violation")
 
     args = parser.parse_args()
 
@@ -84,8 +97,8 @@ if __name__ == "__main__":
 
     logging.info(f"DATASET: {args.dataset}")
     logging.info("Resolution: %s", res)
-    train_loader, val_loader, test_loader = get_data_loaders(dataset=args.dataset, batch_size=args.batch_size, threads=args.threads, 
-                                            use_val=args.use_val, img_size=res, augmentation=True, eval_test=args.eval_test)
+    train_loader, val_loader, test_loader = get_data_loaders(dataset=args.dataset, batch_size=args.batch_size, threads=args.n_workers, 
+                                            val_split=args.val_split, img_size=res, augmentation=True, eval_test=args.eval_test)
     
     if val_loader is None:
         val_loader = test_loader
@@ -119,13 +132,44 @@ if __name__ == "__main__":
         top1_test = validate(test_loader, model, device, print_freq=100)
         logging.info(f"TEST ACCURACY: {top1_test}")
 
-    input_shape = (3, res, res)
+    if args.ood_eval:
+        
+        #results['mCE'] = compute_mCE_CIFARC(args.ood_data, model, device, res=args.res)
+        results['mCE2'] = compute_mCE(args.dataset, model, device, res=args.res, load_ood=args.load_ood)
 
-    info = get_net_info(model, input_shape=input_shape) # <-- vincoli qui
+    input_shape = (3, res, res)
+    #Model cost
+    
+    if args.optim == 'SAM' or args.eval_robust:
+        sigma_step = args.sigma_step
+        if args.sigma_max == args.sigma_min:
+            sigma_step = 1
+        n=round((args.sigma_max-args.sigma_min)/sigma_step)+1
+        sigma_list = [round(args.sigma_min + i * args.sigma_step, 2) for i in range(n)] 
+
+        info_runtime = get_net_info_runtime(device, model, val_loader, sigma_list, print_info=True)
+        results['robustness'] = info_runtime['robustness'][0]
+        logging.info(f"ROBUSTNESS: {info_runtime['robustness'][0]}")
+        alpha = args.alpha
+        alpha_norm = args.alpha_norm
+        results['top1_robust'] = np.round(alpha * top1_err + alpha_norm * (1-alpha) * info_runtime['robustness'][0],2)
+
+    info = get_net_info(model, input_shape=input_shape, print_info=True)
 
     results['top1'] = np.round(top1_err,2)
-    results['macs'] = np.round(info['macs'] / 1e6, 2)
-    results['params'] = np.round(info['params'] / 1e6, 2)
+    results['macs'] = info['macs']
+    results['activations'] = info['activations']
+    results['params'] = info['params']
+    results['tiny_ml'] = tiny_ml(params = results['params'],
+                                 macs = results['macs'],
+                                 activations = results['activations'],
+                                 pmax = args.pmax,
+                                 mmax = args.mmax,
+                                 amax = args.amax,
+                                 wp = args.wp,
+                                 wm = args.wm,
+                                 wa = args.wa,
+                                 penalty = args.penalty)
 
     n_subnet = args.output_path.rsplit("_", 1)[1] 
     
@@ -133,3 +177,4 @@ if __name__ == "__main__":
 
     with open(save_path, 'w') as handle:
         json.dump(results, handle)
+    

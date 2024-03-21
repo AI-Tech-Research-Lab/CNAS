@@ -4,27 +4,22 @@ import random
 import os
 
 import numpy as np
-from ofa_evaluator import OFAEvaluator
 from ofa.utils.pytorch_utils import count_parameters
 
 import torch
-from torch.nn import Conv2d,ReLU,Linear,Sequential,Flatten,BatchNorm2d,AvgPool2d,MaxPool2d, Identity
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torchprofile import profile_macs
 
-from torch.utils.data import Dataset
 from torch.utils.data import DataLoader, Subset
 
-from train_utils import get_device    
+from train_utils import get_device 
+from utils import get_net_info   
 
-from models.base import BinaryIntermediateBranch, IntermediateBranch
-from models.mobilenet_v3 import EEMobileNetV3, FinalClassifier
-from models.resnet import resnet20
-from models.alexnet import AlexNet
-from models.costs import module_cost
-from evaluators import binary_eval
-
+from early_exit.models.base import BinaryIntermediateBranch, IntermediateBranch
+from early_exit.models.mobilenet_v3 import EEMobileNetV3, FinalClassifier
+from early_exit.models.costs import module_cost
+from early_exit.evaluators import binary_eval
 
 def get_intermediate_backbone_cost(backbone, input_size):
     # Compute the MACs of the backbone up to the b-th exit for each exit
@@ -40,46 +35,6 @@ def get_intermediate_backbone_cost(backbone, input_size):
         
     return b_params, b_macs
 
-def get_net_info(net, input_shape=(3, 224, 224), print_info=False):
-    """
-    Modified from https://github.com/mit-han-lab/once-for-all/blob/
-    35ddcb9ca30905829480770a6a282d49685aa282/ofa/imagenet_codebase/utils/pytorch_utils.py#L139
-    """
-
-    # artificial input data
-    inputs = torch.randn(1, 3, input_shape[-2], input_shape[-1])
-
-    # move network to GPU if available
-    if torch.cuda.is_available():
-        device = torch.device('cuda:0')
-        net = net.to(device)
-        cudnn.benchmark = True
-        inputs = inputs.to(device)
-
-    net_info = {}
-    if isinstance(net, nn.DataParallel):
-        net = net.module
-    
-    net.eval() # this avoids batch norm error https://discuss.pytorch.org/t/error-expected-more-than-1-value-per-channel-when-training/26274
-
-    # parameters
-    net_info['params'] = count_parameters(net)
-
-    net = copy.deepcopy(net)
-
-    net_info['macs'] = int(profile_macs(net, inputs))
-
-    # activation_size
-    #net_info['activations'] = int(profile_activation_size(net, inputs))
-
-    if print_info:
-        # print(net)
-        print('Total training params: %.2fM' % (net_info['params'] / 1e6))
-        print('Total MACs: %.2fM' % ( net_info['macs'] / 1e6))
-        #print('Total activations: %.2fM' % (net_info['activations'] / 1e6))
-
-    return net_info
-
 def get_backbone_i_cost(backbone,input_size,num_exit):
     # Compute the MACs of the backbone up to the b-th exit for a given exit
     net = copy.deepcopy(backbone)
@@ -87,7 +42,7 @@ def get_backbone_i_cost(backbone,input_size,num_exit):
     net.blocks = net.blocks[:idx]
     #net.exit_idxs = [net.exit_idxs[num_exit]]
     info = get_net_info(net,input_size) # MACs of the backbone up to the b-th exit
-    return info['params']/1e6, info['macs']/1e6
+    return info['params'], info['macs']
 
 def get_classifier_i_cost(predictor, input_sample):
     #print("PREDICTOR",predictor)
@@ -314,9 +269,6 @@ def get_intermediate_classifiers_adaptive(model, final_classifier,
         _, b_macs_i = get_backbone_i_cost(model, image_size, i)
         _, c_macs_i = get_classifier_i_cost(pred, o)
         _, b_macs_next = get_backbone_i_cost(model, image_size, i+1)
-        #if len(predictors) == 1: #compute the macs of the final classifier         
-        #    c_macs_next = int(profile_macs(predictors[-1], outputs[i+1]))/1e6 #get_net_info(predictors[-1], (input_sample[-3],input_sample[-2],input_sample[-1]))['macs']
-        #else:
         _, c_macs_next = get_classifier_i_cost(predictors[-1], outputs[i+1])
         max_ks = calculate_maxpool_kernel_size(chs)
         ks = 1

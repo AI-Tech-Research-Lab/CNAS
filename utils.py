@@ -16,6 +16,7 @@ from pymoo.core.mutation import Mutation
 from pymoo.core.sampling import Sampling
 from pymoo.core.crossover import Crossover
 
+from ofa.utils.pytorch_utils import count_parameters
 from ofa_evaluator import OFAEvaluator  
 from early_exit.models.mobilenet_v3 import EEMobileNetV3
 
@@ -93,6 +94,7 @@ def get_correlation(prediction, target):
 
     return rmse, rho, tau
 
+'''
 def bash_command_template_single_exit(**kwargs):
 
     gpus = kwargs.pop('gpus', DEFAULT_CFG['gpus'])
@@ -137,6 +139,7 @@ def bash_command_template_single_exit(**kwargs):
                 execution_line += " --{} {}".format(k, v)
     execution_line += ' &'
     return execution_line
+'''
 
 def bash_command_template_multi_exits(**kwargs):
 
@@ -149,10 +152,13 @@ def bash_command_template_multi_exits(**kwargs):
     cfg['resolution'] = kwargs['res']
     cfg['model_path'] = kwargs['subnet']
     cfg['output_path'] = kwargs['save']
+    cfg['pretrained'] = kwargs['pretrained']
+    cfg['supernet_path'] = kwargs['supernet_path']
+    cfg['batch_size'] = kwargs.pop('trn_batch_size', DEFAULT_CFG['trn_batch_size'])
     cfg['mmax'] = kwargs['mmax']
     cfg['top1min'] = kwargs['top1min']
     cfg['method'] = kwargs['method']
-    cfg['use_val'] = kwargs['use_val']
+    cfg['val_split'] = kwargs['val_split']
     cfg['w_gamma'] = kwargs['w_gamma']
     cfg['w_beta'] = kwargs['w_beta']
     cfg['w_alpha'] = kwargs['w_alpha']
@@ -160,9 +166,9 @@ def bash_command_template_multi_exits(**kwargs):
     cfg['backbone_epochs'] = kwargs['n_epochs']
     cfg['warmup_ee_epochs'] = kwargs['warmup_ee_epochs']
     cfg['ee_epochs'] = kwargs['ee_epochs']
-    cfg['threads'] = kwargs['n_workers']
+    cfg['n_workers'] = kwargs['n_workers']
 
-    execution_line = "python early_exit/train.py".format(gpus)
+    execution_line = "python ee_train.py".format(gpus)
     for k, v in cfg.items():
         if v is not None:
             if isinstance(v, bool):
@@ -173,7 +179,7 @@ def bash_command_template_multi_exits(**kwargs):
     execution_line += ' &'
     return execution_line
 
-def bash_command_template_entropic(**kwargs):
+def bash_command_template_single_exit(**kwargs):
 
     gpus = kwargs.pop('gpus', DEFAULT_CFG['gpus'])
     cfg = OrderedDict()
@@ -187,6 +193,7 @@ def bash_command_template_entropic(**kwargs):
     cfg['pretrained'] = kwargs['pretrained']
     cfg['supernet_path'] = kwargs['supernet_path']
     cfg['epochs'] = kwargs.pop('n_epochs', DEFAULT_CFG['n_epochs'])
+    cfg['batch_size'] = kwargs.pop('trn_batch_size', DEFAULT_CFG['trn_batch_size'])
     cfg['optim'] = kwargs['optim']
     cfg['sigma_min'] = kwargs['sigma_min']
     cfg['sigma_max'] = kwargs['sigma_max']
@@ -194,12 +201,17 @@ def bash_command_template_entropic(**kwargs):
     cfg['alpha'] = kwargs['alpha']
     cfg['res'] = kwargs['res']
     cfg ['pmax'] = kwargs['pmax']
-    cfg['p'] = kwargs['penalty']
+    cfg ['mmax'] = kwargs['mmax']
+    cfg ['amax'] = kwargs['amax']
+    cfg ['wp'] = kwargs['wp']
+    cfg ['wm'] = kwargs['wm']
+    cfg ['wa'] = kwargs['wa']
+    cfg['penalty'] = kwargs['penalty']
     cfg['alpha_norm'] = kwargs['alpha_norm']
-    cfg['use_val'] = kwargs['use_val']
-    cfg['threads'] = kwargs['n_workers']
+    cfg['val_split'] = kwargs['val_split']
+    cfg['n_workers'] = kwargs['n_workers']
 
-    execution_line = "python robustness/train.py".format(gpus)
+    execution_line = "python train.py".format(gpus)
     for k, v in cfg.items():
         if v is not None:
             if isinstance(v, bool):
@@ -216,8 +228,6 @@ def get_template_by_type(gpus, subnet, save, type, **kwargs):
         return bash_command_template_single_exit(gpus=gpus, subnet=subnet, save=save, **kwargs)
     elif type == 'multi_exits':
         return bash_command_template_multi_exits(gpus=gpus, subnet=subnet, save=save, **kwargs)
-    elif type == 'entropic':
-        return bash_command_template_entropic(gpus=gpus, subnet=subnet, save=save, **kwargs)
     else:
         raise ValueError('Unknown template type: {}'.format(type))
 
@@ -412,7 +422,6 @@ def get_net_info(net, input_shape=(3, 224, 224), print_info=False):
     Modified from https://github.com/mit-han-lab/once-for-all/blob/
     35ddcb9ca30905829480770a6a282d49685aa282/ofa/imagenet_codebase/utils/pytorch_utils.py#L139
     """
-    from ofa.utils.pytorch_utils import count_parameters
 
     # artificial input data
     inputs = torch.randn(1, 3, input_shape[-2], input_shape[-1])
@@ -431,20 +440,20 @@ def get_net_info(net, input_shape=(3, 224, 224), print_info=False):
     net.eval() # this avoids batch norm error https://discuss.pytorch.org/t/error-expected-more-than-1-value-per-channel-when-training/26274
 
     # parameters
-    net_info['params'] = count_parameters(net)
+    net_info['params'] = np.round(count_parameters(net)/1e6,2)
 
     net = copy.deepcopy(net)
 
-    net_info['macs'] = int(profile_macs(net, inputs))
+    net_info['macs'] = np.round(profile_macs(net, inputs)/1e6,2)
 
     # activation_size
-    #net_info['activations'] = int(profile_activation_size(net, inputs))
+    net_info['activations'] = np.round(profile_activation_size(net, inputs)/1e6,2)
 
     if print_info:
         # print(net)
-        print('Total training params: %.2fM' % (net_info['params'] / 1e6))
-        print('Total MACs: %.2fM' % ( net_info['macs'] / 1e6))
-        #print('Total activations: %.2fM' % (net_info['activations'] / 1e6))
+        print('Total training params: %.2fM' % (net_info['params']))
+        print('Total MACs: %.2fM' % ( net_info['macs']))
+        print('Total activations: %.2fM' % (net_info['activations']))
 
     return net_info
 
@@ -518,6 +527,7 @@ def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, pri
 
 def get_net_from_OFA(subnet_path, n_classes=10, supernet='supernets/ofa_mbv3_d234_e346_k357_w1.0', pretrained=True):
 
+    print("Current directory: ", os.getcwd())
     config = json.load(open(subnet_path))
     ofa = OFAEvaluator(n_classes=n_classes,
     model_path=supernet,

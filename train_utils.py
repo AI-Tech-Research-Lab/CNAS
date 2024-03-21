@@ -637,7 +637,7 @@ class Cutout(object):
         img *= mask
         return img
 
-def get_dataset(name, model_name=None, augmentation=False, resolution=32, use_val=False, autoaugment=True, cutout=True, cutout_length=16):
+def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_split=0, autoaugment=True, cutout=True, cutout_length=16):
 
     if name == 'mnist':
         t = [Resize((32, 32)),
@@ -885,7 +885,7 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, use_va
     val_set = None
 
     # Split the dataset into training and validation sets
-    if use_val:
+    if val_split:
         train_len = len(train_set)
         eval_len = int(train_len * val_split)
         train_len = train_len - eval_len
@@ -901,13 +901,13 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, use_va
         
     return train_set, val_set, test_set, input_size, classes
 
-def get_data_loaders(dataset, batch_size=32, threads=1, img_size=32, augmentation=False, use_val=False, eval_test=True):
+def get_data_loaders(dataset, batch_size=32, threads=1, img_size=32, augmentation=False, val_split=0, eval_test=True):
 
-    train_set, val_set, test_set,  _, _ = get_dataset(dataset, augmentation=augmentation, resolution=img_size, use_val=use_val)
+    train_set, val_set, test_set,  _, _ = get_dataset(dataset, augmentation=augmentation, resolution=img_size, val_split=val_split)
 
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=threads, pin_memory=True)
 
-    if use_val:
+    if val_split:
         val_loader = DataLoader(val_set, batch_size=batch_size*2, shuffle=False, num_workers=threads, pin_memory=True)
     else:
         val_loader = None

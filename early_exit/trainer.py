@@ -11,11 +11,11 @@ from tqdm import tqdm
 
 import os
 
-from evaluators import standard_eval, branches_eval, binary_eval, \
+from early_exit.evaluators import standard_eval, branches_eval, binary_eval, \
     binary_statistics
-from models.base import BranchModel
-from models.mobilenet_v3 import EEMobileNetV3
-from utils_ee import calculate_centroids_confidences, calculate_centroids_scores, extract_balanced_subset, get_device, \
+from early_exit.models.base import BranchModel
+from early_exit.models.mobilenet_v3 import EEMobileNetV3
+from early_exit.utils_ee import calculate_centroids_confidences, calculate_centroids_scores, extract_balanced_subset, get_device, \
  get_intermediate_backbone_cost, get_intermediate_classifiers_cost, save_eenn
 from copy import deepcopy
 
@@ -369,7 +369,7 @@ def binary_bernulli_trainer(model: BranchModel,
         
         confidence_scores = confidence_scores.squeeze()
 
-        w = torch.tensor(exits_costs).to(device)
+        w = torch.tensor(exits_costs).to(device).float()
 
         # Perform weighted sum and compute mean
 

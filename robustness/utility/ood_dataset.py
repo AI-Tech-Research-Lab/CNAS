@@ -2,9 +2,6 @@ import math
 import os
 import shutil
 import shutil
-import torchvision
-from torchvision.datasets import MNIST, FashionMNIST, CIFAR10, CIFAR100, ImageFolder
-from torchvision.transforms import transforms
 import numpy as np
 from PIL import Image
 
