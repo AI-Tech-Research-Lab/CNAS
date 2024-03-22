@@ -277,6 +277,7 @@ class CNAS:
                     stats = json.load(open(path))
 
                     first_obj = stats[self.first_obj]
+
                     sec_obj = stats.get(self.sec_obj, None)
                     
                     if self.sec_obj is not None:
@@ -335,7 +336,8 @@ class CNAS:
                             os.path.join(self.save_path, "failed", "it_{}_net_{}".format(it, i)))
             
             f_obj=stats[self.first_obj]
-            s_obj=stats.get(self.sec_obj, stats['params'])
+            s_obj=stats[self.sec_obj]
+            #s_obj=stats.get(self.sec_obj, stats['params'])
             stat=(f_obj,s_obj)
 
             if self.first_obj=='top1_robust':
@@ -428,7 +430,7 @@ class CNAS:
         
         # kick-off the search
         res = minimize(
-            problem, method, termination=('n_gen', 2), save_history=True, verbose=True) #verbose=True displays some printouts #default 20 generations
+            problem, method, termination=('n_gen', 20), save_history=True, verbose=True) #verbose=True displays some printouts #default 20 generations
 
         self.phi = problem.phi
         print("The ratio of feasible solutions (phi) is {:.2f}".format(problem.phi))
@@ -489,10 +491,12 @@ class AuxiliarySingleObjProblem(Problem):
 
         self.xl = np.zeros(self.n_var) #lower bounds
         self.xu = 2 * np.ones(self.n_var) #upper bounds
+        '''
         if self.ss=='cbnmobilenetv3':
           self.xu[-1] = 1 #EEC on/off
         else:
           self.xu[-1] = int(len(self.ss.resolution) - 1)
+        '''
     
     def _evaluate(self, x, out, *args, **kwargs):
 
@@ -517,14 +521,14 @@ class AuxiliarySingleLevelProblem(Problem):
         self.ss = search_space
         self.acc_predictor = acc_predictor
         self.compl_predictor = compl_predictor
-
         self.xl = np.zeros(self.n_var) #lower bounds
         self.xu = 2 * np.ones(self.n_var) #upper bounds
+        '''
         if self.ss=='cbnmobilenetv3':
           self.xu[-1] = 1 #EEC on/off
         else:
           self.xu[-1] = int(len(self.ss.resolution) - 1)
-
+        '''
         self.sec_obj = sec_obj
         self.dataset = dataset
         self.lut = {'cpu': 'data/i7-8700K_lut.yaml'}
@@ -542,12 +546,11 @@ class AuxiliarySingleLevelProblem(Problem):
         
     def _evaluate(self, x, out, *args, **kwargs):
 
-
         f = np.full((x.shape[0], self.n_obj), np.nan)
 
         top1_err = self.acc_predictor.predict(x)[:, 0]  # predicted top1 error
 
-        if self.compl_predictor is not None and self.ss == 'cbnmobilenetv3':
+        if self.compl_predictor is not None and self.ss.supernet == 'cbnmobilenetv3':
 
             compl = self.compl_predictor.predict(x)[:, 0]  # predicted compl error
             constraint = self.mmax
@@ -557,6 +560,11 @@ class AuxiliarySingleLevelProblem(Problem):
             cmax = max(compl)
 
             for i, (_x, acc_err, ci) in enumerate(zip(x, top1_err, compl)):
+
+                if not self._isvalid(_x):
+                    f[i,0] = 10*15
+                    f[i,1] = 10*15
+                    continue
 
                 ## Compute the normalized constraint violation (CV) (NACHOS)
                 if(cmax!=constraint):
@@ -732,6 +740,7 @@ if __name__ == '__main__':
     parser.add_argument('--alpha', type = float, default=0.5, help='alpha parameter for entropic figure')
     parser.add_argument('--res', type = int, default=32, help='fixed resolution for entropic training')
     parser.add_argument('--w_alpha', type = float, default=1.0, help='weight for alpha factor')
+    parser.add_argument('--method', type = str, default='bernulli', help='method for early exit training')
     parser.add_argument('--w_beta', type = float, default=1.0, help='weight for beta factor')
     parser.add_argument('--w_gamma', type = float, default=1.0, help='weight for gamma factor')
     parser.add_argument('--warmup_ee_epochs', type = int, default=5, help='warmup epochs for early exit')

@@ -7,7 +7,7 @@ python cnas.py --sec_obj avg_macs \
               --first_predictor as --sec_predictor as \
               --supernet_path ./supernets/ofa_mbv3_d234_e346_k357_w1.0 --pretrained  \
               --save ../results/search_path --iterations 10 \
-              --search_space cbnmobilenetv3 --trainer_type multi_exits \
+              --search_space cbnmobilenetv3 --trainer_type multi_exits --method bernulli \
               --val_split 0.1 \
               --n_epochs 10 --warmup_ee_epochs 5 --ee_epochs 5 \
               --w_alpha 1.0 --w_beta 1.0 --w_gamma 1.0 \

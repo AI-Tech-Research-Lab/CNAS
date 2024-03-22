@@ -241,7 +241,8 @@ def joint_trainer(model: BranchModel,
 
                 loss += nn.functional.cross_entropy(preds[-1], y,
                                                     reduction='mean')
-
+            
+            print("Loss: ", loss.item())
             losses.append(loss.item())
 
             optimizer.zero_grad()

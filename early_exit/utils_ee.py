@@ -121,7 +121,7 @@ def calculate_maxpool_kernel_size(num_channels):
         else:
             return 1
         
-'''
+
 def get_intermediate_classifiers_static(model,
                                  image_size,
                                  n_classes,
@@ -202,7 +202,7 @@ def get_intermediate_classifiers_static(model,
             predictors[-1](o)
 
     return predictors
-'''
+
 
 def get_intermediate_classifiers_adaptive(model, final_classifier,
                                  image_size,
@@ -227,9 +227,13 @@ def get_intermediate_classifiers_adaptive(model, final_classifier,
     filters = [32,64,128]
     seq = nn.Sequential(fc.final_expand_layer, fc.global_avg_pool, fc.feature_mix_layer, nn.Flatten())
     cl = fc.classifier
-    final_classifier = BinaryIntermediateBranch(preprocessing=seq,
+    if binary_branch:
+        final_classifier = BinaryIntermediateBranch(preprocessing=seq,
                                                  classifier=cl,
                                                  return_one=True)
+    else:
+        final_classifier = IntermediateBranch(preprocessing=seq,
+                                              classifier=cl)
     predictors.append(final_classifier)
     outputs_ee = outputs[:-1]
     for i, o in enumerate(reversed(outputs_ee)):
@@ -258,11 +262,17 @@ def get_intermediate_classifiers_adaptive(model, final_classifier,
         output = torch.flatten(output, 1)
         od = output.shape[-1]
 
-        linear_layers = nn.Sequential(*[nn.ReLU(),
+        if binary_branch:
+            #num_classes + 1 for the confidence
+            linear_layers = nn.Sequential(*[nn.ReLU(),
                                         nn.Linear(od, n_classes + 1)])
-        #num_classes + 1 for the confidence
-        
-        pred = BinaryIntermediateBranch(preprocessing=seq,
+            pred = BinaryIntermediateBranch(preprocessing=seq,
+                                        classifier=linear_layers,
+                                        )
+        else:
+            linear_layers = nn.Sequential(*[nn.ReLU(),
+                                        nn.Linear(od, n_classes)])
+            pred = IntermediateBranch(preprocessing=seq,
                                         classifier=linear_layers,
                                         )
 
