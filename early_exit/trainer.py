@@ -235,14 +235,12 @@ def joint_trainer(model: BranchModel,
                 loss = torch.stack(
                     [nn.functional.cross_entropy(p, y, reduction='mean')
                      for p in preds[:-1]], 0)
-
                 loss = loss * weights[:-1]
                 loss = loss.sum()
 
                 loss += nn.functional.cross_entropy(preds[-1], y,
                                                     reduction='mean')
             
-            print("Loss: ", loss.item())
             losses.append(loss.item())
 
             optimizer.zero_grad()

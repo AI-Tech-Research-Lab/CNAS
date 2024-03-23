@@ -17,7 +17,7 @@ class OFASearchSpace:
             self.exp_ratio = [3, 4, 6]  # expansion rate
             self.depth = [2, 3, 4]  # number of Inverted Residual Bottleneck layers repetition
             self.threshold = [0.1, 0.2, 1] #threshold value for selection scheme
-            self.nvar=50
+            self.nvar=49 + int(lr!=ur)
         elif(supernet == 'resnet50'):
             self.kernel_size = [3]  # depth-wise conv kernel size
             self.exp_ratio = [0.2,0.25,0.35]  # expansion rate
@@ -73,8 +73,13 @@ class OFASearchSpace:
               exp_ratio = np.random.choice(e, size=int(np.sum(depth)), replace=True).tolist()
 
             if (self.supernet == 'eemobilenetv3'):
+
                 threshold = np.random.choice(t, size=(len(depth)-1), replace=True).tolist()
-                data.append({'ks': kernel_size, 'e': exp_ratio, 'd': depth, 't': threshold, 'r': resolution})
+                if self.fix_res:
+                    data.append({'ks': kernel_size, 'e': exp_ratio, 'd': depth, 't': threshold})
+                else:
+                    resolution = int(np.random.choice(r))
+                    data.append({'ks': kernel_size, 'e': exp_ratio, 'd': depth, 't': threshold, 'r': resolution})
 
             elif (self.supernet == 'mobilenetv3'):
 
@@ -92,7 +97,11 @@ class OFASearchSpace:
                     if any(branch != 0 for branch in branches):
                         break
 
-                data.append({'ks': kernel_size, 'e': exp_ratio, 'd': depth, 'b': branches}) 
+                if self.fix_res:
+                    data.append({'ks': kernel_size, 'e': exp_ratio, 'd': depth, 'b': branches}) 
+                else:
+                    resolution = int(np.random.choice(r))
+                    data.append({'ks': kernel_size, 'e': exp_ratio, 'd': depth, 'b': branches, 'r':resolution})
 
         return data
 
@@ -170,8 +179,8 @@ class OFASearchSpace:
             branches = config['b']
             for i in range(self.num_branches):
                 x = x + [np.argwhere(branches[i] == np.array(self.branches))[0, 0]]
-        else:
-            if not self.fix_res:
+        
+        if not self.fix_res:
                 x.append(np.argwhere(config['r'] == np.array(self.resolution))[0, 0])
 
         return x

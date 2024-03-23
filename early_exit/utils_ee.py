@@ -289,11 +289,18 @@ def get_intermediate_classifiers_adaptive(model, final_classifier,
             output = new_seq(o)
             output = torch.flatten(output, 1)
             od = output.shape[-1]
-            linear_layers = nn.Sequential(*[nn.ReLU(),
-                                            nn.Linear(od, n_classes + 1)])
-            pred = BinaryIntermediateBranch(preprocessing=new_seq,
-                                        classifier=linear_layers,
-                                        )
+            if binary_branch:
+                linear_layers = nn.Sequential(*[nn.ReLU(),
+                                                nn.Linear(od, n_classes + 1)])
+                pred = BinaryIntermediateBranch(preprocessing=new_seq,
+                                            classifier=linear_layers,
+                                            )
+            else:
+                linear_layers = nn.Sequential(*[nn.ReLU(),
+                                                nn.Linear(od, n_classes)])
+                pred = IntermediateBranch(preprocessing=new_seq,
+                                            classifier=linear_layers,
+                                            )
             _, c_macs_i = get_classifier_i_cost(pred, o)
             ks = ks * 2
 
@@ -581,7 +588,18 @@ def get_eenn(subnet, subnet_path, res, n_classes, get_binaries=False):
 
     #model, res = get_eenn_from_OFA(subnet_path, n_classes, supernet, pretrained)
     config = json.load(open(subnet_path))
-    backbone = EEMobileNetV3(subnet.first_conv, subnet.blocks, config['b'], config['d'])
+    if get_binaries:
+        ee_config = config['b']
+    else:
+        # support for EDANAS setting
+        eps_config = config['t']
+        ee_config = []
+        for x in eps_config:
+            if x==1:
+                ee_config.append(0)
+            else:
+                ee_config.append(1)
+    backbone = EEMobileNetV3(subnet.first_conv, subnet.blocks, ee_config, config['d'])
     final_classifier = FinalClassifier(subnet.final_expand_layer, subnet.feature_mix_layer, subnet.classifier)
     img_size = (3, res, res)
     classifiers = get_intermediate_classifiers_adaptive(backbone,
@@ -589,8 +607,14 @@ def get_eenn(subnet, subnet_path, res, n_classes, get_binaries=False):
                                         img_size,
                                         n_classes,
                                         binary_branch=get_binaries)
+    if get_binaries:
+        epsilon=None
+    else:
+        eps_config = config['t']
+        #take a list and remove the 1 values and add a 1 at the end
+        epsilon = [x for x in eps_config if x != 1] + [1]
     
-    return backbone, classifiers
+    return backbone, classifiers, epsilon
 
 def save_eenn(backbone, classifiers, best_backbone, best_classifiers, best_score, epoch, optimizer, ckpt_path):
     checkpoint = {

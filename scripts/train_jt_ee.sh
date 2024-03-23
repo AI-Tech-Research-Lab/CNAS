@@ -1,4 +1,4 @@
-# Train a model with early exit trainer 
+# Train a model with early exit joint trainer
 
 dataset=cifar10
 device=0
@@ -10,6 +10,5 @@ python early_exit/train.py --dataset $dataset  --n_classes 10 \
     --model_path ../results/ee_test/net.subnet \
     --output_path ../results/ee_test \
     --pretrained --supernet_path ./supernets/ofa_mbv3_d234_e346_k357_w1.0 \
-    --backbone_epochs $backbone_epochs --warmup_ee_epochs 2 --ee_epochs 3 \
-    --optim $optim --use_val --save --mmax 5 --top1min 70 \
-    --w_alpha 1.0 --w_beta 1.0 --w_gamma 1.0 
+    --backbone_epochs $backbone_epochs --ee_epochs 3 \
+    --method joint --optim $optim --use_val --save 

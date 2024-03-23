@@ -94,6 +94,8 @@ class CNAS:
 
         # Early Exit params
         self.method = kwargs.pop('method', 'bernulli') # method for early exit training
+        self.support_set = kwargs.pop('support_set', False) # use support set for early exit training
+        self.tune_epsilon = kwargs.pop('tune_epsilon', False) # tune epsilon for early exit inference
         self.w_alpha = kwargs.pop('w_alpha', 1.0) # weight for alpha factor
         self.w_beta = kwargs.pop('w_beta', 1.0)
         self.w_gamma = kwargs.pop('w_gamma', 1.0)
@@ -319,7 +321,9 @@ class CNAS:
             top1min=self.top1min, penalty = self.penalty, supernet_path=self.supernet_path, pretrained=self.pretrained, 
             n_epochs = self.n_epochs, optim=self.optim, sigma_min=self.sigma_min,
             sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.lr, alpha_norm=self.alpha_norm, val_split=self.val_split,
-            method = self.method, w_alpha = self.w_alpha, w_beta = self.w_beta, w_gamma = self.w_gamma, warmup_ee_epochs = self.warmup_ee_epochs, ee_epochs = self.ee_epochs)
+            method = self.method, support_set = self.support_set, tune_epsilon = self.tune_epsilon, 
+            w_alpha = self.w_alpha, w_beta = self.w_beta, w_gamma = self.w_gamma, 
+            warmup_ee_epochs = self.warmup_ee_epochs, ee_epochs = self.ee_epochs)
 
         subprocess.call("sh {}/run_bash.sh".format(gen_dir), shell=True)
 
@@ -741,6 +745,8 @@ if __name__ == '__main__':
     parser.add_argument('--res', type = int, default=32, help='fixed resolution for entropic training')
     parser.add_argument('--w_alpha', type = float, default=1.0, help='weight for alpha factor')
     parser.add_argument('--method', type = str, default='bernulli', help='method for early exit training')
+    parser.add_argument('--support_set', action='store_true', default=False, help='use support set for early exit training')
+    parser.add_argument('--tune_epsilon', action='store_true', default=False, help='tune epsilon for early exit inference')
     parser.add_argument('--w_beta', type = float, default=1.0, help='weight for beta factor')
     parser.add_argument('--w_gamma', type = float, default=1.0, help='weight for gamma factor')
     parser.add_argument('--warmup_ee_epochs', type = int, default=5, help='warmup epochs for early exit')

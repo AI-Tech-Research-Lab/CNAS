@@ -13,7 +13,7 @@ sys.path.append(os.getcwd())
 from train_utils import get_data_loaders, get_optimizer, get_loss, get_lr_scheduler, initialize_seed, train, validate, load_checkpoint, Log
 from utils import get_net_from_OFA
 
-from early_exit.evaluators import binary_eval, standard_eval, ece_score
+from early_exit.evaluators import sm_eval, binary_eval, standard_eval, ece_score
 from early_exit.trainer import binary_bernulli_trainer, joint_trainer
 from early_exit.utils_ee import get_intermediate_backbone_cost, get_intermediate_classifiers_cost, get_subnet_folder_by_backbone, get_eenn
 
@@ -73,7 +73,8 @@ if __name__ == "__main__":
     parser.add_argument("--w_alpha", default=1.0, type=float, help="Weight for the accuracy loss.")
     parser.add_argument("--w_beta", default=1.0, type=float, help="Weight for the MACs loss.")
     parser.add_argument("--w_gamma", default=1.0, type=float, help="Weight for the calibration loss.")
-    parser.add_argument("--train_weights", default=True, action='store_true', help="True if you want to train the weights.")
+    parser.add_argument("--train_weights", default=False, action='store_true', help="True if you want to train the weights.")
+    parser.add_argument("--tune_epsilon", default=False, action='store_true', help="True if you want to tune the epsilon.")
 
     args = parser.parse_args()
 
@@ -157,11 +158,14 @@ if __name__ == "__main__":
         top1 = validate(val_loader, backbone, device, print_freq=100)/100
 
     else:
-        
-        logging.info("Start training...")
-        top1, backbone, optimizer = train(train_loader, val_loader, args.backbone_epochs, backbone, device, optimizer, criterion, scheduler, train_log, ckpt_path=os.path.join(args.output_path,'backbone.pth'))
-        logging.info("Training finished")
+
+        if args.backbone_epochs > 0:
+            logging.info("Start training...")
+            top1, backbone, optimizer = train(train_loader, val_loader, args.backbone_epochs, backbone, device, optimizer, criterion, scheduler, train_log, ckpt_path=os.path.join(args.output_path,'backbone.pth'))
+            logging.info("Training finished")
     
+    if args.backbone_epochs == 0:
+        top1 = validate(val_loader, backbone, device, print_freq=100)/100
     logging.info(f"VAL ACCURACY BACKBONE: {np.round(top1*100,2)}")
     if args.eval_test:
         top1_test = validate(test_loader, backbone, device, print_freq=100)
@@ -172,7 +176,7 @@ if __name__ == "__main__":
 
     #Create the EENN on top of the trained backbone
 
-    backbone, classifiers = get_eenn(subnet=backbone, subnet_path=args.model_path, res=res, n_classes=args.n_classes, get_binaries=get_binaries)
+    backbone, classifiers, epsilon = get_eenn(subnet=backbone, subnet_path=args.model_path, res=res, n_classes=args.n_classes, get_binaries=get_binaries)
 
     # MODEL COST PROFILING
 
@@ -257,7 +261,7 @@ if __name__ == "__main__":
             json_data = json.load(handle)
 
         # Access the "support_conf" field directly
-        support_conf = json_data["support_conf"]
+        #support_conf = json_data["support_conf"]
         #sigma = json_data["global_gate"]
 
         # Now you can use the 'support_conf_value' variable, which contains the value of "support_conf"
@@ -276,9 +280,10 @@ if __name__ == "__main__":
 
         epochs = args.warmup_ee_epochs + args.ee_epochs # Total number of epochs
         scheduler = get_lr_scheduler(optimizer, 'step', epochs=epochs)
-        if args.support_set: 
+        if not args.support_set: 
             n_epoch_gamma = epochs 
         else:
+            logging.info("Support set enabled")
             n_epoch_gamma = args.warmup_ee_epochs
 
         # load weights from previous optimizer
@@ -397,12 +402,32 @@ if __name__ == "__main__":
 
     #logging.info('Last layer train and test scores : {}, {}'.format(train_scores,test_scores))
 
-    if args.method != 'standard':
+    #if args.method != 'standard':
+            
+            
+    if not args.tune_epsilon:
+        best_epsilon = epsilon
+        best_cumulative=False
+        best_scores, best_counters = sm_eval(model=backbone,
+                                dataset_loader=val_loader,
+                                predictors=classifiers,
+                                epsilon=best_epsilon,
+                                cumulative_threshold=False,
+                                sample=False)
+        weights = []
+        for ex in best_counters.values():
+                weights.append(ex/n_samples)
+
+        # For each b-th exit the avg_macs is the percentage of samples exiting from the exit 
+        # multiplied by the sum of the MACs of the backbone up to the b-th exit + MACs of the b-th exit 
+
+        avg_macs = 0
+        for b in range(backbone.b):
+            avg_macs += weights[b] * (b_macs[b] + c_macs[b])
+    else:
 
         results['support_conf']=support_conf#.tolist()
         #results['global_gate']=sigma#.tolist()
-
-    if 'bernulli' in args.method:
 
         ## TUNING THRESHOLDS ##
         
@@ -456,68 +481,71 @@ if __name__ == "__main__":
                 print("New best score: {}".format(best_score))
         
 
-        #results['cumulative_results'] = cumulative_threshold_scores
-            
-        weights = []
-        for ex in best_counters.values():
-                weights.append(ex/n_samples)
-        
-        # For each b-th exit the avg_macs is the percentage of samples exiting from the exit 
-        # multiplied by the sum of the MACs of the backbone up to the b-th exit + MACs of the b-th exit 
-
-        #print("INFO GET_AVG_MACS")
-        #print(weights)
-        #print(backbone_macs_i)
-        #print(classifiers_macs)
-
-        avg_macs = 0
-        for b in range(backbone.b):
-            avg_macs += weights[b] * (b_macs[b] + c_macs[b])
-
-        # Repair action: adjust the thresholds to make the network fit in terms of MACs
-        constraint_compl = args.mmax
-        constraint_acc = args.top1min
-        i=backbone.b-2#cycle from the second last elem
-        repaired = False
-        epsilon=[ 0.7 if best_epsilon <= 0.7 else best_epsilon] + [best_epsilon] * (backbone.n_branches() - 1)
-        best_epsilon = epsilon
-        if(a['global']>=constraint_acc):
-            while (i>=0 and avg_macs>constraint_compl): #cycle from the second last elem
-                #print("CONSTRAINT MACS VIOLATED: REPAIR ACTION ON BRANCH {}".format(i))
-                epsilon[i] = epsilon[i] - 0.1 
-                a, b = binary_eval(model=backbone,
-                                    dataset_loader=val_loader,
-                                    predictors=classifiers,
-                                    epsilon=epsilon,
-                                    # epsilon=[epsilon] *
-                                    #         (backbone.n_branches()),
-                                    cumulative_threshold=True,
-                                    sample=False)
-                a, b = dict(a), dict(b)
-                if(a['global']<constraint_acc):
-                    #print("ACC VIOLATED")
-                    #print(a['global'])
-                    if i>=1:
-                        i=i-1
-                        continue
-                    else:
-                        break
-                best_epsilon = epsilon
-
-                weights = []
-                for ex in b.values():
-                        weights.append(ex/n_samples)
-                avg_macs = 0
-                for b in range(backbone.b):
-                    avg_macs += weights[b] * (b_macs[b] + c_macs[b])
-                best_scores=a
-                best_counters=b
+            #results['cumulative_results'] = cumulative_threshold_scores
                 
-                if(avg_macs<=constraint_compl):
-                    repaired=True
-                    break
-                if(epsilon[i]<=0.11):
-                    i=i-1   
+            weights = []
+            for ex in best_counters.values():
+                    weights.append(ex/n_samples)
+
+            # For each b-th exit the avg_macs is the percentage of samples exiting from the exit 
+            # multiplied by the sum of the MACs of the backbone up to the b-th exit + MACs of the b-th exit 
+
+            avg_macs = 0
+            for b in range(backbone.b):
+                avg_macs += weights[b] * (b_macs[b] + c_macs[b])
+
+            # Repair action: adjust the thresholds to make the network fit in terms of MACs
+            constraint_compl = args.mmax
+            constraint_acc = args.top1min
+            i=backbone.b-2#cycle from the second last elem
+            repaired = False
+            epsilon=[ 0.7 if best_epsilon <= 0.7 else best_epsilon] + [best_epsilon] * (backbone.n_branches() - 1)
+            best_epsilon = epsilon
+            if(a['global']>=constraint_acc):
+                while (i>=0 and avg_macs>constraint_compl): #cycle from the second last elem
+                    #print("CONSTRAINT MACS VIOLATED: REPAIR ACTION ON BRANCH {}".format(i))
+                    epsilon[i] = epsilon[i] - 0.1 
+                    a, b = binary_eval(model=backbone,
+                                        dataset_loader=val_loader,
+                                        predictors=classifiers,
+                                        epsilon=epsilon,
+                                        # epsilon=[epsilon] *
+                                        #         (backbone.n_branches()),
+                                        cumulative_threshold=True,
+                                        sample=False)
+                    a, b = dict(a), dict(b)
+                    if(a['global']<constraint_acc):
+                        #print("ACC VIOLATED")
+                        #print(a['global'])
+                        if i>=1:
+                            i=i-1
+                            continue
+                        else:
+                            break
+                    best_epsilon = epsilon
+
+                    weights = []
+                    for ex in b.values():
+                            weights.append(ex/n_samples)
+                    avg_macs = 0
+                    for b in range(backbone.b):
+                        avg_macs += weights[b] * (b_macs[b] + c_macs[b])
+                    best_scores=a
+                    best_counters=b
+                    
+                    if(avg_macs<=constraint_compl):
+                        repaired=True
+                        break
+                    if(epsilon[i]<=0.11):
+                        i=i-1   
+                    
+        #COMPUTE ECE SCORES FOR CALIBRATION EVALUATION
+        stats_ece = ece_score(model=backbone,predictors=classifiers, dataset_loader=val_loader)
+        ece_scores={}
+        for i,k in enumerate(stats_ece):
+            scores = stats_ece[i]
+            ece_scores[i]=scores[0]
+        results['ece_scores']=ece_scores
     
     #print("Solution repaired: {}".format(repaired))
     results["exits_ratio"]=weights
@@ -537,14 +565,6 @@ if __name__ == "__main__":
     #log.info('Branches scores on exiting samples: {}'.format(best_scores))
     #log.info('Exit ratios: {}'.format(weights))
     #log.info('Average MACS: {:.2f}'.format(avg_macs))
-
-    #COMPUTE ECE SCORES FOR CALIBRATION EVALUATION
-    stats_ece = ece_score(model=backbone,predictors=classifiers, dataset_loader=val_loader)
-    ece_scores={}
-    for i,k in enumerate(stats_ece):
-        scores = stats_ece[i]
-        ece_scores[i]=scores[0]
-    results['ece_scores']=ece_scores
     
     with open(save_path, 'w') as handle:
             json.dump(results, handle)

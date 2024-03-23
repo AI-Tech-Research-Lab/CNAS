@@ -335,6 +335,118 @@ def binary_eval(model: BranchModel,
 
     return branches_scores, exits_counter
 
+def score_margin(logits):
+    s=torch.nn.functional.softmax(logits, dim=1) #softmax
+    sm = torch.max(s,dim=1)[0]-torch.topk(s, 2, dim=1)[0][:,1] #largest - second largest value in the softmax
+    return sm 
+
+@torch.no_grad()
+def sm_eval(model: BranchModel,
+                predictors: nn.ModuleList,
+                dataset_loader,
+                epsilon: Union[List[float], float] = None,
+                cumulative_threshold=False,
+                sample=False,
+                global_gate=None): 
+    
+    model.eval()
+    predictors.eval()
+    device = get_device(model)
+
+    if epsilon is None:
+        epsilon = 0.5
+
+    if isinstance(epsilon, float):
+        epsilon = [epsilon] * model.n_branches()
+    
+    if global_gate is None:
+        sigma = [1] * model.n_branches()
+    else:
+        sigma = global_gate#nn.Sigmoid()(global_gate)
+
+    #print("Evaluating with thresholds:")
+    #print(epsilon)
+
+    exits_counter = {key: 0 for key in range(model.n_branches())}#defaultdict(int)
+    exits_corrected = {key: 0 for key in range(model.n_branches())}#defaultdict(int)
+
+    for x, y in dataset_loader:
+        x, y = x.to(device), y.to(device)
+
+        preds = model(x)
+
+        distributions, logits = [], []
+        
+        count=0
+        for j, bo in enumerate(preds):
+            l = predictors[j](bo)
+            #b = b * sigma[j]
+            #print("LOGITS: ", l[:10])
+            # Compute a tensor per each logit with the difference between the highest and second highest probabilities
+            b = score_margin(l)
+            #print("B: ", b[:10])
+            distributions.append(b)
+            logits.append(l)
+        
+        distributions = torch.stack(distributions, 0)
+
+        if cumulative_threshold:
+            distributions[1:] = distributions[1:] * \
+                                torch.cumprod(1 - distributions[:-1], 0)
+            distributions = torch.cumsum(distributions, dim=0)
+
+        logits = torch.stack(logits, 0)
+
+        for bi in range(x.shape[0]):
+            found = False
+            for i in range(logits.shape[0]):
+
+                b = distributions[i][bi]
+
+                if b >= epsilon[i]:
+                    p = logits[i][bi]
+                    pred = torch.argmax(p)
+                    if pred == y[bi]:
+                        exits_corrected[i] += 1
+
+                    exits_counter[i] += 1
+
+                    found = True
+                    break
+
+            if not found:
+                i = len(predictors) - 1
+                p = logits[i][bi]
+
+                exits_counter[i] += 1
+                pred = torch.argmax(p)
+
+                if pred == y[bi]:
+                    exits_corrected[i] += 1
+
+    branches_scores = {}
+    tot = 0
+    correctly_predicted = 0
+
+    for k in range(model.n_branches()):
+
+        correct = exits_corrected[k]
+        counter = exits_counter.get(k, 0)
+
+        if counter == 0:
+            score = 0
+        else:
+            score = correct / counter
+
+        branches_scores[k] = score
+
+        tot += counter
+        correctly_predicted += correct
+
+    branches_scores['global'] = correctly_predicted / tot
+
+    return branches_scores, exits_counter
+
 
 @torch.no_grad()
 def binary_statistics(model: BranchModel,
