@@ -3,7 +3,7 @@
 dataset=cifar10
 device=0
 optim=SGD
-backbone_epochs=0
+backbone_epochs=2
 
 python ee_train.py --dataset $dataset  --n_classes 10 \
     --model mobilenetv3 --device $device --n_workers 4\

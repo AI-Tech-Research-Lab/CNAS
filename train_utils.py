@@ -731,11 +731,11 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_sp
 
         if resolution==32:
             # data processing used in NACHOS
-            tt = [Resize((resolution, resolution))]
+            #tt = [Resize((resolution, resolution))]
 
             if augmentation:
-                tt.extend([RandomHorizontalFlip(),
-                    RandomCrop(resolution, padding=resolution//8)])
+                tt=[RandomHorizontalFlip(),
+                    RandomCrop(resolution, padding=resolution//8)]
 
         else:
         
