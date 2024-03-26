@@ -5,7 +5,7 @@ import argparse
 import numpy as np
 import math
 
-from ofa.imagenet_classification.elastic_nn.networks import OFAMobileNetV3, OFAResNets #, OFAEEMobileNetV3, OFAResNets, OFAResNetsHE, OFAMobileNetV3HE
+from ofa.imagenet_classification.elastic_nn.networks import OFAMobileNetV3, OFAResNets 
 from ofa.imagenet_classification.run_manager import RunManager
 from ofa.imagenet_classification.elastic_nn.modules.dynamic_op import DynamicSeparableConv2d
 #from ofa.utils import download_url
@@ -103,8 +103,8 @@ class OFAEvaluator:
             init = torch.load(model_path, map_location='cpu')['state_dict']
 
             ##FIX size mismatch error##### 
-            init['classifier.linear.linear.weight'] = init['classifier.linear.linear.weight'][:n_classes]
-            init['classifier.linear.linear.bias'] = init['classifier.linear.linear.bias'][:n_classes]
+            init['classifier.linear.weight'] = init['classifier.linear.weight'][:n_classes]
+            init['classifier.linear.bias'] = init['classifier.linear.bias'][:n_classes]
             ##############################
 
             self.engine.load_state_dict(init)  

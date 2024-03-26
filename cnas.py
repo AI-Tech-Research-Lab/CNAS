@@ -17,7 +17,7 @@ from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.operators.crossover.pntx import TwoPointCrossover
 from pymoo.operators.mutation.pm import PolynomialMutation
 
-from utils import get_correlation, get_net_info
+from utils import get_correlation, get_net_info, tiny_ml
 from ofa_evaluator import OFAEvaluator
 
 from search_space import OFASearchSpace
@@ -603,7 +603,17 @@ class AuxiliarySingleLevelProblem(Problem):
 
                 r = config.get("r",32) #default value: 32
 
-                info = get_net_info(subnet, (3, r, r), pmax=self.pmax, penalty = self.penalty, print_info=False)
+                info = get_net_info(subnet, (3, r, r), print_info=False)
+                info['tiny_ml'] = tiny_ml(params = info['params'],
+                                 macs = info['macs'],
+                                 activations = info['activations'],
+                                 pmax = self.pmax,
+                                 mmax = self.mmax,
+                                 amax = self.amax,
+                                 wp = self.wp,
+                                 wm = self.wm,
+                                 wa = self.wa,
+                                 penalty = self.penalty)
 
                 f[i, 0] = acc_err
                 f[i, 1] = info.get(self.sec_obj,None) 

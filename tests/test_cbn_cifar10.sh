@@ -1,4 +1,4 @@
-python cnas.py  --sec_obj avg_macs \
+python cnas.py  --resume ../results/nachos-cifar10/iter_0 --sec_obj avg_macs \
               --n_gpus 1 --gpu 1 --n_workers 4 \
               --data ../datasets/cifar10 --dataset cifar10 --n_classes 10\
               --first_predictor carts --sec_predictor carts \
