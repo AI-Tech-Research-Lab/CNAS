@@ -72,9 +72,9 @@ class CNAS:
         self.pmax = kwargs.pop('pmax',2) #max value of params of the candidate architecture
         self.mmax = kwargs.pop('mmax',100) #max value of flops of the candidate architecture
         self.amax = kwargs.pop('amax',5) #max value of activations of the candidate architecture
-        self.wp = kwargs.pop('pmax',1) #weight for params 
-        self.wm = kwargs.pop('mmax',1/40) #weight for macs
-        self.wa = kwargs.pop('amax',1) #weight for activations
+        self.wp = kwargs.pop('wp',1) #weight for params 
+        self.wm = kwargs.pop('wm',1/40) #weight for macs
+        self.wa = kwargs.pop('wa',1) #weight for activations
         self.penalty = kwargs.pop('penalty',10**10) #static penalty factor
         # Functional constraints params
         self.func_constr = kwargs.pop('func_constr',False) #use functional constraints
@@ -734,7 +734,7 @@ if __name__ == '__main__':
     parser.add_argument('--top1min', type = float, default=0.1, help='top1 constraint')
     parser.add_argument('--wp', type = float, default=1.0,
                         help='weight for params')
-    parser.add_argument('--wf', type = float, default=1/40,
+    parser.add_argument('--wm', type = float, default=1/40,
                         help='weight for flops')
     parser.add_argument('--wa', type = float, default=1.0,
                         help='weight for activations')
