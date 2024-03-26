@@ -5,7 +5,7 @@ import argparse
 import numpy as np
 import math
 
-from ofa.imagenet_classification.elastic_nn.networks import OFAMobileNetV3 #, OFAEEMobileNetV3, OFAResNets, OFAResNetsHE, OFAMobileNetV3HE
+from ofa.imagenet_classification.elastic_nn.networks import OFAMobileNetV3, OFAResNets #, OFAEEMobileNetV3, OFAResNets, OFAResNetsHE, OFAMobileNetV3HE
 from ofa.imagenet_classification.run_manager import RunManager
 from ofa.imagenet_classification.elastic_nn.modules.dynamic_op import DynamicSeparableConv2d
 #from ofa.utils import download_url
@@ -33,75 +33,6 @@ def pad_none(x, depth, max_depth):
             new_x += [None] * (max_depth - d)
     return new_x
 
-def tiny_ml(params,macs,activations,pmax,mmax,amax,wp,wm,wa,penalty):
-  output = wp*(params + penalty*max(0,params-pmax)) + wm*(macs + penalty*max(0,macs-mmax)) + wa*(activations + penalty*max(0,activations-amax))
-  return output
-
-def c_params(params,pmax,penalty):
-  output = params + penalty*max(0,params-pmax) 
-  return output
-
-def get_adapt_net_info(net, data_shape, measure_latency=None, print_info=True, clean=False, lut=None, 
-                 pmax = 2, fmax = 100, amax = 5, wp = 1, wf = 1/40, wa = 1, penalty = 10**10):
-    
-    from utils import get_adapt_net_info
-    net_info = get_adapt_net_info(net, data_shape, measure_latency, print_info=print_info, clean=clean, lut=lut)
-    gpu_latency, cpu_latency = None, None
-    for k in net_info.keys():
-        if 'gpu' in k:
-            gpu_latency = np.round(net_info[k]['val'], 2)
-        if 'cpu' in k:
-            cpu_latency = np.round(net_info[k]['val'], 2)
-
-    params = np.round(net_info['params'] / 1e6, 2)
-    macs = []
-    for m in net_info['macs']:
-      macs.append(np.round(m / 1e6, 2))
-    activations = np.round(net_info['activations'] / 1e6, 2)
-
-    return {
-        'params': params,
-        'macs': macs,
-        'activations': activations,
-        'tiny_ml' : tiny_ml(params = params, flops = macs[-1] , activations = activations, 
-                            pmax = pmax, fmax = fmax, amax = amax,
-                            wp = wp, wf = wf, wa = wa, penalty = penalty),
-        'gpu': gpu_latency, 'cpu': cpu_latency
-    }
-
-def get_net_info(net, data_shape, measure_latency=None, print_info=True, clean=False, lut=None, 
-                 pmax = 2, fmax = 100, amax = 5, wp = 1, wf = 1/40, wa = 1, penalty = 10**10):
-    
-    from utils import get_net_info
-    net_info = get_net_info(net, data_shape, print_info)
-    gpu_latency, cpu_latency = None, None
-    for k in net_info.keys():
-        if 'gpu' in k:
-            gpu_latency = np.round(net_info[k]['val'], 2)
-        if 'cpu' in k:
-            cpu_latency = np.round(net_info[k]['val'], 2)
-
-    params = np.round(net_info['params'] / 1e6, 2)
-    macs = np.round(net_info['macs'] / 1e6, 2)
-    c_p = c_params(params,pmax,penalty)
-    #activations = np.round(net_info['activations'] / 1e6, 2)
-    
-    return {'params': params,'macs': macs, 'c_params': c_p}   
-
-    '''
-    return {
-        'params': params,
-        'macs': macs,
-        'activations': activations,
-        'tiny_ml' : tiny_ml(params = params, flops = macs, activations = activations, 
-                            pmax = pmax, fmax = fmax, amax = amax,
-                            wp = wp, wf = wf, wa = wa, penalty = penalty),
-        'gpu': gpu_latency, 'cpu': cpu_latency
-    }
-    '''
-
-
-
 def validate_config(config, max_depth=4):
     kernel_size, exp_ratio, depth = config['ks'], config['e'], config['d']
 
@@ -121,17 +52,15 @@ def validate_config(config, max_depth=4):
     # return {'ks': kernel_size, 'e': exp_ratio, 'd': depth, 'w': config['w']}
     return {'ks': kernel_size, 'e': exp_ratio, 'd': depth}
 
-
 class OFAEvaluator:
     """ based on OnceForAll supernet taken from https://github.com/mit-han-lab/once-for-all """
     def __init__(self,
                  n_classes=1000,
                  model_path='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0',
-                 model_name = 'ofa_mbv3',
                  pretrained = False,
                  kernel_size=None, exp_ratio=None, depth=None, threshold = None):
                  
-        # default configurations
+        # default configurations (MBV3)
         self.kernel_size = [3, 5, 7] if kernel_size is None else kernel_size  # depth-wise conv kernel size
         self.exp_ratio = [3, 4, 6] if exp_ratio is None else exp_ratio  # expansion rate
         self.depth = [2, 3, 4] if depth is None else depth  # number of MB block repetition 
@@ -140,83 +69,18 @@ class OFAEvaluator:
             self.width_mult = 1.0
         elif 'w1.2' in model_path:
             self.width_mult = 1.2
-        elif 'mbv3' in model_path: #both cbnmbv3 and eembv3
-            self.width_mult = 1.0
         else:
             raise ValueError
+        
+        print("MODEL PATH: ", model_path)
 
-        if ('ofa_mbv3' in model_name):
+        if ('ofa_mbv3' in model_path):
             self.engine = OFAMobileNetV3(
                 n_classes=n_classes,
                 dropout_rate=0, width_mult=self.width_mult, ks_list=self.kernel_size,
                 expand_ratio_list=self.exp_ratio, depth_list=self.depth)
-
-            if(pretrained):
-                
-                init = torch.load(model_path, map_location='cpu')['state_dict']
-                '''
-                url_base = 'https://hanlab.mit.edu/files/OnceForAll/ofa_nets/'
-                init = torch.load(
-                    download_url(url_base + model_path, model_dir='./ofa_nets'),
-                    map_location='cpu')['state_dict']
-                '''
-
-                ##FIX size mismatch error#####
-                init['classifier.linear.weight'] = init['classifier.linear.weight'][:n_classes]
-                init['classifier.linear.bias'] = init['classifier.linear.bias'][:n_classes]
-                ##############################
-
-                self.engine.load_state_dict(init)
-        
-        elif ('ofa_eembv3' in model_name):
-
-            self.threshold = [0.1, 0.2, 1] if threshold is None else threshold  # number of MB block repetition
-
-            self.engine = OFAEEMobileNetV3(
-                n_classes=n_classes,
-                dropout_rate=0, width_mult_list=self.width_mult, ks_list=self.kernel_size,
-                expand_ratio_list=self.exp_ratio, depth_list=self.depth)
-
-            if(pretrained):
-                init = torch.load(model_path, map_location='cpu')['state_dict']
-                '''
-                url_base = 'https://hanlab.mit.edu/files/OnceForAll/ofa_nets/'
-                init = torch.load(
-                    download_url(url_base + model_path, model_dir='./ofa_nets'),
-                    map_location='cpu')['state_dict']
-                '''
-
-                ##FIX size mismatch error#####
-                init['classifier.linear.weight'] = init['classifier.linear.weight'][:n_classes]
-                init['classifier.linear.bias'] = init['classifier.linear.bias'][:n_classes]
-                ##############################
-
-                self.engine.load_weights_from_net(init)
-        
-        elif 'resnet50_he' in model_name:
-            # default configurations
-            #ks is 3 by default for resnet
-            self.kernel_size = [3] if kernel_size is None else kernel_size  # depth-wise conv kernel size
-            self.exp_ratio = [1] if exp_ratio is None else exp_ratio  # expansion rate
-            self.depth = [2,3,4,5,6,7] if depth is None else depth  # number of MB block repetition
-            self.engine = OFAResNetsHE(n_classes = 10, depth_list=self.depth,
-             expand_ratio_list=self.exp_ratio)
             
-            '''
-            #Load pretrained weights
-            init = torch.load(model_path, map_location='cpu')['state_dict']
-
-            ##FIX size mismatch error##### 
-            init['classifier.linear.linear.weight'] = init['classifier.linear.linear.weight'][:n_classes]
-            init['classifier.linear.linear.bias'] = init['classifier.linear.linear.bias'][:n_classes]
-            ##############################
-
-            self.engine.load_state_dict(init)
-            '''
-            
-            return 
-            
-        elif 'resnet50' in model_name:
+        elif 'resnet50' in model_path:
             # default configurations
             #ks is 3 by default for resnet
             self.kernel_size = [3] if kernel_size is None else kernel_size  # depth-wise conv kernel size
@@ -230,28 +94,20 @@ class OFAEvaluator:
               expand_ratio_list = self.exp_ratio,
               width_mult_list = self.width_mult
               ) 
-            
-            if(pretrained):
-
-                init = torch.load(model_path, map_location='cpu')['state_dict']
-                '''
-                url_base = 'https://hanlab.mit.edu/files/OnceForAll/ofa_nets/'
-                init = torch.load(
-                    download_url(url_base + model_path, model_dir='./ofa_nets'),
-                    map_location='cpu')['state_dict']
-                '''
-                ##FIX size mismatch error##### 
-                init['classifier.linear.linear.weight'] = init['classifier.linear.linear.weight'][:n_classes]
-                init['classifier.linear.linear.bias'] = init['classifier.linear.linear.bias'][:n_classes]
-                ##############################
-
-                self.engine.load_state_dict(init) 
-        
         else:
 
           raise NotImplementedError 
-        
-        
+            
+        if(pretrained):
+
+            init = torch.load(model_path, map_location='cpu')['state_dict']
+
+            ##FIX size mismatch error##### 
+            init['classifier.linear.linear.weight'] = init['classifier.linear.linear.weight'][:n_classes]
+            init['classifier.linear.linear.bias'] = init['classifier.linear.linear.bias'][:n_classes]
+            ##############################
+
+            self.engine.load_state_dict(init)  
             
     def sample(self, config=None):
         """ randomly sample a sub-network """
@@ -331,180 +187,6 @@ class OFAEvaluator:
             json.dump(info, handle)
         
         print(info)
-
-
-    @staticmethod   
-    def adaptive_eval(subnet, data_path, dataset='imagenet', n_epochs=0, resolution=(224,224), trn_batch_size=128, vld_batch_size=250,
-             num_workers=4, valid_size=None, is_test=True, log_dir='.tmp/eval', measure_latency=None, no_logs=False,
-             reset_running_statistics=True, pmax = 2, fmax = 100, amax = 5, wp = 1, wf = 1/40, wa = 1, penalty = 10**10):
-
-        lut = {'cpu': 'data/i7-8700K_lut.yaml'}
-        
-        
-        info = get_adapt_net_info(
-              subnet, (3, resolution, resolution), measure_latency=measure_latency,
-              print_info=False, clean=True, lut=lut, pmax = pmax, fmax = fmax, amax = amax, wp = wp, wf = wf, wa = wa, penalty = penalty)
-        
-        run_config = get_run_config(
-            dataset=dataset, data_path=data_path, image_size=resolution, n_epochs=n_epochs,
-            train_batch_size=trn_batch_size, test_batch_size=vld_batch_size,
-            n_worker=num_workers, valid_size=valid_size)
-        
-        # set the image size. You can set any image size from 192 to 256 here
-        run_config.data_provider.assign_active_img_size(resolution)
-
-        run_manager = RunManager(log_dir, subnet, run_config, init=False) ##<-- HERE the bug!!!
-        
-        if reset_running_statistics:
-            # run_manager.reset_running_statistics(net=subnet, batch_size=vld_batch_size)
-            run_manager.reset_running_statistics(net=subnet)
-        
-        if n_epochs > 0:
-            cfgs.subnet = subnet
-            subnet = run_manager.adaptive_train(cfgs)
-        
-        loss, top1, top5, utils = run_manager.adaptive_validate(net=subnet, is_test=is_test, no_logs=no_logs)
-
-        info['loss'], info['top1'], info['top5'], info['util'] = loss, top1, top5, utils
-
-        macs = 0
-        for u,m in zip(utils,info['macs']):
-          macs += u*m
-        info['macs']=macs #average number of macs
-
-        save_path = os.path.join(log_dir, 'net.stats') if cfgs.save is None else cfgs.save
-        if cfgs.save_config:
-            OFAEvaluator.save_net_config(log_dir, subnet, "net.config")
-            OFAEvaluator.save_net(log_dir, subnet, "net.init")
-        with open(save_path, 'w') as handle:
-            json.dump(info, handle)
-        
-        print(info)
-        
-
-
-def main(args):
-    """ one evaluation of a subnet or a config from a file """
-    mode = 'subnet'
-    if args.config is not None:
-        if args.init is not None:
-            mode = 'config'
-
-    #print('Evaluation mode: {}'.format(mode))
-    if mode == 'config':
-        net_config = json.load(open(args.config))
-        subnet = NSGANetV2.build_from_config(net_config, drop_connect_rate=args.drop_connect_rate)
-        init = torch.load(args.init, map_location='cpu')['state_dict']
-        subnet.load_state_dict(init)
-        subnet.classifier.dropout_rate = args.drop_rate
-        threshold = net_config['t']
-        subnet.threshold = threshold
-        try:
-            resolution = net_config['resolution']
-        except KeyError:
-            resolution = args.resolution
-
-    elif mode == 'subnet':
-        config = json.load(open(args.subnet))
-        evaluator = OFAEvaluator(n_classes=args.n_classes, model_path=args.supernet, pretrained = args.pretrained)
-        if ('w1.0' in args.supernet):
-          subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
-        if ('eembv3' in args.supernet):
-          subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 't':config['t']})
-        if ('cbnmbv3' in args.supernet):
-          subnet, _ = evaluator.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d'], 'ne':config['ne']})
-        resolution = config['r']
-        
-
-    else:
-        raise NotImplementedError
-    
-    if ('w1.0' in args.supernet):
-        OFAEvaluator.eval(
-            subnet, log_dir=args.log_dir, data_path=args.data, dataset=args.dataset, n_epochs=args.n_epochs,
-            resolution=resolution, trn_batch_size=args.trn_batch_size, vld_batch_size=args.vld_batch_size,
-            num_workers=args.num_workers, valid_size=args.valid_size, is_test=args.test, measure_latency=args.latency,
-            no_logs=(not args.verbose), reset_running_statistics=args.reset_running_statistics, 
-            pmax = args.pmax, fmax = args.fmax, amax = args.amax, wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty)
-    
-    if ('eembv3' in args.supernet):
-        OFAEvaluator.adaptive_eval(
-            subnet, log_dir=args.log_dir, data_path=args.data, dataset=args.dataset, n_epochs=args.n_epochs,
-            resolution=resolution, trn_batch_size=args.trn_batch_size, vld_batch_size=args.vld_batch_size,
-            num_workers=args.num_workers, valid_size=args.valid_size, is_test=args.test, measure_latency=args.latency,
-            no_logs=(not args.verbose), reset_running_statistics=args.reset_running_statistics, 
-            pmax = args.pmax, fmax = args.fmax, amax = args.amax, wp = args.wp, wf = args.wf, wa = args.wa, penalty = args.penalty,
-            )
-    
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--data', type=str, default='/mnt/datastore/ILSVRC2012',
-                        help='location of the data corpus')
-    parser.add_argument('--log_dir', type=str, default='.tmp',
-                        help='directory for logging')
-    parser.add_argument('--dataset', type=str, default='imagenet',
-                        help='name of the dataset (imagenet, cifar10, cifar100, ...)')
-    parser.add_argument('--n_classes', type=int, default=1000,
-                        help='number of classes for the given dataset')
-    parser.add_argument('--supernet', type=str, default='ofa_mbv3_d234_e346_k357_w1.0',
-                        help='file path to supernet weights')
-    parser.add_argument('--pretrained', action='store_true', default=False,
-                        help='use pretrained weights')
-    parser.add_argument('--subnet', type=str, default=None,
-                        help='location of a json file of ks, e, d, and e')
-    parser.add_argument('--config', type=str, default=None,
-                        help='location of a json file of specific model declaration')
-    parser.add_argument('--init', type=str, default=None,
-                        help='location of initial weight to load')
-    parser.add_argument('--trn_batch_size', type=int, default=128,
-                        help='test batch size for inference')
-    parser.add_argument('--vld_batch_size', type=int, default=256,
-                        help='test batch size for inference')
-    parser.add_argument('--num_workers', type=int, default=6,
-                        help='number of workers for data loading')
-    parser.add_argument('--n_epochs', type=int, default=0,
-                        help='number of training epochs')
-    parser.add_argument('--save', type=str, default=None,
-                        help='location to save the evaluated metrics')
-    parser.add_argument('--resolution', type=list, default=(224,224),
-                        help='input resolution (192 -> 256)')
-    parser.add_argument('--valid_size', type=int, default=None,
-                        help='validation set size, randomly sampled from training set')
-    parser.add_argument('--test', action='store_true', default=False,
-                        help='evaluation performance on testing set')
-    parser.add_argument('--latency', type=str, default=None,
-                        help='latency measurement settings (gpu64#cpu)')
-    parser.add_argument('--verbose', action='store_true', default=False,
-                        help='whether to display evaluation progress')
-    parser.add_argument('--reset_running_statistics', action='store_true', default=False,
-                        help='reset the running mean / std of BN')
-    parser.add_argument('--drop_rate', type=float, default=0.2,
-                        help='dropout rate')
-    parser.add_argument('--drop_connect_rate', type=float, default=0.0,
-                        help='connection dropout rate')
-    parser.add_argument('--save_config', action='store_true', default=False,
-                        help='save config file')
-    parser.add_argument('--pmax', type=float, default=2.0,
-                        help='threshold params')
-    parser.add_argument('--fmax', type=float, default=100.0,
-                        help='threshold flops')
-    parser.add_argument('--amax', type = float, default=5.0,
-                        help='max value of activations for candidate architecture')
-    parser.add_argument('--wp', type = float, default=1.0,
-                        help='weight for params')
-    parser.add_argument('--wf', type = float, default=1/40,
-                        help='weight for flops')
-    parser.add_argument('--wa', type = float, default=1.0,
-                        help='weight for activations')
-    parser.add_argument('--penalty', type = float, default=10**10,
-                        help='penalty factor')
-
-    cfgs = parser.parse_args()
-
-    cfgs.teacher_model = None
-
-    main(cfgs)
 
 
 

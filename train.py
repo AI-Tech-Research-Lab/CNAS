@@ -10,8 +10,7 @@ import logging
 sys.path.append(os.getcwd())
  
 from train_utils import get_optimizer, get_loss, get_lr_scheduler, get_data_loaders, load_checkpoint, validate, initialize_seed, Log, train
-from utils import get_net_info, get_net_from_OFA
-from ofa_evaluator import tiny_ml
+from utils import get_net_info, get_net_from_OFA, tiny_ml
 from robustness.utility.perturb import get_net_info_runtime
 from robustness.evaluate_cifar10c import compute_mCE
 
@@ -53,6 +52,7 @@ if __name__ == "__main__":
     parser.add_argument('--ood_data', type=str, default=None, help='OOD dataset')
     parser.add_argument('--alpha', default=0.5, type=float, help="weight for top1_robust")  
     parser.add_argument('--alpha_norm', default=1.0, type=float, help="weight for top1_robust normalization")
+    parser.add_argument('--func_constr', action='store_true', default=False, help="use functional constraints")
     parser.add_argument('--pmax', default=300, type=float, help="constraint on params")
     parser.add_argument('--mmax', default=300, type=float, help="constraint on macs")
     parser.add_argument('--amax', default=300, type=float, help="constraint on activations")
@@ -93,7 +93,7 @@ if __name__ == "__main__":
         model_path = args.model_path
     logging.info("Model: %s", args.model)
 
-    model, res = get_net_from_OFA(model_path, args.n_classes, args.supernet_path, pretrained=True)
+    model, res = get_net_from_OFA(model_path, args.n_classes, args.supernet_path, pretrained=args.pretrained, func_constr=args.func_constr)
 
     logging.info(f"DATASET: {args.dataset}")
     logging.info("Resolution: %s", res)

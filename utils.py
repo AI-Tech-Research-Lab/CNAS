@@ -201,6 +201,7 @@ def bash_command_template_single_exit(**kwargs):
     cfg['sigma_step'] = kwargs['sigma_step']
     cfg['alpha'] = kwargs['alpha']
     cfg['res'] = kwargs['res']
+    cfg['func_constr'] = kwargs['func_constr']
     cfg ['pmax'] = kwargs['pmax']
     cfg ['mmax'] = kwargs['mmax']
     cfg ['amax'] = kwargs['amax']
@@ -458,83 +459,20 @@ def get_net_info(net, input_shape=(3, 224, 224), print_info=False):
 
     return net_info
 
-def get_adapt_net_info(net, input_shape=(3, 224, 224), measure_latency=None, print_info=True, clean=False, lut=None):
-    """
-    Modified from https://github.com/mit-han-lab/once-for-all/blob/
-    35ddcb9ca30905829480770a6a282d49685aa282/ofa/imagenet_codebase/utils/pytorch_utils.py#L139
-    """
-    from ofa.imagenet_codebase.utils.pytorch_utils import count_parameters, measure_net_latency
+def get_net_from_OFA(subnet_path, n_classes=10, supernet='supernets/ofa_mbv3_d234_e346_k357_w1.0', pretrained=True, func_constr=False):
 
-    # artificial input data
-    inputs = torch.randn(1, 3, input_shape[-2], input_shape[-1])
-
-    # move network to GPU if available
-    if torch.cuda.is_available():
-        device = torch.device('cuda:0')
-        net = net.to(device)
-        cudnn.benchmark = True
-        inputs = inputs.to(device)
-
-    net_info = {}
-    if isinstance(net, nn.DataParallel):
-        net = net.module
-
-    # parameters
-    net_info['params'] = count_parameters(net)
-
-    t_list = net.threshold
-
-    macs = []
-    t_config = [[0,1,1,1],[1,0,1,1],[1,1,0,1],[1,1,1,0]]
-    
-    for i,c in enumerate(t_config):
-        if (t_list[i]!=1):
-
-            cp_net = copy.deepcopy(net)
-            cp_net.eval()
-
-            # move network to GPU if available
-            if torch.cuda.is_available():
-                    device = torch.device('cuda:0')
-                    cp_net = cp_net.to(device)
-
-            cp_net.set_threshold(c)
-            macs.append(int(profile_macs(cp_net, inputs)))
-
-    # macs whole network
-    cp_net = copy.deepcopy(net)
-    cp_net.eval()
-    # move network to GPU if available
-    if torch.cuda.is_available():
-            device = torch.device('cuda:0')
-            cp_net = cp_net.to(device)
-    cp_net.set_threshold([1,1,1,1])
-    macs.append(int(profile_macs(cp_net, inputs)))
-
-    net_info['macs'] = macs
-   
-    # activation_size
-    net_info['activations'] = int(profile_activation_size(copy.deepcopy(net), inputs))
-
-    if print_info:
-        # print(net)
-        print('Total training params: %.2fM' % (net_info['params'] / 1e6))
-        print('Total MACs: %.2fM' % ( macs[-1] / 1e6))
-        print('Total activations: %.2fM' % (net_info['activations'] / 1e6))
-        #for l_type in latency_types:
-        #    print('Estimated %s latency: %.3fms' % (l_type, net_info['%s latency' % l_type]['val']))
-
-    return net_info 
-
-def get_net_from_OFA(subnet_path, n_classes=10, supernet='supernets/ofa_mbv3_d234_e346_k357_w1.0', pretrained=True):
-
-    print("Current directory: ", os.getcwd())
     config = json.load(open(subnet_path))
     ofa = OFAEvaluator(n_classes=n_classes,
     model_path=supernet,
     pretrained = pretrained)
     r=config.get("r",None)
     subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
+
+    # Functional constraints
+    if(func_constr):
+        print("Functional constraints applied")
+        subnet=substitute_activation(subnet,nn.ReLU,OurReLU())
+
     return subnet, r
 
 def get_subnet_folder(exp_path, subnet):
@@ -560,3 +498,38 @@ def get_subnet_folder(exp_path, subnet):
         return None
     
     return folders[-1]
+
+def tiny_ml(params,macs,activations,pmax,mmax,amax,wp,wm,wa,penalty):
+  output = wp*(params + penalty*max(0,params-pmax)) + wm*(macs + penalty*max(0,macs-mmax)) + wa*(activations + penalty*max(0,activations-amax))
+  return output
+
+class OurReLU(nn.Module):
+    def __init__(self):
+        super().__init__()
+        
+    def forward(self, x):
+
+        return 0.01 * torch.pow(x, 2) + 0.5 * x
+        #return torch.pow(x, 2)
+
+def substitute_activation(model, old_activation, new_activation):
+    """
+    Replace all old activations in a PyTorch model with a new activation function.
+
+    Args:
+        model (nn.Module): PyTorch neural network model.
+        new_activation (nn.Module): Custom activation function to replace old activation.
+
+    Returns:
+        nn.Module: PyTorch model with old activations replaced by new activation.
+    """
+    if not isinstance(model, nn.Module):
+        raise ValueError("Input model must be a PyTorch nn.Module")
+
+    for name, module in model.named_children():
+        if isinstance(module, old_activation):
+            setattr(model, name, new_activation)
+        else:
+            substitute_activation(module, old_activation, new_activation)
+
+    return model

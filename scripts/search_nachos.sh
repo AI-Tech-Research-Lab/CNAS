@@ -13,4 +13,4 @@ python cnas.py --sec_obj avg_macs \
               --n_epochs 10 --warmup_ee_epochs 5 --ee_epochs 5 \
               --w_alpha 1.0 --w_beta 1.0 --w_gamma 1.0 \
               --mmax 2.7 --top1min 0.65 \
-              --lr 32 --ur 32 
+              --lr 32 --ur 32 --rstep 4

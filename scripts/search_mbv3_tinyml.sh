@@ -7,5 +7,5 @@ python cnas.py --sec_obj tiny_ml \
               --supernet_path ./supernets/ofa_mbv3_d234_e346_k357_w1.0 --pretrained  \
               --save ../results/search_path --iterations 30 \
               --search_space mobilenetv3 --trainer_type single_exit \
-              --n_epochs 5 --lr 40 --ur 104 \
+              --n_epochs 5 --lr 40 --ur 104 --rstep 4\
               --pmax 2.2 --mmax 7 --amax 0.3 --wp 1.0 --wm 1.0 --wa 1.0 

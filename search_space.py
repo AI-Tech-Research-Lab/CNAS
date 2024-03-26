@@ -81,7 +81,7 @@ class OFASearchSpace:
                     resolution = int(np.random.choice(r))
                     data.append({'ks': kernel_size, 'e': exp_ratio, 'd': depth, 't': threshold, 'r': resolution})
 
-            elif (self.supernet == 'mobilenetv3'):
+            elif (self.supernet == 'mobilenetv3' or self.supernet == 'resnet50' or self.supernet == 'resnet50_he'):
 
                 if self.fix_res:
                     data.append({'ks': kernel_size, 'e': exp_ratio, 'd': depth})

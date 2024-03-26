@@ -17,8 +17,8 @@ from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.operators.crossover.pntx import TwoPointCrossover
 from pymoo.operators.mutation.pm import PolynomialMutation
 
-from utils import get_correlation
-from ofa_evaluator import OFAEvaluator, get_net_info, get_adapt_net_info
+from utils import get_correlation, get_net_info
+from ofa_evaluator import OFAEvaluator
 
 from search_space import OFASearchSpace
 from acc_predictor.factory import get_acc_predictor
@@ -66,36 +66,33 @@ class CNAS:
         self.rstep = kwargs.pop('rstep',4) #resolution step
         self.seed = kwargs.pop('seed', 0)  # random seed
         self.optim = kwargs.pop('optim', "SGD") # training optimizer
-
         # Trainer type 
         self.trainer_type = kwargs.pop('trainer_type', 'single-exit')
-        # Constraint params
+        # Technological constraints params
         self.pmax = kwargs.pop('pmax',2) #max value of params of the candidate architecture
         self.mmax = kwargs.pop('mmax',100) #max value of flops of the candidate architecture
         self.amax = kwargs.pop('amax',5) #max value of activations of the candidate architecture
-        self.top1min = kwargs.pop('top1min', 0.1) #top1 constraint
-        ##
         self.wp = kwargs.pop('pmax',1) #weight for params 
         self.wm = kwargs.pop('mmax',1/40) #weight for macs
         self.wa = kwargs.pop('amax',1) #weight for activations
         self.penalty = kwargs.pop('penalty',10**10) #static penalty factor
+        # Functional constraints params
+        self.func_constr = kwargs.pop('func_constr',False) #use functional constraints
         # Robustness params
         self.sigma_min = kwargs.pop('sigma_min', 0.05) # min noise perturbation intensity
         self.sigma_max = kwargs.pop('sigma_max', 0.05) # max noise perturbation intensity
         self.sigma_step = kwargs.pop('sigma_step', 0) # noise perturbation intensity step
         self.alpha = kwargs.pop('alpha', 0.5) # alpha parameter for entropic figure
-
         sigma_step=self.sigma_step
         if self.sigma_max == self.sigma_min:
             sigma_step = 1
         n=round((self.sigma_max-self.sigma_min)/sigma_step)+1
-
         self.alpha_norm = 1.0 # alpha factor for entropic training
-
         # Early Exit params
         self.method = kwargs.pop('method', 'bernulli') # method for early exit training
         self.support_set = kwargs.pop('support_set', False) # use support set for early exit training
         self.tune_epsilon = kwargs.pop('tune_epsilon', False) # tune epsilon for early exit inference
+        self.top1min = kwargs.pop('top1min', 0.1) #top1 constraint
         self.w_alpha = kwargs.pop('w_alpha', 1.0) # weight for alpha factor
         self.w_beta = kwargs.pop('w_beta', 1.0)
         self.w_gamma = kwargs.pop('w_gamma', 1.0)
@@ -318,7 +315,7 @@ class CNAS:
             self.gpu_list, self.trainer_type, n_workers = self.n_workers,
             data=self.data, dataset=self.dataset, model=self.model, pmax = self.pmax, 
             mmax =self.mmax, amax = self.amax, wp=self.wp, wm=self.wm, wa=self.wa,
-            top1min=self.top1min, penalty = self.penalty, supernet_path=self.supernet_path, pretrained=self.pretrained, 
+            top1min=self.top1min, penalty = self.penalty, func_constr=self.func_constr, supernet_path=self.supernet_path, pretrained=self.pretrained, 
             n_epochs = self.n_epochs, optim=self.optim, sigma_min=self.sigma_min,
             sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.lr, alpha_norm=self.alpha_norm, val_split=self.val_split,
             method = self.method, support_set = self.support_set, tune_epsilon = self.tune_epsilon, 
@@ -606,12 +603,7 @@ class AuxiliarySingleLevelProblem(Problem):
 
                 r = config.get("r",32) #default value: 32
 
-                if(self.ss.supernet == 'eemobilenetv3'):
-                    info = get_adapt_net_info(subnet, (3, r, r),measure_latency=self.sec_obj, print_info=False, clean=True, lut=self.lut, pmax = self.pmax, mmax = self.mmax,
-                amax = self.amax, wp = self.wp, wf = self.wf, wa = self.wa, penalty = self.penalty)
-                    #info['macs']=info['macs'][-1]
-                else:
-                    info = get_net_info(subnet, (3, r, r), pmax=self.pmax, penalty = self.penalty, print_info=False)
+                info = get_net_info(subnet, (3, r, r), pmax=self.pmax, penalty = self.penalty, print_info=False)
 
                 f[i, 0] = acc_err
                 f[i, 1] = info.get(self.sec_obj,None) 
@@ -721,6 +713,8 @@ if __name__ == '__main__':
                         help='random seed')
     parser.add_argument('--trainer_type', type = str, default='single_exit',
                         help='trainer type (single_exit, multi_exits)')
+    parser.add_argument('--func_constr', action='store_true', default=False,
+                        help='use functional constraints')
     parser.add_argument('--pmax', type = float, default=2.0,
                         help='max value of params for candidate architecture')
     parser.add_argument('--mmax', type = float, default=100,

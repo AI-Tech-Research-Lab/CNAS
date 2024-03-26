@@ -9,4 +9,4 @@ python cnas.py --sec_obj avg_macs \
               --search_space eemobilenetv3 --trainer_type multi_exits \
               --method joint --val_split 0.1 \
               --n_epochs 0  --ee_epochs 5 \
-              --lr 40 --ur 104 
+              --lr 40 --ur 104 --rstep 4
