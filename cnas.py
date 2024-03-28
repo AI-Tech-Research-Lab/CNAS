@@ -3,6 +3,7 @@ import json
 import shutil
 import argparse
 import subprocess
+from nasbench import NASBench201
 import numpy as np
 import math
 import datetime
@@ -39,7 +40,7 @@ class CNAS:
         self.iterations = kwargs.pop('iterations', 30)  # number of iterations to run search
         self.n_doe = kwargs.pop('n_doe', 100)  # number of architectures to train before fit surrogate model
         self.n_iter = kwargs.pop('n_iter', 8)  # number of architectures to train in each iteration
-        self.first_predictor = kwargs.pop('first_predictor', 'rbf')  # surrogate 1st objective
+        self.first_predictor = kwargs.pop('first_predictor', 'gp')  # surrogate 1st objective
         self.sec_predictor = kwargs.pop('sec_predictor', None)  # surrogate 2nd objective
         self.n_gpus = kwargs.pop('n_gpus', 1)  # number of available gpus
         self.gpu = kwargs.pop('gpu', 1)  # required number of gpus per evaluation job
@@ -99,7 +100,10 @@ class CNAS:
         self.warmup_ee_epochs = kwargs.pop('warmup_ee_epochs', 5) # warmup epochs for early exit
         self.ee_epochs = kwargs.pop('ee_epochs', 0) # early exit epochs with support set
 
-        self.search_space = OFASearchSpace(self.search_space,self.lr,self.ur, self.rstep)
+        if self.search_space != 'nasbench':
+            self.search_space = OFASearchSpace(self.search_space, self.lr, self.ur, self.rstep)
+        else:
+            self.search_space = NASBench201(self.dataset, self.save_path)
 
     def search(self):
 
@@ -119,8 +123,6 @@ class CNAS:
 
             arch_doe = self.search_space.sample(n_samples = self.n_doe)
             
-            # parallel evaluation of arch_doe
-            #top1_err, complexity = self._evaluate(arch_doe, it=0)
             stats = self._evaluate(arch_doe, it=0)
 
             for arch, info in zip(arch_doe,stats):
@@ -310,19 +312,23 @@ class CNAS:
 
         gen_dir = os.path.join(self.save_path, "iter_{}".format(it))
 
-        prepare_eval_folder(
-            gen_dir, archs, self.gpu, self.n_gpus, 
-            self.gpu_list, self.trainer_type, n_workers = self.n_workers,
-            data=self.data, dataset=self.dataset, model=self.model, pmax = self.pmax, 
-            mmax =self.mmax, amax = self.amax, wp=self.wp, wm=self.wm, wa=self.wa,
-            top1min=self.top1min, penalty = self.penalty, func_constr=self.func_constr, supernet_path=self.supernet_path, pretrained=self.pretrained, 
-            n_epochs = self.n_epochs, optim=self.optim, sigma_min=self.sigma_min,
-            sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.lr, alpha_norm=self.alpha_norm, val_split=self.val_split,
-            method = self.method, support_set = self.support_set, tune_epsilon = self.tune_epsilon, 
-            w_alpha = self.w_alpha, w_beta = self.w_beta, w_gamma = self.w_gamma, 
-            warmup_ee_epochs = self.warmup_ee_epochs, ee_epochs = self.ee_epochs)
+        if isinstance(self.search_space, OFASearchSpace):
 
-        subprocess.call("sh {}/run_bash.sh".format(gen_dir), shell=True)
+            prepare_eval_folder(
+                gen_dir, archs, self.gpu, self.n_gpus, 
+                self.gpu_list, self.trainer_type, n_workers = self.n_workers,
+                data=self.data, dataset=self.dataset, model=self.model, pmax = self.pmax, 
+                mmax =self.mmax, amax = self.amax, wp=self.wp, wm=self.wm, wa=self.wa,
+                top1min=self.top1min, penalty = self.penalty, func_constr=self.func_constr, supernet_path=self.supernet_path, pretrained=self.pretrained, 
+                n_epochs = self.n_epochs, optim=self.optim, sigma_min=self.sigma_min,
+                sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.lr, alpha_norm=self.alpha_norm, val_split=self.val_split,
+                method = self.method, support_set = self.support_set, tune_epsilon = self.tune_epsilon, 
+                w_alpha = self.w_alpha, w_beta = self.w_beta, w_gamma = self.w_gamma, 
+                warmup_ee_epochs = self.warmup_ee_epochs, ee_epochs = self.ee_epochs)
+
+            subprocess.call("sh {}/run_bash.sh".format(gen_dir), shell=True)
+        else:
+            self.search_space.evaluate(archs, it)
 
         all_stats=[]
         for i in range(len(archs)):
@@ -523,7 +529,10 @@ class AuxiliarySingleLevelProblem(Problem):
         self.acc_predictor = acc_predictor
         self.compl_predictor = compl_predictor
         self.xl = np.zeros(self.n_var) #lower bounds
-        self.xu = 2 * np.ones(self.n_var) #upper bounds
+        if isinstance(self.ss,NASBench201):
+            self.xu = self.ss.num_operations * np.ones(self.n_var) #upper bounds
+        else:
+            self.xu = 2 * np.ones(self.n_var) #upper bounds
         '''
         if self.ss=='cbnmobilenetv3':
           self.xu[-1] = 1 #EEC on/off
@@ -577,6 +586,12 @@ class AuxiliarySingleLevelProblem(Problem):
                 f[i, 0] = acc_err
                 f[i, 1] = sec_obj 
         
+        elif isinstance(self.ss,NASBench201):
+                for i,(_x,acc_err) in enumerate(zip(x,top1_err)):
+                    arch = self.ss.matrix2str(self.ss.vector2matrix(_x))
+                    stats = self.ss.get_info_from_arch({'arch':arch})
+                    f[i,0] = acc_err
+                    f[i,1] = stats.get(self.sec_obj,None)
         else:
 
             for i, (_x, acc_err) in enumerate(zip(x, top1_err)):
@@ -629,8 +644,6 @@ class AuxiliarySingleLevelProblem(Problem):
           #2nd check: no zero EECs
           is_valid = False
       return is_valid
-
-
 
 class SubsetProblem(Problem):
     """ select a subset to diversify the pareto front """
