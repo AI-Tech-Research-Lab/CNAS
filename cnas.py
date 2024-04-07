@@ -255,7 +255,7 @@ class CNAS:
         path = split[0]
         
         for file in glob.glob(os.path.join(path + '_*', "net_*/net_*.subnet")):
-            arch = json.load(open(file))
+            arch = json.load(open(file))#['arch']
             pre,ext= os.path.splitext(file)
             split = pre.rsplit("_",3)  
             split2 = split[1].rsplit("/",1)
@@ -305,6 +305,7 @@ class CNAS:
         
         print("LEN ARCHIVE")    
         print(len(archive))
+        print(archive[:10])
     
         return archive
 
@@ -356,6 +357,7 @@ class CNAS:
         
 
     def _fit_first_predictor(self, archive):
+
         inputs = np.array([self.search_space.encode(x[0]) for x in archive])
         targets = np.array([x[1] for x in archive])
         assert len(inputs) > len(inputs[0]), "# of training samples have to be > # of dimensions"
