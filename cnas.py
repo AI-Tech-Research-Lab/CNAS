@@ -3,7 +3,7 @@ import json
 import shutil
 import argparse
 import subprocess
-from nasbench import NASBench201
+from nasbench201 import NASBench201
 import numpy as np
 import math
 import datetime
@@ -173,15 +173,25 @@ class CNAS:
             if self.sec_predictor is not None:
                 # check for complexity predictor's performance
                 rmse_c, rho_c, tau_c = get_correlation(
-                    np.vstack((a_sec_err_pred, c_sec_err_pred)), np.array([x[2] for x in archive] + complexity))          
+                    np.vstack((a_sec_err_pred, c_sec_err_pred)), np.array([x[2] for x in archive] + complexity))   
+
+            n_candidates = self.n_iter       
             
             for arch, info in zip(candidates,stats):
-                archive.append((arch,*info))
-
+                duplicate=False
+                if isinstance(self.search_space,NASBench201):
+                    for x in archive:
+                        if x[0]['arch'] == arch['arch']:
+                            duplicate=True
+                if not duplicate:
+                    archive.append((arch,*info))
+                else:
+                    n_candidates-=1
+            
             if self.first_predictor is not None:
                 print("fitting {}: RMSE = {:.4f}, Spearman's Rho = {:.4f}, Kendall’s Tau = {:.4f}".format(
                     self.first_predictor, rmse, rho, tau))
-                stats={'archive': archive, 'candidates': archive[-self.n_iter:],
+                stats={'archive': archive, 'candidates': archive[-n_candidates:],
                             'first_surrogate': {
                                 'model': self.first_predictor, 'name': first_predictor.name,
                                 'winner': first_predictor.winner if self.first_predictor == 'as' else first_predictor.name,
@@ -344,8 +354,8 @@ class CNAS:
                             os.path.join(self.save_path, "failed", "it_{}_net_{}".format(it, i)))
             
             f_obj=stats[self.first_obj]
-            s_obj=stats[self.sec_obj]
-            #s_obj=stats.get(self.sec_obj, stats['params'])
+            #s_obj=stats[self.sec_obj]
+            s_obj=stats.get(self.sec_obj, stats['params'])
             stat=(f_obj,s_obj)
 
             if self.first_obj=='top1_robust':
@@ -499,13 +509,10 @@ class AuxiliarySingleObjProblem(Problem):
         self.acc_predictor = acc_predictor
 
         self.xl = np.zeros(self.n_var) #lower bounds
-        self.xu = 2 * np.ones(self.n_var) #upper bounds
-        '''
-        if self.ss=='cbnmobilenetv3':
-          self.xu[-1] = 1 #EEC on/off
+        if isinstance(self.ss,NASBench201):
+            self.xu = self.ss.num_operations * np.ones(self.n_var) #upper bounds
         else:
-          self.xu[-1] = int(len(self.ss.resolution) - 1)
-        '''
+            self.xu = 2 * np.ones(self.n_var) #upper bounds
     
     def _evaluate(self, x, out, *args, **kwargs):
 

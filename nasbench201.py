@@ -275,12 +275,12 @@ class NASBench201(): #NASBench201 dataset
                 vector = np.random.randint(0, self.num_operations, int(self.num_nodes*(self.num_nodes-1)/2))
                 if not any((vector == arr).all() for arr in vectors):
                     vectors.append(vector)
-                    arch = {'arch': self.matrix2str(self.vector2matrix(vector))}
-                    archs.append(arch)
                     break
-        # Detect duplicates
-        #for v in vectors:
-        #    assert sum([(v == arr).all() for arr in vectors]) == 1
+
+        for v in vectors:
+            assert sum([(v == arr).all() for arr in vectors]) == 1
+            arch = {'arch': self.matrix2str(self.vector2matrix(v))}
+            archs.append(arch)
 
         return archs
 
