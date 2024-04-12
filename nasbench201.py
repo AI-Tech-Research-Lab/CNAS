@@ -347,4 +347,3 @@ class NASBench201(): #NASBench201 dataset
         str=self.archive['str'][idx]
         info['top1']=np.round(100 - self.archive['val-acc'][val_dataset][idx],3) # top1 error
         return info
-
