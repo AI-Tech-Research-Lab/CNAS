@@ -6,10 +6,10 @@ dataset=cifar10; res=32; ood_data="../datasets/cifar10c"
 #
 device=0
 #
-#optim=SGD; folder_optim=SGD; epochs_optim=6; first_obj=top1; folder=""
+optim=SGD; folder_optim=SGD; epochs_optim=6; first_obj=top1; folder=""
 #optim=SAM; folder_optim=SGD; epochs_optim=6; first_obj=top1; folder="/sgd_with_sam"
-optim=SAM; folder_optim=SAM; epochs_optim=6; first_obj=top1_robust; folder=""
-epochs=5
+#optim=SAM; folder_optim=SAM; epochs_optim=6; first_obj=top1_robust; folder=""
+epochs=200
 #
 #first_obj=robustness
 sec_obj=c_params
@@ -26,5 +26,6 @@ python train.py --dataset $dataset \
     --model_path ../results/entropic-mbv3-$dataset-${folder_optim}-$first_obj-$sec_obj-max$pmax-alpha$alpha-sigma$sigma-ep$epochs_optim-multires/final/net-trade-off_0/net.subnet \
     --output_path ../result/entropic-mbv3-$dataset-${folder_optim}-$first_obj-$sec_obj-max$pmax-alpha$alpha-sigma$sigma-ep$epochs_optim-multires/final/net-trade-off_0$folder \
     --pretrained --supernet_path ./supernets/ofa_mbv3_d234_e346_k357_w1.0 --n_classes 10\
-    --res $res --epochs $epochs --optim $optim --alpha $alpha --val_split 0.1 --eval_test \
-    --pmax $pmax --wp $wp
+    --res $res --epochs $epochs --optim $optim --alpha $alpha --val_split 0.5 --eval_test \
+    --pmax $pmax --wp $wp \
+    --nesterov --weight_decay 0.0005 --momentum 0.9 --learning_rate 0.1 --batch_size 256 
