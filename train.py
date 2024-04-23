@@ -1,4 +1,5 @@
 import argparse
+from nasbench201 import NASNet
 import torch
 
 import sys
@@ -16,19 +17,22 @@ from robustness.evaluate_cifar10c import compute_mCE
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    #seed
+    parser.add_argument("--seed", default=42, type=int, help="Seed for reproducibility.")
     parser.add_argument("--adaptive", default=True, type=bool, help="True if you want to use the Adaptive SAM.")
-    parser.add_argument("--nesterov", default=False, type=bool, help="True if you want to use Nesterov momentum.")
+    parser.add_argument("--nesterov", action='store_true', default=False, help="True if you want to use Nesterov momentum.")
     parser.add_argument("--batch_size", default=128, type=int, help="Batch size used in the training and validation loop.")
     parser.add_argument("--depth", default=16, type=int, help="Number of layers.")
     parser.add_argument("--dropout", default=0.0, type=float, help="Dropout rate.")
     parser.add_argument("--epochs", default=200, type=int, help="Total number of epochs.")
     parser.add_argument("--label_smoothing", default=0.1, type=float, help="Use 0.0 for no label smoothing.")
     parser.add_argument("--learning_rate", default=0.1, type=float, help="Base learning rate at the start of the training.") #0.1
+    parser.add_argument("--lr_min", default=0, type=float, help="Min learning rate") #0.1
     parser.add_argument("--momentum", default=0.9, type=float, help="SGD Momentum.")
     parser.add_argument("--n_workers", default=2, type=int, help="Number of CPU threads for dataloaders.")
     parser.add_argument("--weight_decay", default=5e-5, type=float, help="L2 weight decay.") 
     parser.add_argument("--val_split", default=0.0, type=float, help='percentage of train set for validation')
-    parser.add_argument('--save', action='store_true', default=True, help='save log of experiments')
+    parser.add_argument('--save', action='store_true', default=False, help='save log of experiments')
     parser.add_argument('--save_ckpt', action='store_true', default=False, help='save checkpoint')
     parser.add_argument('--optim', type=str, default='SAM', help='algorithm to use for training')
     parser.add_argument("--rho", default=2.0, type=int, help="Rho parameter for SAM.")
@@ -86,14 +90,16 @@ if __name__ == "__main__":
         logging.warning("Device not found or CUDA not available.")
     
     device = torch.device(device)
-    initialize_seed(42, use_cuda)
+    initialize_seed(args.seed, use_cuda)
 
     supernet_path = args.supernet_path
     if args.model_path is not None:
         model_path = args.model_path
     logging.info("Model: %s", args.model)
 
-    model, res = get_net_from_OFA(model_path, args.n_classes, args.supernet_path, pretrained=args.pretrained, func_constr=args.func_constr)
+    #model, res = get_net_from_OFA(model_path, args.n_classes, args.supernet_path, pretrained=args.pretrained, func_constr=args.func_constr)
+    model = NASNet(cell_encode=[3, 3, 3, 1, 3, 2],num_classes=10)
+    res=32
 
     logging.info(f"DATASET: {args.dataset}")
     logging.info("Resolution: %s", res)
@@ -112,14 +118,12 @@ if __name__ == "__main__":
 
     criterion = get_loss('ce')
     
-    scheduler = get_lr_scheduler(optimizer, 'cosine', epochs=epochs)
+    scheduler = get_lr_scheduler(optimizer, 'cosine', epochs=epochs, lr_min=args.lr_min)
     
     if (os.path.exists(os.path.join(args.output_path,'ckpt.pth'))):
-
         model, optimizer = load_checkpoint(model, optimizer, os.path.join(args.output_path,'ckpt.pth'))
         logging.info("Loaded checkpoint")
         top1 = validate(val_loader, model, device, print_freq=100)/100
-
     else:
         logging.info("Start training...")
         top1, model, optimizer = train(train_loader, val_loader, epochs, model, device, optimizer, criterion, scheduler, log, ckpt_path=os.path.join(args.output_path,'ckpt.pth'))

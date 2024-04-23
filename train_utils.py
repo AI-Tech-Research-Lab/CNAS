@@ -1,3 +1,4 @@
+from collections import defaultdict
 import csv
 import random
 import time
@@ -890,9 +891,19 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_sp
         eval_len = int(train_len * val_split)
         train_len = train_len - eval_len
 
+        #print("VAL SPLIT: ", val_split)
+        val_split=0.2
+
+        train_set, val_set = random_split_with_equal_per_class(train_set, val_split)
+
+        print("TRAIN LEN: ", len(train_set))
+        print("VAL LEN: ", len(val_set))
+
+        '''
         train_set, val_set = torch.utils.data.random_split(train_set,
                                                         [train_len,
                                                             eval_len])
+        '''
 
         val_set.dataset = copy.deepcopy(val_set.dataset)
 
@@ -900,6 +911,48 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_sp
         val_set.dataset.target_transform = test_set.target_transform
         
     return train_set, val_set, test_set, input_size, classes
+
+def random_split_with_equal_per_class(train_set, val_split):
+    """
+    Randomly shuffle and split a dataset into training and validation sets with an equal number of samples per class in the validation set.
+
+    Args:
+        train_set (Dataset): The dataset to split.
+        val_split (float): The fraction of the dataset to include in the validation set.
+
+    Returns:
+        train_set (Subset): The training subset of the dataset.
+        val_set (Subset): The validation subset of the dataset.
+    """
+    # Shuffle the train set
+    train_size = len(train_set)
+    shuffled_indices = torch.randperm(train_size).tolist()
+    train_set = Subset(train_set, shuffled_indices)
+
+    # Determine the number of samples per class for the validation set
+    class_counts = defaultdict(int)
+    for _, target in train_set:
+        class_counts[target] += 1
+    samples_per_class = {cls: int(val_split * count) for cls, count in class_counts.items()}
+
+    print("SAMPLES PER CLASS: ", samples_per_class)
+
+    # Initialize lists to hold indices for the validation set
+    val_indices = []
+
+    # Iterate through the dataset to select samples for validation
+    for cls in samples_per_class:
+        class_indices = [idx for idx, (_, target) in enumerate(train_set) if target == cls]
+        val_indices.extend(class_indices[:samples_per_class[cls]])
+
+    # Create Subset with selected validation indices
+    val_set = Subset(train_set, val_indices)
+
+    # Remove the selected validation samples from the train_set
+    train_indices = list(set(range(len(train_set))) - set(val_indices))
+    train_set = Subset(train_set, train_indices)
+
+    return train_set, val_set
 
 def get_data_loaders(dataset, batch_size=32, threads=1, img_size=32, augmentation=False, val_split=0, eval_test=True):
 
@@ -1010,12 +1063,12 @@ def get_loss(name: str):
     else:
         raise ValueError('Loss must be crossentropy or labelsmooth')
 
-def get_lr_scheduler(optimizer, name, epochs, gamma=1.0):
+def get_lr_scheduler(optimizer, name, epochs, gamma=1.0, lr_min=0.0):
     name=name.lower()
     if name=='step':
         return StepLR(optimizer, step_size=epochs, gamma=gamma)
     elif name=='cosine':
-        return CosineAnnealingLR(optimizer, T_max=epochs)
+        return CosineAnnealingLR(optimizer, T_max=epochs, eta_min=lr_min)
     else:
         raise ValueError('Scheduler must be step or cosine')                     
     return scheduler

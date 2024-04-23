@@ -56,14 +56,13 @@ print("PARAMS: ",str(params))
 #print(model)
 
 depth = net_config['d']
-qmask = [1,0,1,0]
+qmask = [1,0,1,0,1]
 n_blocks = len(depth)
 idx=0 
 qlist=[]
-for i in range(0,n_blocks-1):
+for i in range(n_blocks):
     idx += depth[i]
-    if (qmask[i]==1):
-        qlist.append(idx)
+    qlist.append(idx)
 
 print("QLIST: ", qlist)
 
@@ -110,20 +109,19 @@ qscheme=torch.per_tensor_symmetric,
 qconfig = QConfig(weight=weights, activation=act)
 '''
 
-qconfig=torch.quantization.QConfig(weight=torch.quantization.default_qconfig.weight, activation=torch.quantization.default_qconfig.activation)
-qconfig_mapping = torch.quantization.QConfigMapping()
-qconfig_mapping.set_activation(torch.quantization.default_observer, torch.nn.Identity())
-qconfig_mapping.set_weight(torch.quantization.default_observer, torch.nn.Identity())
+qconfig=QConfig(weight=torch.quantization.default_qconfig.weight, activation=torch.quantization.default_qconfig.activation)
+qconfig_mapping = get_default_qconfig_mapping("x86")
 
 # Apply custom qconfigs to the specified blocks
 quant_on=qlist[0]
 i=0
 for idx,(name,block) in enumerate(model_fp.named_modules()):
-    if (idx==qlist[i]): #early exit
-        quant_on = qlist[i]
+    if (i<len(qlist) and idx==qlist[i]): 
+        quant_on = qmask[i]
         print("Quantization switched to ", quant_on)
         i+=1
-    qconfig_mapping.add(name, qconfig)
+    if quant_on: #if layer of a block to quantize
+        qconfig_mapping.add(name, qconfig)
 
 '''
 # Dynamic quantization

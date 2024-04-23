@@ -118,14 +118,15 @@ class FinalClassificationLayer(nn.Module):
         return F.softmax(x, dim=1)
     
 class ResidualBlock(nn.Module):
-    def __init__(self, in_channels: int, out_channels: int) -> None:
+    def __init__(self, in_channels: int, out_channels: int, stride: int) -> None:
         super().__init__()
+
         self.conv1 = nn.Conv2d(
             in_channels=in_channels, 
             out_channels=out_channels, 
             kernel_size=(3, 3),
-            stride=1, 
-            padding='same', 
+            stride=stride, 
+            padding=1, #if stride == 1 else 0,  # Dynamic padding calculation for stride 2 
             bias=False
         )
         self.bn1 = nn.BatchNorm2d(out_channels)
@@ -134,25 +135,25 @@ class ResidualBlock(nn.Module):
             in_channels=out_channels, 
             out_channels=out_channels, 
             kernel_size=(3, 3), 
-            stride=2,
-            #padding='same', 
+            stride=1,
+            padding=1, 
             bias=False
         )
         self.bn2 = nn.BatchNorm2d(out_channels)
         
         self.downsample = None
-        if in_channels != out_channels:
-            self.downsample = nn.Sequential(
-                nn.Conv2d(
-                    in_channels, 
-                    out_channels, 
-                    kernel_size=(3, 3), 
-                    stride=2,
-                    #padding='same', 
-                    bias=False
-                ),
-                nn.BatchNorm2d(out_channels)
-            )
+        if stride!=1 or in_channels != out_channels:
+                self.downsample = nn.Sequential(
+                    nn.AvgPool2d(kernel_size=2, stride=2),
+                    nn.Conv2d(
+                        in_channels, 
+                        out_channels, 
+                        kernel_size=(1, 1), 
+                        stride=1,
+                        padding=0, 
+                        bias=False
+                    )
+                )
 
     def forward(self, x):
         identity = self.downsample(x) if self.downsample else x
@@ -172,9 +173,9 @@ class NASNet(nn.Module): #NASNet model built stacking 3 stages of five NASBench2
         self.cell_encode = cell_encode
         self.stem_cell = StemCell()
         self.stage1 = self._make_stage(16, 5)
-        self.residual_block1 = ResidualBlock(16, 32)
+        self.residual_block1 = ResidualBlock(16, 32, stride=2)
         self.stage2 = self._make_stage(32, 5)
-        self.residual_block2 = ResidualBlock(32, 64)
+        self.residual_block2 = ResidualBlock(32, 64, stride=2)
         self.stage3 = self._make_stage(64, 5)
         self.classification_layer = FinalClassificationLayer(64, num_classes)
 
@@ -347,3 +348,12 @@ class NASBench201(): #NASBench201 dataset
         str=self.archive['str'][idx]
         info['top1']=np.round(100 - self.archive['val-acc'][val_dataset][idx],3) # top1 error
         return info
+    
+bench = NASBench201()
+val_accs = bench.archive['val-acc']['cifar10-valid']
+idxs = list(range(len(val_accs)))
+val_accs_idxs = list(zip(val_accs, idxs))
+sorted_val_accs_idxs = sorted(val_accs_idxs, key=lambda x: x[0])
+sorted_val_accs = [val_acc for val_acc, _ in sorted_val_accs_idxs]
+sorted_idxs = [idx for _, idx in sorted_val_accs_idxs]
+print(bench.matrix2vector(bench.str2matrix(bench.archive['str'][sorted_idxs[-1]])))
