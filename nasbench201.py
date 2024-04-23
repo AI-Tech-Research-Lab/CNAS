@@ -349,11 +349,4 @@ class NASBench201(): #NASBench201 dataset
         info['top1']=np.round(100 - self.archive['val-acc'][val_dataset][idx],3) # top1 error
         return info
     
-bench = NASBench201()
-val_accs = bench.archive['val-acc']['cifar10-valid']
-idxs = list(range(len(val_accs)))
-val_accs_idxs = list(zip(val_accs, idxs))
-sorted_val_accs_idxs = sorted(val_accs_idxs, key=lambda x: x[0])
-sorted_val_accs = [val_acc for val_acc, _ in sorted_val_accs_idxs]
-sorted_idxs = [idx for _, idx in sorted_val_accs_idxs]
-print(bench.matrix2vector(bench.str2matrix(bench.archive['str'][sorted_idxs[-1]])))
+
