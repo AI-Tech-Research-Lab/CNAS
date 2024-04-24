@@ -638,7 +638,7 @@ class Cutout(object):
         img *= mask
         return img
 
-def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_split=0, autoaugment=True, cutout=True, cutout_length=16):
+def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_split=0, balanced_val=False, autoaugment=True, cutout=True, cutout_length=16):
 
     if name == 'mnist':
         t = [Resize((32, 32)),
@@ -894,16 +894,12 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_sp
         #print("VAL SPLIT: ", val_split)
         val_split=0.2
 
-        train_set, val_set = random_split_with_equal_per_class(train_set, val_split)
-
-        print("TRAIN LEN: ", len(train_set))
-        print("VAL LEN: ", len(val_set))
-
-        '''
-        train_set, val_set = torch.utils.data.random_split(train_set,
+        if balanced_val:
+            train_set, val_set = random_split_with_equal_per_class(train_set, val_split)
+        else:
+            train_set, val_set = torch.utils.data.random_split(train_set,
                                                         [train_len,
                                                             eval_len])
-        '''
 
         val_set.dataset = copy.deepcopy(val_set.dataset)
 
