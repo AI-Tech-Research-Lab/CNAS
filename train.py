@@ -1,5 +1,5 @@
 import argparse
-from nasnet import NASNet
+from nasbench201 import NASNet
 import torch
 
 import sys
