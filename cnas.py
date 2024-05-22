@@ -3,7 +3,6 @@ import json
 import shutil
 import argparse
 import subprocess
-from nasbench201 import NASBench201
 import numpy as np
 import math
 import datetime
@@ -19,9 +18,9 @@ from pymoo.operators.crossover.pntx import TwoPointCrossover
 from pymoo.operators.mutation.pm import PolynomialMutation
 
 from utils import get_correlation, get_net_info, tiny_ml
-from ofa_evaluator import OFAEvaluator
-
-from search_space import OFASearchSpace
+from models.ofa.evaluator import OFAEvaluator
+from models.ofa.search_space import OFASearchSpace
+from models.nasbench201.search_space import NASBench201SearchSpace
 from acc_predictor.factory import get_acc_predictor
 from utils import prepare_eval_folder, MySampling, BinaryCrossover, MyMutation
 from train_utils import initialize_seed
