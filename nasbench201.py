@@ -69,15 +69,15 @@ class NASBench201Cell(nn.Module):
     
     def get_op(self, op_idx, layer_idx):
         OPS = [ Zero(self.C_in, self.C_out, self.stride), #none
-            Pooling(self.C_in, self.C_out, self.stride if layer_idx == 0 else 1, self.bn_affine, self.bn_momentum,
-                                     self.bn_track_running_stats), #avg_pool_3x3
-            ReLUConvBN(self.C_in, self.C_out, 3, self.stride if layer_idx == 0 else 1, 1, 1, self.bn_affine, self.bn_momentum,
-                                    self.bn_track_running_stats), #conv_3x3
+             nn.Identity() if self.stride == 1 and self.C_in == self.C_out #skip_connect
+             else FactorizedReduce(self.C_in, self.C_out, self.stride if layer_idx == 0 else 1, self.bn_affine, self.bn_momentum,
+                                   self.bn_track_running_stats), #skip_connect
             ReLUConvBN(self.C_in, self.C_out, 1, self.stride if layer_idx == 0 else 1, 0, 1, self.bn_affine, self.bn_momentum,
                                     self.bn_track_running_stats), #conv_1x1
-            nn.Identity() if self.stride == 1 and self.C_in == self.C_out #skip_connect
-             else FactorizedReduce(self.C_in, self.C_out, self.stride if layer_idx == 0 else 1, self.bn_affine, self.bn_momentum,
-                                   self.bn_track_running_stats) #skip_connect
+            ReLUConvBN(self.C_in, self.C_out, 3, self.stride if layer_idx == 0 else 1, 1, 1, self.bn_affine, self.bn_momentum,
+                                    self.bn_track_running_stats), #conv_3x3
+            Pooling(self.C_in, self.C_out, self.stride if layer_idx == 0 else 1, self.bn_affine, self.bn_momentum,
+                                     self.bn_track_running_stats) #avg_pool_3x3
         ]
         return OPS[op_idx]
 
