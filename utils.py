@@ -17,7 +17,9 @@ from pymoo.core.sampling import Sampling
 from pymoo.core.crossover import Crossover
 
 from ofa.utils.pytorch_utils import count_parameters
-from ofa_evaluator import OFAEvaluator  
+from models.ofa.evaluator import OFAEvaluator  
+from models.nasbench201.search_space import NASBench201SearchSpace
+from models.nasbench201.model import NASBenchNet
 from early_exit.models.mobilenet_v3 import EEMobileNetV3
 
 DEFAULT_CFG = {
@@ -459,14 +461,22 @@ def get_net_info(net, input_shape=(3, 224, 224), print_info=False):
 
     return net_info
 
-def get_net_from_OFA(subnet_path, n_classes=10, supernet='supernets/ofa_mbv3_d234_e346_k357_w1.0', pretrained=True, func_constr=False):
+def get_network_search(model, subnet_path, n_classes=10, supernet='supernets/ofa_mbv3_d234_e346_k357_w1.0', pretrained=True, func_constr=False):
 
     config = json.load(open(subnet_path))
-    ofa = OFAEvaluator(n_classes=n_classes,
-    model_path=supernet,
-    pretrained = pretrained)
-    r=config.get("r",None)
-    subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
+
+    if model!='nasbench':
+        ofa = OFAEvaluator(n_classes=n_classes,
+        model_path=supernet,
+        pretrained = pretrained)
+        r=config.get("r",None)
+        subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
+    else:
+        print("NASBench201 model selected")
+        bench=NASBench201SearchSpace()
+        vector=bench.matrix2vector(bench.str2matrix(config['arch']))
+        r=32
+        subnet=NASBenchNet(cell_encode=vector, C=16, num_classes=n_classes, stages=3, cells=5, steps=4)
 
     # Functional constraints
     if(func_constr):

@@ -47,7 +47,7 @@ class CNAS:
         print("GPU LIST:", str(self.gpu_list))
         self.data = kwargs.pop('data', '../data')  # location of the data files
         self.dataset = kwargs.pop('dataset', 'imagenet')  # which dataset to run search on
-        self.model = kwargs.pop('model', 'mobilenetv3') 
+        #self.model = kwargs.pop('model', 'mobilenetv3') 
         self.n_classes = kwargs.pop('n_classes', 1000)  # number of classes of the given dataset
         self.n_workers = kwargs.pop('n_workers', 6)  # number of threads for dataloader
         self.val_split = kwargs.pop('val_split', 0.0)  # 'percentage of train set for validation'
@@ -57,8 +57,9 @@ class CNAS:
         #self.test = kwargs.pop('test', True)  # evaluate performance on test set
         self.supernet_path = kwargs.pop(
             'supernet_path', './supernets/ofa_mbv3_d234_e346_k357_w1.0')  # supernet model path
-        self.search_space = kwargs.pop(
+        self.model = kwargs.pop(
             'search_space', 'mobilenetv3')  # supernet type
+        self.bench_eval = kwargs.pop('bench_eval', False)  # evaluate on NASBench201
         self.pretrained = kwargs.pop('pretrained',True) #use pretrained weights
         #self.latency = self.sec_obj if "cpu" in self.sec_obj or "gpu" in self.sec_obj else None
         self.lr = kwargs.pop('lr',224) #minimum resolution
@@ -99,10 +100,11 @@ class CNAS:
         self.warmup_ee_epochs = kwargs.pop('warmup_ee_epochs', 5) # warmup epochs for early exit
         self.ee_epochs = kwargs.pop('ee_epochs', 0) # early exit epochs with support set
 
-        if self.search_space != 'nasbench':
+        if self.model != 'nasbench':
             self.search_space = OFASearchSpace(self.search_space, self.lr, self.ur, self.rstep)
         else:
-            self.search_space = NASBench201(self.dataset, self.save_path)
+
+            self.search_space = NASBench201SearchSpace(self.dataset, self.save_path)
 
     def search(self):
 
@@ -141,6 +143,8 @@ class CNAS:
               for x in archive:
                   temp.append((x[0],x[3]*self.alpha + self.alpha_norm*(1-self.alpha)*x[4],x[2],x[3],x[4]))
               archive=temp
+            
+            print("Training the surrogate model(s) for iteration {}".format(it))
 
             # construct predictor surrogates model from archive
             if self.first_predictor is not None:
@@ -178,7 +182,7 @@ class CNAS:
             
             for arch, info in zip(candidates,stats):
                 duplicate=False
-                if isinstance(self.search_space,NASBench201):
+                if isinstance(self.search_space,NASBench201SearchSpace):
                     for x in archive:
                         if x[0]['arch'] == arch['arch']:
                             duplicate=True
@@ -322,8 +326,10 @@ class CNAS:
 
         gen_dir = os.path.join(self.save_path, "iter_{}".format(it))
 
-        if isinstance(self.search_space, OFASearchSpace):
-
+        
+        if isinstance(self.search_space, NASBench201SearchSpace) and self.bench_eval:
+            self.search_space.evaluate(archs, it)
+        else:
             prepare_eval_folder(
                 gen_dir, archs, self.gpu, self.n_gpus, 
                 self.gpu_list, self.trainer_type, n_workers = self.n_workers,
@@ -337,8 +343,6 @@ class CNAS:
                 warmup_ee_epochs = self.warmup_ee_epochs, ee_epochs = self.ee_epochs)
 
             subprocess.call("sh {}/run_bash.sh".format(gen_dir), shell=True)
-        else:
-            self.search_space.evaluate(archs, it)
 
         all_stats=[]
         for i in range(len(archs)):
@@ -508,7 +512,7 @@ class AuxiliarySingleObjProblem(Problem):
         self.acc_predictor = acc_predictor
 
         self.xl = np.zeros(self.n_var) #lower bounds
-        if isinstance(self.ss,NASBench201):
+        if isinstance(self.ss,NASBench201SearchSpace):
             self.xu = self.ss.num_operations * np.ones(self.n_var) #upper bounds
         else:
             self.xu = 2 * np.ones(self.n_var) #upper bounds
@@ -537,7 +541,7 @@ class AuxiliarySingleLevelProblem(Problem):
         self.acc_predictor = acc_predictor
         self.compl_predictor = compl_predictor
         self.xl = np.zeros(self.n_var) #lower bounds
-        if isinstance(self.ss,NASBench201):
+        if isinstance(self.ss,NASBench201SearchSpace):
             self.xu = self.ss.num_operations * np.ones(self.n_var) #upper bounds
         else:
             self.xu = 2 * np.ones(self.n_var) #upper bounds
@@ -594,7 +598,7 @@ class AuxiliarySingleLevelProblem(Problem):
                 f[i, 0] = acc_err
                 f[i, 1] = sec_obj 
         
-        elif isinstance(self.ss,NASBench201):
+        elif isinstance(self.ss,NASBench201SearchSpace):
                 for i,(_x,acc_err) in enumerate(zip(x,top1_err)):
                     arch = self.ss.matrix2str(self.ss.vector2matrix(_x))
                     stats = self.ss.get_info_from_arch({'arch':arch})
@@ -721,6 +725,7 @@ if __name__ == '__main__':
                         help='file path to supernet weights')
     parser.add_argument('--search_space', type=str, default='mobilenetv3',
                         help='type of search space')
+    parser.add_argument('--bench_eval', action='store_true', default=False,help='evaluate on NASBench201')
     parser.add_argument('--pretrained', action='store_true', default=False,
                         help='use pretrained weights')                    
     parser.add_argument('--n_workers', type=int, default=4,

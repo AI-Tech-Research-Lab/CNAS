@@ -638,7 +638,7 @@ class Cutout(object):
         img *= mask
         return img
 
-def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_split=0, balanced_val=True, autoaugment=True, cutout=True, cutout_length=16):
+def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_split=0, balanced_val=False, autoaugment=True, cutout=True, cutout_length=16):
 
     if name == 'mnist':
         t = [Resize((32, 32)),

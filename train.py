@@ -1,5 +1,4 @@
 import argparse
-from nasbench201 import NASNet
 import torch
 
 import sys
@@ -11,7 +10,7 @@ import logging
 sys.path.append(os.getcwd())
  
 from train_utils import get_optimizer, get_loss, get_lr_scheduler, get_data_loaders, load_checkpoint, validate, initialize_seed, Log, train
-from utils import get_net_info, get_net_from_OFA, tiny_ml
+from utils import get_net_info, get_network_search, tiny_ml
 from robustness.utility.perturb import get_net_info_runtime
 from robustness.evaluate_cifar10c import compute_mCE
 
@@ -42,6 +41,7 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', type=str, default='imagenet', help='name of the dataset (imagenet, cifar10, cifar100, ...)')
     parser.add_argument('--model', type=str, default='mobilenetv3', help='name of the model (mobilenetv3, ...)')
     parser.add_argument('--n_classes', type=int, default=1000, help='number of classes of the given dataset')
+    parser.add_argument('--search_space', type=str, default=None, help='type of search space')
     parser.add_argument('--supernet_path', type=str, default='./ofa_nets/ofa_mbv3_d234_e346_k357_w1.0', help='file path to supernet weights')
     parser.add_argument('--model_path', type=str, default=None, help='file path to subnet')
     parser.add_argument('--output_path', type=str, default=None, help='file path to save results')
@@ -97,9 +97,7 @@ if __name__ == "__main__":
         model_path = args.model_path
     logging.info("Model: %s", args.model)
 
-    #model, res = get_net_from_OFA(model_path, args.n_classes, args.supernet_path, pretrained=args.pretrained, func_constr=args.func_constr)
-    model = NASNet(cell_encode=[3, 3, 3, 1, 3, 2],num_classes=10)
-    res=32
+    model, res = get_network_search(args.model, model_path, args.n_classes, args.supernet_path, pretrained=args.pretrained, func_constr=args.func_constr)
 
     logging.info(f"DATASET: {args.dataset}")
     logging.info("Resolution: %s", res)
