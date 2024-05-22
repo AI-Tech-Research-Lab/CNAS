@@ -1,6 +1,6 @@
 This repository contains the code for a Neural Architecture Search (NAS) framework supporting for:
 - technological and functional constraints (introduced in CNAS[1])
-- different search spaces: Once-For-All (OFA)[2] and NASBench201[3]
+- different search spaces: Once-For-All (OFA)[2] (MobileNetV3 with resolutions ranging in 128 - 224) and NASBench201[3] (CNNs with fixed resolution at 32)
 - Early Exit classifiers on top of Once-For-All (OFA)[2] backbones (introduced in EDANAS[4]) and constrained in their number of MAC operations (introduced in NACHOS [5])
 - Out-Of-Distribution (OOD) robustness optimization accounting for the flatness of the loss landscape (introduced in FLATNAS [6])
 ## Overview
