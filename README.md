@@ -126,4 +126,4 @@ To realize the full potential of the searched architectures, we further train th
 
 [5] NACHOS: Neural Architecture Search for Hardware Constrained Early Exit Neural Networks (https://arxiv.org/abs/2401.13330)
 
-[6] FlatNAS: optimizing Flatness in Neural Architecture Search for Out-of-Distribution Robustness (https://arxiv.org/abs/2402.19102)
+[6] FlatNAS: optimizing Flatness in Neural Architecture Search for Out-of-Distribution Robustness [ACCEPTED WCCI 2024] (https://arxiv.org/abs/2402.19102)
