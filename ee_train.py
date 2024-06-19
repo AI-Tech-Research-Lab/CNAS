@@ -11,11 +11,11 @@ import sys
 sys.path.append(os.getcwd())
 
 from train_utils import get_data_loaders, get_optimizer, get_loss, get_lr_scheduler, initialize_seed, train, validate, load_checkpoint, Log
-from utils import get_net_from_OFA
+from utils import get_network_search
 
-from early_exit.evaluators import sm_eval, binary_eval, standard_eval, ece_score
-from early_exit.trainer import binary_bernulli_trainer, joint_trainer
-from early_exit.utils_ee import get_intermediate_backbone_cost, get_intermediate_classifiers_cost, get_subnet_folder_by_backbone, get_eenn
+from EarlyExits.evaluators import sm_eval, binary_eval, standard_eval, ece_score
+from EarlyExits.trainer import binary_bernulli_trainer, joint_trainer
+from EarlyExits.utils_ee import get_intermediate_backbone_cost, get_intermediate_classifiers_cost, get_subnet_folder_by_backbone, get_eenn
 
 #--trn_batch_size 128 --vld_batch_size 200 --num_workers 4 --n_epochs 5 --resolution 224 --valid_size 5000
 #init_lr=0.01, lr_schedule_type='cosine' weight_decay=4e-5, label_smoothing=0.0
@@ -48,6 +48,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_early_stopping", default=True, type=bool, help="True if you want to use early stopping.")
     parser.add_argument("--early_stopping_tolerance", default=5, type=int, help="Number of epochs to wait before early stopping.")
     parser.add_argument("--resolution", default=32, type=int, help="Image resolution.")
+    parser.add_argument("--func_constr", action='store_true', default=False, help='use functional constraints')
 
     #method: bernulli
     parser.add_argument("--method", type=str, default='bernulli', help="Method to use for training: bernulli or joint")
@@ -122,15 +123,18 @@ if __name__ == "__main__":
     if get_binaries:
         fix_last_layer = args.fix_last_layer
     
-    backbone, res = get_net_from_OFA(subnet_path=args.model_path, 
+    backbone, res = get_network_search(model=args.model,
+                                subnet_path=args.model_path, 
                                 supernet=args.supernet_path, 
                                 n_classes=args.n_classes, 
-                                pretrained=args.pretrained)
+                                pretrained=args.pretrained,
+                                func_constr=args.func_constr)
     if res is None:
         res = args.resolution
 
     logging.info(f"DATASET: {args.dataset}")
     logging.info("Resolution: %s", res)
+    print("EE epochs: ", args.ee_epochs)
 
     train_loader, val_loader, test_loader = get_data_loaders(dataset=args.dataset, batch_size=args.batch_size, threads=args.n_workers, 
                                             val_split=args.val_split, img_size=res, augmentation=True, eval_test=args.eval_test)
@@ -183,7 +187,7 @@ if __name__ == "__main__":
     input_size = (3, res, res)
     
     net = copy.deepcopy(backbone)
-    if args.model == 'mobilenetv3':
+    if args.model == 'eemobilenetv3':
         net.exit_idxs=[net.exit_idxs[-1]] #take only the final exit
         b_params, b_macs = get_intermediate_backbone_cost(backbone, input_size)
     else:
@@ -197,9 +201,11 @@ if __name__ == "__main__":
 
     max_cost = b_macs[-1] + c_macs[-1]
 
+    '''
     if args.mmax is not None and max_cost < args.mmax:
         logging.warning("The maximum cost is lower than the constraint")
         sys.exit()
+    '''
 
     results['classifiers_params'] = c_params
     results['backbone_params_i'] = b_params

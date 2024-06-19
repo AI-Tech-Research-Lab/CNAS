@@ -17,10 +17,9 @@ from pymoo.core.sampling import Sampling
 from pymoo.core.crossover import Crossover
 
 from ofa.utils.pytorch_utils import count_parameters
-from models.ofa.evaluator import OFAEvaluator  
-from models.nasbench201.search_space import NASBench201SearchSpace
-from models.nasbench201.model import NASBenchNet
-from early_exit.models.mobilenet_v3 import EEMobileNetV3
+from NasSearchSpace.ofa.evaluator import OFAEvaluator  
+from NasSearchSpace.nasbench201.search_space import NASBench201SearchSpace
+from NasSearchSpace.nasbench201.model import NASBenchNet
 
 DEFAULT_CFG = {
     'gpus': '0', 'config': None, 'init': None, 'trn_batch_size': 128, 'vld_batch_size': 250, 'num_workers': 4,

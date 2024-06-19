@@ -18,9 +18,9 @@ from pymoo.operators.crossover.pntx import TwoPointCrossover
 from pymoo.operators.mutation.pm import PolynomialMutation
 
 from utils import get_correlation, get_net_info, tiny_ml
-from models.ofa.evaluator import OFAEvaluator
-from models.ofa.search_space import OFASearchSpace
-from models.nasbench201.search_space import NASBench201SearchSpace
+from NasSearchSpace.ofa.evaluator import OFAEvaluator
+from NasSearchSpace.ofa.search_space import OFASearchSpace
+from NasSearchSpace.nasbench201.search_space import NASBench201SearchSpace
 from acc_predictor.factory import get_acc_predictor
 from utils import prepare_eval_folder, MySampling, BinaryCrossover, MyMutation
 from train_utils import initialize_seed
@@ -101,7 +101,7 @@ class CNAS:
         self.ee_epochs = kwargs.pop('ee_epochs', 0) # early exit epochs with support set
 
         if self.model != 'nasbench':
-            self.search_space = OFASearchSpace(self.search_space, self.lr, self.ur, self.rstep)
+            self.search_space = OFASearchSpace(self.model, self.lr, self.ur, self.rstep)
         else:
 
             self.search_space = NASBench201SearchSpace(self.dataset, self.save_path)
