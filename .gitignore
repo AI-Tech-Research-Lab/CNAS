@@ -137,3 +137,7 @@ data/
 
 # Checkpoints
 *.pth
+
+# Plug in repos
+EarlyExits/
+NasSearchSpace/
