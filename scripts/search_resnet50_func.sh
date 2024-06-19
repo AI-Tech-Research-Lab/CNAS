@@ -5,10 +5,10 @@
 
 python cnas.py --sec_obj tiny_ml \
               --n_gpus 1 --gpu 1 --n_workers 4 \
-              --data ../datasets/cifar10 --dataset cifar10 \
+              --data datasets/cifar10 --dataset cifar10 \
               --first_predictor as --optim SGD \
               --supernet_path resnet50 --func_constr \
-              --save ../results/search_path --iterations 30 \
+              --save results/search_path --iterations 30 \
               --search_space resnet50 --trainer_type single_exit \
               --n_epochs 5 --lr 40 --ur 104 --rstep 4\
               --pmax 0.5 --mmax 150 --amax 5.0 --wp 1.0 --wm 1.0 --wa 1.0
