@@ -22,8 +22,8 @@ rstep=4 #resolution step
 
 python cnas.py --n_gpus 1 --gpu 1 --gpu_list $gpu --n_workers 4 \
         --data ../datasets/$dataset --dataset $dataset \
-        --supernet_path ./supernets/ofa_mbv3_d234_e346_k357_w1.0 \
-        --pretrained --search_space mobilenetv3 --trainer_type entropic \
+        --supernet_path ./NasSearchSpace/ofa/supernets/ofa_mbv3_d234_e346_k357_w1.0 \
+        --pretrained --search_space mobilenetv3 --trainer_type single_exit \
         --alpha $alpha --lr $lr --ur $ur --rstep $rstep --optim $optim \
         --first_obj $first_obj --first_predictor as \
         --sigma_min $sigma --sigma_max $sigma \
