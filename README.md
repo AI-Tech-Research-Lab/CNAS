@@ -25,9 +25,10 @@ The outputs of the CNAS framework consist of:
 
 ## Requirements
 
-1. Install requirements with `pip install -r requirements.txt` and `git clone https://github.com/AI-Tech-Research-Lab/NasSearchSpace.git`
-2. Install early exit folder with `git clone https://github.com/AI-Tech-Research-Lab/EarlyExits.git` (if needed)
-3. Install robustness folder with `git clone https://github.com/AI-Tech-Research-Lab/Robustness.git` (if needed)
+1. Install requirements with `pip install -r requirements.txt`
+2. Install the available search spaces of the NAS with `git clone https://github.com/AI-Tech-Research-Lab/NasSearchSpace.git`
+3. Install robustness folder with `git clone https://github.com/AI-Tech-Research-Lab/Robustness.git
+4. Install Early Exit folder with `git clone https://github.com/AI-Tech-Research-Lab/EarlyExits.git` (if needed)
 
 ## Contents
 
