@@ -11,8 +11,8 @@ sys.path.append(os.getcwd())
  
 from train_utils import get_optimizer, get_loss, get_lr_scheduler, get_data_loaders, load_checkpoint, validate, initialize_seed, Log, train
 from utils import get_net_info, get_network_search, tiny_ml
-from robustness.utility.perturb import get_net_info_runtime
-from robustness.evaluate_cifar10c import compute_mCE
+from Robustness.utility.perturb import get_net_info_runtime
+from Robustness.evaluate_cifar10c import compute_mCE
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

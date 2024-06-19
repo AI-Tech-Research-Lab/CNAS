@@ -29,5 +29,5 @@ python cnas.py --n_gpus 1 --gpu 1 --gpu_list $gpu --n_workers 4 \
         --sigma_min $sigma --sigma_max $sigma \
         --iterations $iterations --n_epochs $n_epochs --seed $seed \
         --sec_obj $sec_obj --pmax $pmax --wp $wp\
-        --save ../results/search_path 
+        --save results/search_path 
         
