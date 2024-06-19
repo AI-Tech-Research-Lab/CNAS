@@ -25,17 +25,19 @@ The outputs of the CNAS framework consist of:
 
 ## Requirements
 
-1. Install requirements with `pip install -r requirements.txt`
+1. Install requirements with `pip install -r requirements.txt` and `git clone https://github.com/AI-Tech-Research-Lab/NasSearchSpace.git`
+2. Install early exit folder with `git clone https://github.com/AI-Tech-Research-Lab/EarlyExits.git` (if needed)
+3. Install robustness folder with `git clone https://github.com/AI-Tech-Research-Lab/Robustness.git` (if needed)
 
 ## Contents
 
 - `scripts` contains the scripts needed to perform a search using NAS.
 - `results` contains the architecture found by search procedure (if any).
-- `models` contains the available search spaces.
-- `models/ofa/supernets` contains the pretrained weights of the OFA supernets.
+- `NasSearchSpace` contains the available search spaces.
+- `NasSearchSpace/ofa/supernets` contains the pretrained weights of the OFA supernets.
 - `acc_predictor` contains the accuracy predictors used to evaluate candidate networks in the NAS search.
-- `early_exit` contains the trainer and the utilities for early exit.
-- `robustness` contains the trainer and the utilities for robustness optimization.
+- `EarlyExits` contains the trainer and the utilities for early exit (optional repo)
+- `Robustness` contains the trainer and the utilities for robustness optimization (optional repo)
 
 ## Dataset
 Download the dataset from the link embedded in the name. Datasets with * can be automatically downloaded.
