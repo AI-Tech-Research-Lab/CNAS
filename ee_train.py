@@ -123,10 +123,17 @@ if __name__ == "__main__":
     if get_binaries:
         fix_last_layer = args.fix_last_layer
     
+    if args.dataset=='cifar100':
+        n_classes=100
+    elif args.dataset=='ImageNet16':
+        n_classes=120
+    else:
+        n_classes=10
+    
     backbone, res = get_network_search(model=args.model,
                                 subnet_path=args.model_path, 
                                 supernet=args.supernet_path, 
-                                n_classes=args.n_classes, 
+                                n_classes=n_classes, 
                                 pretrained=args.pretrained,
                                 func_constr=args.func_constr)
     if res is None:
@@ -134,6 +141,7 @@ if __name__ == "__main__":
 
     logging.info(f"DATASET: {args.dataset}")
     logging.info("Resolution: %s", res)
+    logging.info("Number of classes: %s", n_classes)
     print("EE epochs: ", args.ee_epochs)
 
     train_loader, val_loader, test_loader = get_data_loaders(dataset=args.dataset, batch_size=args.batch_size, threads=args.n_workers, 
@@ -180,7 +188,7 @@ if __name__ == "__main__":
 
     #Create the EENN on top of the trained backbone
 
-    backbone, classifiers, epsilon = get_eenn(subnet=backbone, subnet_path=args.model_path, res=res, n_classes=args.n_classes, get_binaries=get_binaries)
+    backbone, classifiers, epsilon = get_eenn(subnet=backbone, subnet_path=args.model_path, res=res, n_classes=n_classes, get_binaries=get_binaries)
 
     # MODEL COST PROFILING
 
@@ -331,7 +339,7 @@ if __name__ == "__main__":
                                             w_beta=args.w_beta,
                                             w_gamma=args.w_gamma,
                                             n_epoch_gamma=n_epoch_gamma,
-                                            n_classes=args.n_classes,
+                                            n_classes=n_classes,
                                             n_workers=args.n_workers
                                             )[0]
 

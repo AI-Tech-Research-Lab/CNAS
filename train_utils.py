@@ -2,6 +2,7 @@ from collections import defaultdict
 import csv
 import random
 import time
+from imagenet16 import ImageNet16
 import torch
 import numpy as np
 import copy
@@ -879,7 +880,27 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_sp
                                          transform=transform)
 
         input_size, classes = (3, resolution, resolution), 200
+    
+    elif name == 'ImageNet16':
+        IMAGENET16_MEAN = [x / 255 for x in [122.68, 116.66, 104.01]]
+        IMAGENET16_STD = [x / 255 for x in [63.22, 61.26, 65.09]]
 
+        train_transform = Compose([
+            RandomHorizontalFlip(),
+            RandomResizedCrop(resolution), #RandomCrop(resolution, padding=2),
+            ToTensor(),
+            Normalize(IMAGENET16_MEAN, IMAGENET16_STD),
+        ])
+
+        valid_transform = Compose([
+            Resize(resolution),
+            ToTensor(),
+            Normalize(IMAGENET16_MEAN, IMAGENET16_STD),
+        ])
+        classes=120
+        train_set = ImageNet16(root='../datasets/ImageNet16', train=True, transform=train_transform, use_num_of_class_only=classes)
+        test_set = ImageNet16(root='../datasets/ImageNet16', train=False, transform=valid_transform, use_num_of_class_only=classes)
+        input_size, classes = (3, resolution, resolution), classes
     else:
         assert False
 
@@ -892,7 +913,7 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_sp
         train_len = train_len - eval_len
 
         #print("VAL SPLIT: ", val_split)
-        val_split=0.5
+        #val_split=0.5
 
         if balanced_val:
             train_set, val_set = random_split_with_equal_per_class(train_set, val_split)
@@ -905,7 +926,8 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_sp
         val_set.dataset = copy.deepcopy(val_set.dataset)
 
         val_set.dataset.transform = test_set.transform
-        val_set.dataset.target_transform = test_set.target_transform
+        if hasattr(val_set.dataset, 'target_transform'):
+            val_set.dataset.target_transform = test_set.target_transform
         
     return train_set, val_set, test_set, input_size, classes
 
