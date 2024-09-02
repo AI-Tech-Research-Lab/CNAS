@@ -141,3 +141,6 @@ data/
 # Plug in repos
 EarlyExits/
 NasSearchSpace/
+
+# exp folders
+results/
