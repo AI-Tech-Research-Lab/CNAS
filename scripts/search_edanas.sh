@@ -1,7 +1,7 @@
 # Search an Early-Exit MobileNetV3 on CIFAR-10 optimizing on top1 accuracy and average number of MACs using a joint trainer on losses (EDANAS)
 
 #dataset=ImageNet16 val_split=0.2 
-dataset=cifar10 val_split=0.1
+dataset=imagenette val_split=0.2
 
 python cnas.py --sec_obj avg_macs \
               --n_gpus 1 --gpu 1 --n_workers 4 \
@@ -12,4 +12,4 @@ python cnas.py --sec_obj avg_macs \
               --search_space eemobilenetv3 --trainer_type multi_exits \
               --method joint --val_split $val_split \
               --n_epochs 0  --ee_epochs 5 \
-              --lr 40 --ur 104 --rstep 4
+              --lr 160 --ur 160 --rstep 4

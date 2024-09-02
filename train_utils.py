@@ -11,6 +11,7 @@ import os
 from torch.utils.data import Dataset, Subset, DataLoader
 from torch.utils.data.dataset import random_split
 from torchvision.datasets.folder import default_loader
+import torchvision.datasets as datasets
 import torch.optim as optim
 
 import torch.nn as nn
@@ -18,7 +19,7 @@ import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
 from torchvision import datasets
 from torchvision.transforms import Resize, ToTensor, Normalize, Compose, \
-    RandomHorizontalFlip, RandomCrop, RandomRotation, RandomErasing, RandomResizedCrop, \
+    RandomHorizontalFlip, RandomCrop, RandomRotation, RandomErasing, RandomResizedCrop, CenterCrop, \
     TrivialAugmentWide, InterpolationMode
 from torch.utils.data import Dataset
 from torchvision.datasets.folder import default_loader
@@ -901,6 +902,27 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_sp
         train_set = ImageNet16(root='../datasets/ImageNet16', train=True, transform=train_transform, use_num_of_class_only=classes)
         test_set = ImageNet16(root='../datasets/ImageNet16', train=False, transform=valid_transform, use_num_of_class_only=classes)
         input_size, classes = (3, resolution, resolution), classes
+    elif name == 'imagenette':
+        IMAGENET_MEAN = [0.485, 0.456, 0.406]
+        IMAGENET_STD = [0.229, 0.224, 0.225]
+
+        train_transform = Compose([
+            RandomResizedCrop(resolution, scale=(0.08,1.0)),
+            RandomHorizontalFlip(),
+            ToTensor(),
+            Normalize(IMAGENET_MEAN, IMAGENET_STD),
+        ])
+
+        valid_transform = Compose([
+            Resize(resolution),
+            CenterCrop((resolution, resolution)),
+            ToTensor(),
+            Normalize(IMAGENET_MEAN, IMAGENET_STD),
+        ])
+
+        train_set = datasets.Imagenette('../datasets/imagenette/train', split='train', size='160px', download=False, transform=train_transform)
+        test_set = datasets.Imagenette('../datasets/imagenette/val', split='val', size='160px', download=False, transform=valid_transform)
+        input_size, classes = (3, resolution, resolution), 10
     else:
         assert False
 
