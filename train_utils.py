@@ -183,7 +183,7 @@ def train(train_loader, val_loader, num_epochs, model, device, optimizer, criter
 
                 with torch.no_grad():
                     correct = torch.argmax(predictions.data, 1) == targets
-                    log(model, loss.cpu(), correct.cpu(), scheduler.get_lr()[0])
+                    log(model, loss.cpu(), correct.cpu(), scheduler.get_last_lr()[0])
                     scheduler.step()
 
             model.eval()
@@ -303,6 +303,9 @@ def validate(val_loader, model, device=None, print_info=True, print_freq=0):
     top1 = AverageMeter('Acc@1', ':6.2f')
     progress = ProgressMeter(len(val_loader), [batch_time, top1], prefix='Test: ')
     model.to(device)
+
+    device = next(model.parameters()).device
+    print(f"Model is on device: {device}")
 
     # switch to evaluate mode
     model.eval()

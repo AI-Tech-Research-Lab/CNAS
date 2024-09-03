@@ -165,7 +165,7 @@ if __name__ == "__main__":
 
     if (os.path.exists(os.path.join(args.output_path,'backbone.pth'))):
 
-        backbone, optimizer = load_checkpoint(backbone, optimizer, os.path.join(args.output_path,'backbone.pth'))
+        backbone, optimizer = load_checkpoint(backbone, optimizer, device, os.path.join(args.output_path,'backbone.pth'))
         logging.info("Loaded checkpoint")
         top1 = validate(val_loader, backbone, device, print_freq=100)/100
 
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     input_size = (3, res, res)
     
     net = copy.deepcopy(backbone)
-    if args.model == 'eemobilenetv3':
+    if args.model == 'cbnmobilenetv3' or args.model == 'eemobilenetv3':
         net.exit_idxs=[net.exit_idxs[-1]] #take only the final exit
         b_params, b_macs = get_intermediate_backbone_cost(backbone, input_size)
     else:

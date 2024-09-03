@@ -1,5 +1,5 @@
 #dataset=ImageNet16 val_split=0.2 
-dataset=imagenette val_split=0.2
+dataset=imagenette val_split=0.1
 
 python cnas.py --sec_obj avg_macs \
               --n_gpus 1 --gpu 1 --n_workers 4 --seed 42 \
