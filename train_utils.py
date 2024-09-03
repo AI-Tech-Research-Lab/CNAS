@@ -22,13 +22,13 @@ def save_checkpoint(model, optimizer, filename='checkpoint.pth'):
     }
     torch.save(checkpoint, filename)
 
-def load_checkpoint(model, optimizer, filename='checkpoint.pth'):
-    checkpoint = torch.load(filename)
+def load_checkpoint(model, optimizer, device, filename='checkpoint.pth'):
+    checkpoint = torch.load(filename, map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     return model, optimizer
 
-def train(train_loader, val_loader, num_epochs, model, device, criterion, optimizer, print_freq=10):
+def train(train_loader, val_loader, num_epochs, model, device, criterion, optimizer, print_freq=10, ckpt='checkpoint.pth'):
 
     batch_time = AverageMeter('Time', ':6.3f')
     top1 = AverageMeter('Acc@1', ':6.2f')
@@ -65,7 +65,7 @@ def train(train_loader, val_loader, num_epochs, model, device, criterion, optimi
         print(f'Train Epoch: {epoch + 1}, Train Accuracy: {top1.avg:.2f}%, Val Accuracy: {top1_val:.2f}%')
 
     # Save the trained model weights
-    save_checkpoint(model, optimizer)
+    save_checkpoint(model, optimizer, ckpt)
 
 
 def validate(val_loader, model, device=None, print_freq=10):
