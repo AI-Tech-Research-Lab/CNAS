@@ -65,7 +65,7 @@ class CNAS:
         self.lr = kwargs.pop('lr',224) #minimum resolution
         self.ur = kwargs.pop('ur',224) #maximum resolution
         self.rstep = kwargs.pop('rstep',4) #resolution step
-        self.seed = kwargs.pop('seed', 0)  # random seed
+        self.seed = kwargs.pop('seed', 42)  # random seed
         self.optim = kwargs.pop('optim', "SGD") # training optimizer
         # Trainer type 
         self.trainer_type = kwargs.pop('trainer_type', 'single-exit')
