@@ -71,7 +71,7 @@ class CNAS:
         self.trainer_type = kwargs.pop('trainer_type', 'single-exit')
         # Technological constraints params
         self.pmax = kwargs.pop('pmax',2) #max value of params of the candidate architecture
-        self.mmax = kwargs.pop('mmax',100) #max value of flops of the candidate architecture
+        self.mmax = kwargs.pop('mmax', 10**10) # the candidate architecture
         self.amax = kwargs.pop('amax',5) #max value of activations of the candidate architecture
         self.wp = kwargs.pop('wp',1) #weight for params 
         self.wm = kwargs.pop('wm',1/40) #weight for macs
@@ -93,7 +93,7 @@ class CNAS:
         self.method = kwargs.pop('method', 'bernulli') # method for early exit training
         self.support_set = kwargs.pop('support_set', False) # use support set for early exit training
         self.tune_epsilon = kwargs.pop('tune_epsilon', False) # tune epsilon for early exit inference
-        self.top1min = kwargs.pop('top1min', 0.1) #top1 constraint
+        self.top1min = kwargs.pop('top1min', 0) #top1 constraint
         self.w_alpha = kwargs.pop('w_alpha', 1.0) # weight for alpha factor
         self.w_beta = kwargs.pop('w_beta', 1.0)
         self.w_gamma = kwargs.pop('w_gamma', 1.0)
