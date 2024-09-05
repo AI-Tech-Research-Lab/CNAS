@@ -103,7 +103,6 @@ class CNAS:
         if self.model != 'nasbench':
             self.search_space = OFASearchSpace(self.model, self.lr, self.ur, self.rstep)
         else:
-
             self.search_space = NASBench201SearchSpace(self.dataset, self.save_path)
 
     def search(self):
@@ -572,7 +571,7 @@ class AuxiliarySingleLevelProblem(Problem):
 
         top1_err = self.acc_predictor.predict(x)[:, 0]  # predicted top1 error
 
-        if self.compl_predictor is not None and self.ss.supernet == 'cbnmobilenetv3':
+        if self.compl_predictor is not None and (self.ss.supernet == 'cbnmobilenetv3' or self.ss.supernet=='eemobilenetv3'): #NACHOS or EDANAS
 
             compl = self.compl_predictor.predict(x)[:, 0]  # predicted compl error
             constraint = self.mmax
@@ -583,7 +582,7 @@ class AuxiliarySingleLevelProblem(Problem):
 
             for i, (_x, acc_err, ci) in enumerate(zip(x, top1_err, compl)):
 
-                if not self._isvalid(_x):
+                if self.ss.supernet == 'cbnmobilenetv3' and not self._isvalid(_x):
                     f[i,0] = 10*15
                     f[i,1] = 10*15
                     continue
@@ -613,13 +612,14 @@ class AuxiliarySingleLevelProblem(Problem):
                         f[i,0] = 10*15
                         f[i,1] = 10*15
                         continue
-
+                
+                '''
                 if(self.ss.supernet == 'cbnmobilenetv3'):
                     if not self._isvalid(_x):
                         f[i,0] = 10*15
                         f[i,1] = 10*15
                         continue
-
+                '''
                 config = self.ss.decode(_x)
 
                 if(self.ss.supernet == 'eemobilenetv3'):
@@ -644,7 +644,7 @@ class AuxiliarySingleLevelProblem(Problem):
 
                 f[i, 0] = acc_err
                 f[i, 1] = info.get(self.sec_obj,None) 
-
+         
         out["F"] = f
 
 
