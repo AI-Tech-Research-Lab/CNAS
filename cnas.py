@@ -358,7 +358,7 @@ class CNAS:
             
             f_obj=stats[self.first_obj]
             #s_obj=stats[self.sec_obj]
-            s_obj=stats.get(self.sec_obj, stats['params'])
+            s_obj=stats.get(self.sec_obj, 0)
             stat=(f_obj,s_obj)
 
             if self.first_obj=='top1_robust':
