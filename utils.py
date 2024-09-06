@@ -235,7 +235,7 @@ def get_template_by_type(gpus, subnet, save, type, **kwargs):
         raise ValueError('Unknown template type: {}'.format(type))
 
 
-def prepare_eval_folder(path, configs, gpu=2, n_gpus=8, gpu_list=None, type='single-exit', **kwargs):
+def prepare_eval_folder(path, configs, gpu=2, n_gpus=8, gpu_list=None, type='single-exit', iter_num=0, slurm=False, **kwargs):
     """ create a folder for parallel evaluation of a population of architectures """
 
     os.makedirs(path, exist_ok=True)
@@ -260,6 +260,38 @@ def prepare_eval_folder(path, configs, gpu=2, n_gpus=8, gpu_list=None, type='sin
     with open(os.path.join(path, 'run_bash.sh'), 'w') as handle:
         for line in bash_file:
             handle.write(line + os.linesep)
+    
+    if slurm:
+        # Create the SLURM script for this iteration with EDANAS_ITERx as job name
+        slurm_script_path = os.path.join(path, f'run_slurm.sh')
+        create_slurm_script(slurm_script_path, iter_num, path)
+
+def create_slurm_script(slurm_script_path, iter_num, experiment_path):
+    """ Helper function to create a SLURM script with the dynamic job name EDANAS_ITERx """
+    
+    slurm_script_content = f"""#!/bin/bash
+#SBATCH --job-name="EDANAS_ITER{iter_num}"   # Job name
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=1                    # Number of threads
+#SBATCH --time=72:00:00                      # Walltime limit
+#SBATCH --gpus=1                             # Num gpus
+#SBATCH --partition=gpu                      # GPU partition
+#SBATCH --account=pittorino
+#SBATCH --mail-type=NONE
+#SBATCH --mail-user=fabrizio.pittorino@unibocconi.it
+#SBATCH --output=out/%x_%j.out               # Where to write standard output
+#SBATCH --error=err/%x_%j.err                # Where to write standard error
+
+module load cuda/12.3
+
+# Call the generated run_bash.sh in the experiment path
+bash {os.path.join(experiment_path, 'run_bash.sh')}
+"""
+    # Write the SLURM script to the specified path
+    with open(slurm_script_path, 'w') as f:
+        f.write(slurm_script_content)
 
 
 class MySampling(Sampling):
