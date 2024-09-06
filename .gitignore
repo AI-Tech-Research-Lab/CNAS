@@ -144,3 +144,5 @@ NasSearchSpace/
 
 # exp folders
 results/
+err/
+out/
