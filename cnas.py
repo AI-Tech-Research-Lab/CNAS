@@ -99,11 +99,11 @@ class CNAS:
         self.w_gamma = kwargs.pop('w_gamma', 1.0)
         self.warmup_ee_epochs = kwargs.pop('warmup_ee_epochs', 5) # warmup epochs for early exit
         self.ee_epochs = kwargs.pop('ee_epochs', 0) # early exit epochs with support set
+        self.slurm = kwargs.pop('slurm', False)  # use slurm for parallel evaluation
 
         if self.model != 'nasbench':
             self.search_space = OFASearchSpace(self.model, self.lr, self.ur, self.rstep)
         else:
-
             self.search_space = NASBench201SearchSpace(self.dataset, self.save_path)
 
     def search(self):
@@ -318,7 +318,6 @@ class CNAS:
         
         print("LEN ARCHIVE")    
         print(len(archive))
-        print(archive[:10])
     
         return archive
 
@@ -332,7 +331,7 @@ class CNAS:
         else:
             prepare_eval_folder(
                 gen_dir, archs, self.gpu, self.n_gpus, 
-                self.gpu_list, self.trainer_type, n_workers = self.n_workers,
+                self.gpu_list, self.trainer_type, it, slurm=self.slurm, n_workers = self.n_workers,
                 data=self.data, dataset=self.dataset, model=self.model, pmax = self.pmax, 
                 mmax =self.mmax, amax = self.amax, wp=self.wp, wm=self.wm, wa=self.wa,
                 top1min=self.top1min, penalty = self.penalty, func_constr=self.func_constr, supernet_path=self.supernet_path, pretrained=self.pretrained, 
@@ -341,8 +340,11 @@ class CNAS:
                 method = self.method, support_set = self.support_set, tune_epsilon = self.tune_epsilon, 
                 w_alpha = self.w_alpha, w_beta = self.w_beta, w_gamma = self.w_gamma, 
                 warmup_ee_epochs = self.warmup_ee_epochs, ee_epochs = self.ee_epochs)
-
-            subprocess.call("sh {}/run_bash.sh".format(gen_dir), shell=True)
+            
+            if self.slurm:
+                subprocess.call("sbatch {}/run_slurm.sh".format(gen_dir), shell=True)
+            else:
+                subprocess.call("sh {}/run_bash.sh".format(gen_dir), shell=True)
 
         all_stats=[]
         for i in range(len(archs)):
@@ -572,7 +574,7 @@ class AuxiliarySingleLevelProblem(Problem):
 
         top1_err = self.acc_predictor.predict(x)[:, 0]  # predicted top1 error
 
-        if self.compl_predictor is not None and self.ss.supernet == 'cbnmobilenetv3':
+        if self.compl_predictor is not None and (self.ss.supernet == 'cbnmobilenetv3' or self.ss.supernet=='eemobilenetv3'): #NACHOS or EDANAS
 
             compl = self.compl_predictor.predict(x)[:, 0]  # predicted compl error
             constraint = self.mmax
@@ -583,7 +585,7 @@ class AuxiliarySingleLevelProblem(Problem):
 
             for i, (_x, acc_err, ci) in enumerate(zip(x, top1_err, compl)):
 
-                if not self._isvalid(_x):
+                if self.ss.supernet == 'cbnmobilenetv3' and not self._isvalid(_x):
                     f[i,0] = 10*15
                     f[i,1] = 10*15
                     continue
@@ -613,13 +615,14 @@ class AuxiliarySingleLevelProblem(Problem):
                         f[i,0] = 10*15
                         f[i,1] = 10*15
                         continue
-
+                
+                '''
                 if(self.ss.supernet == 'cbnmobilenetv3'):
                     if not self._isvalid(_x):
                         f[i,0] = 10*15
                         f[i,1] = 10*15
                         continue
-
+                '''
                 config = self.ss.decode(_x)
 
                 if(self.ss.supernet == 'eemobilenetv3'):
@@ -644,7 +647,7 @@ class AuxiliarySingleLevelProblem(Problem):
 
                 f[i, 0] = acc_err
                 f[i, 1] = info.get(self.sec_obj,None) 
-
+         
         out["F"] = f
 
 
@@ -781,6 +784,7 @@ if __name__ == '__main__':
     parser.add_argument('--w_gamma', type = float, default=1.0, help='weight for gamma factor')
     parser.add_argument('--warmup_ee_epochs', type = int, default=5, help='warmup epochs for early exit')
     parser.add_argument('--ee_epochs', type = int, default=0, help='early exit epochs with support set')
+    parser.add_argument('--slurm', action='store_true', default=False, help='use slurm for parallel evaluation')
     cfgs = parser.parse_args()
     main(cfgs)
 

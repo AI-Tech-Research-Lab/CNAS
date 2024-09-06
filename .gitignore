@@ -145,3 +145,5 @@ Robustness/
 
 # exp folders
 results/
+err/
+out/
