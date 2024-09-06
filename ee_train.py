@@ -573,8 +573,8 @@ if __name__ == "__main__":
     
     results['top1'] = (1-best_scores['global']) * 100 #top1 error
     results['branch_scores'] = best_scores
-    results['params']=sum(b_params)+sum(c_params)
-    results['macs']=sum(b_macs)+sum(c_macs)
+    results['params']=b_params[-1]+sum(c_params)
+    results['macs']=b_macs[-1]+c_macs[-1]
 
     #log.info('Best epsilon: {}'.format(best_epsilon))
     #log.info('Best cumulative threshold: {}'.format(best_cumulative))
