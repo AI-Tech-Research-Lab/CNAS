@@ -318,7 +318,6 @@ class CNAS:
         
         print("LEN ARCHIVE")    
         print(len(archive))
-        print(archive[:10])
     
         return archive
 
