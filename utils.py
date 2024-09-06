@@ -270,6 +270,8 @@ def create_slurm_script(slurm_script_path, iter_num, experiment_path):
     """ Helper function to create a SLURM script with the dynamic job name EDANAS_ITERx """
     
     slurm_script_content = f"""#!/bin/bash
+# SLURM script to be runned through `sbatch job.sh`
+# In the following slurm options, customize (if needed) only the ones with comments
 #SBATCH --job-name="EDANAS_ITER{iter_num}"   # Job name
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
@@ -284,7 +286,19 @@ def create_slurm_script(slurm_script_path, iter_num, experiment_path):
 #SBATCH --output=out/%x_%j.out               # Where to write standard output
 #SBATCH --error=err/%x_%j.err                # Where to write standard error
 
+# PARTITIONS
+# If you have cpu job change partition to compute.
+# defq, timelimit 3 days, Nodes=cnode0[1-4] (CPU)
+# compute, timelimit 15 days, Nodes=cnode0[5-8] (CPU)
+# gpu, timelimit 3 days, Nodes=gnode0[1-4] (GPU)
+# debug, timelimit 30 minutes, Nodes=cnode01,gnode04 (short test on either CPU or GPU)
+# QOS long: long jobs (7 days max) on gnode0[1-4] (GPU)
+
+### export PATH="/home/Pittorino/miniconda3/bin:$PATH"
+#export PATH="/home/Pittorino/miniconda3:$PATH"
+
 module load cuda/12.3
+#conda activate timefs
 
 # Call the generated run_bash.sh in the experiment path
 bash {os.path.join(experiment_path, 'run_bash.sh')}
