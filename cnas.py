@@ -266,6 +266,7 @@ class CNAS:
         split = self.resume.rsplit("_",1)
         maxiter = int(split[1])
         path = split[0]
+        print("PATH: ",path)
         
         for file in glob.glob(os.path.join(path + '_*', "net_*/net_*.subnet")):
             arch = json.load(open(file))#['arch']
@@ -273,6 +274,7 @@ class CNAS:
             split = pre.rsplit("_",3)  
             split2 = split[1].rsplit("/",1)
             niter = int(split2[0])
+            #iter_path = path
             split = pre.rsplit("_",2)  
             split2 = split[1].rsplit("/",1)
             nsubnet = int(split2[0])
@@ -306,8 +308,15 @@ class CNAS:
 
                 else: #failed net
                     print("FAILED NET")
-                    print(path)
-                    print(nsubnet)
+                    i=nsubnet
+                    it=niter
+                    gen_dir = self.resume.rsplit("_",1)[0] +  "_" + str(it)
+                    print(os.path.join(gen_dir, "net_{}/net_{}.subnet".format(i,i)))
+                    # store this architecture to a separate in case we want to revisit after the search
+                    os.makedirs(os.path.join(self.save_path, "failed"), exist_ok=True)
+                    shutil.copy(os.path.join(gen_dir, "net_{}/net_{}.subnet".format(i,i)),
+                                os.path.join(self.save_path, "failed", "it_{}_net_{}".format(it, i)))
+            
                     '''
                     if self.sec_obj is not None:
                         v = (arch, 100, 10**15)
@@ -351,12 +360,14 @@ class CNAS:
             try:
                 stats = json.load(open(os.path.join(gen_dir, "net_{}/net_{}.stats".format(i,i))))
             except FileNotFoundError:
+                print("FAILED NET: ",i)
                 # just in case the subprocess evaluation failed
-                stats = {self.first_obj: 0, self.sec_obj: 10**15}  # makes the solution artificially bad so it won't survive
+                #stats = {self.first_obj: 0, self.sec_obj: 10**15}  # makes the solution artificially bad so it won't survive
                 # store this architecture to a separate in case we want to revisit after the search
                 os.makedirs(os.path.join(self.save_path, "failed"), exist_ok=True)
-                shutil.copy(os.path.join(gen_dir, "net_{}/net_{}.subnet".format(i)),
+                shutil.copy(os.path.join(gen_dir, "net_{}/net_{}.subnet".format(i,i)),
                             os.path.join(self.save_path, "failed", "it_{}_net_{}".format(it, i)))
+                continue
             
             f_obj=stats[self.first_obj]
             #s_obj=stats[self.sec_obj]
