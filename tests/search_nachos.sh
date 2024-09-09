@@ -1,7 +1,7 @@
 #dataset=ImageNet16 val_split=0.2 
 dataset=imagenette val_split=0.1
 
-python cnas.py --sec_obj avg_macs --resume results/search_nachos_noconstraints_$dataset/iter_0   \
+python cnas.py --sec_obj avg_macs \
               --n_gpus 1 --gpu 1 --n_workers 4 --seed 42\
               --data datasets/$dataset --dataset $dataset \
               --first_predictor as --sec_predictor as \
