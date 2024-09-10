@@ -4,7 +4,7 @@ dataset=imagenette val_split=0.1
 mode=noconstraints
 #mode=nopeak
 
-python cnas.py --sec_obj avg_macs --resume results/search_nachos_${mode}_$dataset/iter_1 \
+python cnas.py --sec_obj avg_macs  \
               --n_gpus 1 --gpu 1 --n_workers 4 --seed 42\
               --data datasets/$dataset --dataset $dataset \
               --first_predictor as --sec_predictor as \
