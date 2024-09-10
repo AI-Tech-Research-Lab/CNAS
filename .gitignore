@@ -141,6 +141,8 @@ data/
 # Plug in repos
 EarlyExits/
 NasSearchSpace/
+Robustness/
+quantization/
 
 # exp folders
 results/

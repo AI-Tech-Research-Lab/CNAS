@@ -149,11 +149,25 @@ def save_checkpoint(model, optimizer, filename='checkpoint.pth'):
 def load_checkpoint(model, optimizer, device, filename='checkpoint.pth'):
     checkpoint = torch.load(filename, map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
+    
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    '''
+    model.to(device)
+    for state in optimizer.state.values():
+        if isinstance(state, torch.Tensor):
+            state.data = state.data.to(device)
+        elif isinstance(state, dict):
+            for k, v in state.items():
+                if isinstance(v, torch.Tensor):
+                    state[k] = v.to(device)
+    '''
     return model, optimizer
 
 def train(train_loader, val_loader, num_epochs, model, device, optimizer, criterion, scheduler, log, ckpt_path=None, label_smoothing=0.1):
+        
         model.to(device)
+        best_model = copy.deepcopy({'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}) #initialize best model with the first model
+
         for epoch in range(num_epochs):
             model.train()
             log.train(model, optimizer, len_dataset=len(train_loader))
