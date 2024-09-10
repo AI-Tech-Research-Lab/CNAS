@@ -521,8 +521,9 @@ if __name__ == "__main__":
         best_epsilon = epsilon
         if(a['global']>=constraint_acc):
             while (i>=0 and avg_macs>constraint_compl): #cycle from the second last elem
-                #print("CONSTRAINT MACS VIOLATED: REPAIR ACTION ON BRANCH {}".format(i))
+                print("CONSTRAINT MACS VIOLATED: REPAIR ACTION ON BRANCH {}".format(i))
                 epsilon[i] = epsilon[i] - 0.1 
+                print("New epsilon: ", epsilon)
                 a, b = binary_eval(model=backbone,
                                     dataset_loader=val_loader,
                                     predictors=classifiers,

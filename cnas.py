@@ -767,11 +767,11 @@ if __name__ == '__main__':
                         help='use functional constraints')
     parser.add_argument('--pmax', type = float, default=2.0,
                         help='max value of params for candidate architecture')
-    parser.add_argument('--mmax', type = float, default=100,
+    parser.add_argument('--mmax', type = float, default=10**10,
                         help='max value of macs for candidate architecture')
     parser.add_argument('--amax', type = float, default=5.0,
                         help='max value of activations for candidate architecture')
-    parser.add_argument('--top1min', type = float, default=0.1, help='top1 constraint')
+    parser.add_argument('--top1min', type = float, default=0, help='top1 constraint')
     parser.add_argument('--wp', type = float, default=1.0,
                         help='weight for params')
     parser.add_argument('--wm', type = float, default=1/40,
