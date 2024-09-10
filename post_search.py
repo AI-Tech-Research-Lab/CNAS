@@ -7,8 +7,8 @@ import numpy as np
 from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 from pymoo.core.decision_making import DecisionMaking, find_outliers_upper_tail, NeighborFinder
 from explainability import get_archive
-from trainers.cbn.utils import get_subnet_folder
-from ofa_evaluator import OFAEvaluator, get_net_info, get_adapt_net_info
+from utils import get_subnet_folder
+#from ofa_evaluator import OFAEvaluator, get_net_info, get_adapt_net_info
 
 from matplotlib import pyplot as plt
 
