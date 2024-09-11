@@ -224,8 +224,20 @@ if __name__ == "__main__":
     print("Classifiers MACS: ", c_macs)  
     print("Backbone params: ", b_params)
     print("Classifiers params: ", c_params)
-      
-    
+
+    if backbone.n_branches()==1:
+        print("Single branch model")
+        results['exits_ratio']=[1.0]
+        results['avg_macs']=b_macs[-1]+c_macs[-1]
+        results['top1']=np.round(100-top1*100,2)
+        results['branch_scores']={'global':top1}
+        results['params']=b_params[-1]+sum(c_params)
+        results['macs']=b_macs[-1]+c_macs[-1]
+        with open(save_path, 'w') as handle:
+            json.dump(results, handle)
+        sys.exit()
+
+
     # GLOBAL GATE to switch on/off the EECs (not used)
     '''
     if(args.gg_on):
