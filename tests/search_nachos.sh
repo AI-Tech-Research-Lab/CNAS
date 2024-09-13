@@ -15,7 +15,7 @@ python cnas.py --sec_obj avg_macs \
               --val_split $val_split \
               --n_epochs 5 --warmup_ee_epochs 2 --ee_epochs 3 \
               --w_alpha 1.0 --w_beta 1.0 --w_gamma 1.0 \
-              --lr 160 --ur 160 --rstep 4 --mmax 50 --top1min 0.70
+              --lr 160 --ur 160 --rstep 4 --mmax 100 --top1min 0.80
 
 # NACHOS  #[10,5,5] 
 # --mmax 2.7 --top1min 0.65 \

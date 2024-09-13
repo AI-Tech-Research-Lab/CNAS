@@ -545,8 +545,9 @@ if __name__ == "__main__":
                                     cumulative_threshold=True,
                                     sample=False)
                 a, b = dict(a), dict(b)
+                print(a['global'])
                 if(a['global']<constraint_acc):
-                    #print("ACC VIOLATED")
+                    print("ACC VIOLATED")
                     #print(a['global'])
                     if i>=1:
                         i=i-1

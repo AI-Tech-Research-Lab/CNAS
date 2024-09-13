@@ -600,13 +600,17 @@ class AuxiliarySingleLevelProblem(Problem):
                     f[i,0] = 10*15
                     f[i,1] = 10*15
                     continue
-
+                
+                '''
                 ## Compute the normalized constraint violation (CV) (NACHOS)
                 if(cmax!=constraint):
                     cv = max(0,(ci-constraint))/abs(cmax-constraint) 
                 else:
                     cv = 0   
-                sec_obj = phi*ci + (1-phi)*cv
+                '''
+                cv = max(0,(ci-constraint))
+
+                sec_obj = phi*ci + (1-phi)*cv*self.penalty
 
                 f[i, 0] = acc_err
                 f[i, 1] = sec_obj 

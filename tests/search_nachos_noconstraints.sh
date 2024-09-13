@@ -4,12 +4,12 @@ dataset=imagenette val_split=0.1
 mode=noconstraints
 #mode=nopeak
 
-python cnas.py --sec_obj avg_macs --resume results/search_nachos_${mode}_$dataset/iter_7  \
+python cnas.py --sec_obj avg_macs --resume results/search_nachos_${mode}_$dataset/iter_1 \
               --n_gpus 1 --gpu 1 --n_workers 4 --seed 42\
               --data datasets/$dataset --dataset $dataset \
               --first_predictor as --sec_predictor as \
               --supernet_path NasSearchSpace/ofa/supernets/ofa_mbv3_d234_e346_k357_w1.0 --pretrained  \
-              --save results/search_nachos_${mode}_$dataset --iterations 2 \
+              --save results/search_nachos_${mode}_$dataset --iterations 9 \
               --search_space cbnmobilenetv3 --trainer_type multi_exits \
               --method bernulli --support_set --tune_epsilon \
               --val_split $val_split \
