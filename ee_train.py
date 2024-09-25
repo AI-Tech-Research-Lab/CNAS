@@ -5,7 +5,9 @@ from itertools import chain
 import copy
 import argparse
 import numpy as np
+from EarlyExits.models.efficientnet import EEEfficientNet
 import torch
+import torch.nn as nn
 
 import sys
 sys.path.append(os.getcwd())
@@ -15,7 +17,8 @@ from utils import get_network_search
 
 from EarlyExits.evaluators import sm_eval, binary_eval, standard_eval, ece_score
 from EarlyExits.trainer import binary_bernulli_trainer, joint_trainer
-from EarlyExits.utils_ee import get_intermediate_backbone_cost, get_intermediate_classifiers_cost, get_subnet_folder_by_backbone, get_eenn
+from EarlyExits.utils_ee import get_ee_efficientnet, get_intermediate_backbone_cost, get_intermediate_classifiers_cost, get_subnet_folder_by_backbone, get_eenn
+import torchvision.models as models
 
 #--trn_batch_size 128 --vld_batch_size 200 --num_workers 4 --n_epochs 5 --resolution 224 --valid_size 5000
 #init_lr=0.01, lr_schedule_type='cosine' weight_decay=4e-5, label_smoothing=0.0
@@ -24,6 +27,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--model', type=str, default='mobilenetv3', help='name of the model (mobilenetv3, ...)')
+    parser.add_argument('--ofa', action='store_true', default=True, help='s')
     parser.add_argument("--batch_size", default=128, type=int, help="Batch size used in the training and validation loop.")
     #parser.add_argument("--epochs", default=200, type=int, help="Total number of epochs.")
     parser.add_argument("--label_smoothing", default=0.1, type=float, help="Use 0.0 for no label smoothing.")
@@ -104,14 +108,6 @@ if __name__ == "__main__":
     device = torch.device(device)
     initialize_seed(42, use_cuda)
 
-    n_subnet = args.output_path.rsplit("_", 1)[1]
-    save_path = os.path.join(args.output_path, 'net_{}.stats'.format(n_subnet))
-
-    supernet_path = args.supernet_path
-    if args.model_path is not None:
-        model_path = args.model_path
-    logging.info("Model: %s", args.model)
-
     if args.method == 'bernulli':
         get_binaries = True
     else:
@@ -129,13 +125,31 @@ if __name__ == "__main__":
         n_classes=120
     else:
         n_classes=10
-    
-    backbone, res = get_network_search(model=args.model,
-                                subnet_path=args.model_path, 
-                                supernet=args.supernet_path, 
-                                n_classes=n_classes, 
-                                pretrained=args.pretrained,
-                                func_constr=args.func_constr)
+
+    if 'mobilenetv3' in args.model:
+        n_subnet = args.output_path.rsplit("_", 1)[1]
+        save_path = os.path.join(args.output_path, 'net_{}.stats'.format(n_subnet))
+
+        supernet_path = args.supernet_path
+        if args.model_path is not None:
+            model_path = args.model_path
+        logging.info("Model: %s", args.model)
+        
+        backbone, res = get_network_search(model=args.model,
+                                    subnet_path=args.model_path, 
+                                    supernet=args.supernet_path, 
+                                    n_classes=n_classes, 
+                                    pretrained=args.pretrained,
+                                    func_constr=args.func_constr)
+    else:
+        backbone=models.efficientnet_b0(weights='DEFAULT') #EEEfficientNet()
+        backbone.classifier = nn.Sequential(
+            nn.Dropout(p=0.2, inplace=True),  # Dropout for regularization
+            nn.Linear(1280, n_classes, bias=True)  # Fully connected layer
+        )
+        save_path = os.path.join(args.output_path, 'net.stats')
+        res = args.resolution
+
     if res is None:
         res = args.resolution
 
@@ -152,6 +166,9 @@ if __name__ == "__main__":
     else:
         val_loader = test_loader
         n_samples=len(test_loader.dataset)
+
+    print("Train samples: ", len(train_loader.dataset))
+    print("Val samples: ", len(val_loader.dataset))
 
     train_log = Log(log_each=10)
 
@@ -188,15 +205,18 @@ if __name__ == "__main__":
 
     #Create the EENN on top of the trained backbone
 
-    backbone, classifiers, epsilon = get_eenn(subnet=backbone, subnet_path=args.model_path, res=res, n_classes=n_classes, get_binaries=get_binaries)
+    if 'mobilenetv3' in args.model:
+        backbone, classifiers, epsilon = get_eenn(subnet=backbone, subnet_path=args.model_path, res=res, n_classes=n_classes, get_binaries=get_binaries)
+    else:
+        backbone, classifiers, epsilon = get_ee_efficientnet(model=backbone, img_size=res, n_classes=n_classes, get_binaries=get_binaries)
 
     # MODEL COST PROFILING
 
     input_size = (3, res, res)
     
     net = copy.deepcopy(backbone)
-    if args.model == 'cbnmobilenetv3' or args.model == 'eemobilenetv3':
-        net.exit_idxs=[net.exit_idxs[-1]] #take only the final exit
+    if args.model == 'cbnmobilenetv3' or args.model == 'eemobilenetv3' or args.model == 'efficientnet':
+        #net.exit_idxs=[net.exit_idxs[-1]] #take only the final exit
         b_params, b_macs = get_intermediate_backbone_cost(backbone, input_size)
     else:
         dict_macs = net.computational_cost(torch.randn((1, 3, res, res)))
