@@ -591,13 +591,13 @@ if __name__ == "__main__":
                 if(epsilon[i]<=0.11):
                     i=i-1   
                     
-        #COMPUTE ECE SCORES FOR CALIBRATION EVALUATION
-        stats_ece = ece_score(model=backbone,predictors=classifiers, dataset_loader=val_loader)
-        ece_scores={}
-        for i,k in enumerate(stats_ece):
-            scores = stats_ece[i]
-            ece_scores[i]=scores[0]
-        results['ece_scores']=ece_scores
+    #COMPUTE ECE SCORES FOR CALIBRATION EVALUATION
+    stats_ece = ece_score(model=backbone,predictors=classifiers, dataset_loader=val_loader)
+    ece_scores={}
+    for i,k in enumerate(stats_ece):
+        scores = stats_ece[i]
+        ece_scores[i]=scores[0]
+    results['ece_scores']=ece_scores
     
     #print("Solution repaired: {}".format(repaired))
     results["exits_ratio"]=weights
