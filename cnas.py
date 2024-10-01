@@ -100,6 +100,8 @@ class CNAS:
         self.warmup_ee_epochs = kwargs.pop('warmup_ee_epochs', 5) # warmup epochs for early exit
         self.ee_epochs = kwargs.pop('ee_epochs', 0) # early exit epochs with support set
         self.slurm = kwargs.pop('slurm', False)  # use slurm for parallel evaluation
+        self.quantization=kwargs.pop('quantization',False) #use quantization
+        
 
         if self.model != 'nasbench':
             self.search_space = OFASearchSpace(self.model, self.lr, self.ur, self.rstep)
@@ -348,7 +350,7 @@ class CNAS:
                 sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.lr, alpha_norm=self.alpha_norm, val_split=self.val_split,
                 method = self.method, support_set = self.support_set, tune_epsilon = self.tune_epsilon, 
                 w_alpha = self.w_alpha, w_beta = self.w_beta, w_gamma = self.w_gamma, 
-                warmup_ee_epochs = self.warmup_ee_epochs, ee_epochs = self.ee_epochs)
+                warmup_ee_epochs = self.warmup_ee_epochs, ee_epochs = self.ee_epochs, quantization=self.quantization)
             
             if self.slurm:
                 subprocess.call("sbatch {}/run_slurm.sh".format(gen_dir), shell=True)
@@ -800,6 +802,7 @@ if __name__ == '__main__':
     parser.add_argument('--warmup_ee_epochs', type = int, default=5, help='warmup epochs for early exit')
     parser.add_argument('--ee_epochs', type = int, default=0, help='early exit epochs with support set')
     parser.add_argument('--slurm', action='store_true', default=False, help='use slurm for parallel evaluation')
+    parser.add_argument('--quantization', action='store_true', default=False, help='use weights and activations quantization')
     cfgs = parser.parse_args()
     main(cfgs)
 

@@ -1,4 +1,5 @@
 import argparse
+from quantization.drift import validate_drift
 import torch
 
 import sys
@@ -13,6 +14,7 @@ from train_utils import get_optimizer, get_loss, get_lr_scheduler, get_data_load
 from utils import get_net_info, get_network_search, tiny_ml
 from Robustness.utility.perturb import get_net_info_runtime
 from Robustness.evaluate_cifar10c import compute_mCE
+from quantization.quant_dorefa import quantize_layers
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -64,6 +66,8 @@ if __name__ == "__main__":
     parser.add_argument('--wm', default=0.0, type=float, help="weight for macs")
     parser.add_argument('--wa', default=0.0, type=float, help="weight for activations")
     parser.add_argument('--penalty', default=1e10, type=float, help="penalty for constraint violation")
+    parser.add_argument('--quantization', action='store_true', default=False, help='use weights and activations quantization')
+    parser.add_argument('--drift', action='store_true', default=False, help='use weights drift')
 
     args = parser.parse_args()
 
@@ -99,6 +103,14 @@ if __name__ == "__main__":
 
     model, res = get_network_search(args.model, model_path, args.n_classes, args.supernet_path, pretrained=args.pretrained, func_constr=args.func_constr)
 
+    if res is None:
+        res = args.res
+
+    if args.quantization:
+        print("Quantizing model")
+        model = quantize_layers(model)
+
+    logging.info("Training epochs: %s", args.epochs)
     logging.info(f"DATASET: {args.dataset}")
     logging.info("Resolution: %s", res)
     train_loader, val_loader, test_loader = get_data_loaders(dataset=args.dataset, batch_size=args.batch_size, threads=args.n_workers, 
@@ -106,6 +118,9 @@ if __name__ == "__main__":
     
     if val_loader is None:
         val_loader = test_loader
+
+    print("Num train samples: ", len(train_loader.dataset))
+    print("Num val samples: ", len(val_loader.dataset))
 
     log = Log(log_each=10)
 
@@ -138,6 +153,10 @@ if __name__ == "__main__":
         
         #results['mCE'] = compute_mCE_CIFARC(args.ood_data, model, device, res=args.res)
         results['mCE2'] = compute_mCE(args.dataset, model, device, res=args.res, load_ood=args.load_ood)
+    
+    if args.drift:
+        results['top1_drift'] = validate_drift(test_loader, model, device)
+        logging.info(f"TEST ACCURACY: {results['top1_drift']}")
 
     input_shape = (3, res, res)
     #Model cost

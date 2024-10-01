@@ -940,6 +940,8 @@ def get_dataset(name, model_name=None, augmentation=False, resolution=32, val_sp
         train_set = datasets.Imagenette('../datasets/imagenette/train', split='train', size='160px', download=False, transform=train_transform)
         test_set = datasets.Imagenette('../datasets/imagenette/val', split='val', size='160px', download=False, transform=valid_transform)
         input_size, classes = (3, resolution, resolution), 10
+        print("TRAIN SET: ", len(train_set))
+        print("TEST SET: ", len(test_set))
     else:
         assert False
 

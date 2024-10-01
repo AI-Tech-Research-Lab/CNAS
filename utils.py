@@ -213,6 +213,7 @@ def bash_command_template_single_exit(**kwargs):
     cfg['alpha_norm'] = kwargs['alpha_norm']
     cfg['val_split'] = kwargs['val_split']
     cfg['n_workers'] = kwargs['n_workers']
+    cfg['quantization'] = kwargs['quantization']
 
     execution_line = "python train.py".format(gpus)
     for k, v in cfg.items():
