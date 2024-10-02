@@ -80,6 +80,15 @@ class OFAEvaluator:
                 dropout_rate=0, width_mult=self.width_mult, ks_list=self.kernel_size,
                 expand_ratio_list=self.exp_ratio, depth_list=self.depth)
             
+            init = torch.load(model_path, map_location='cpu')['state_dict']
+
+            ##FIX size mismatch error##### 
+            init['classifier.linear.weight'] = init['classifier.linear.weight'][:n_classes]
+            init['classifier.linear.bias'] = init['classifier.linear.bias'][:n_classes]
+            ##############################
+
+            self.engine.load_state_dict(init) 
+            
         elif 'resnet50' in model_path:
             # default configurations
             #ks is 3 by default for resnet
@@ -94,20 +103,20 @@ class OFAEvaluator:
               expand_ratio_list = self.exp_ratio,
               width_mult_list = self.width_mult
               ) 
+            
+            init = torch.load(model_path, map_location='cpu')['state_dict']
+
+            ##FIX size mismatch error##### 
+            init['classifier.linear.linear.weight'] = init['classifier.linear.linear.weight'][:n_classes]
+            init['classifier.linear.linear.bias'] = init['classifier.linear.linear.bias'][:n_classes]
+            ##############################
+
+            self.engine.load_state_dict(init) 
+
         else:
 
           raise NotImplementedError 
             
-        if(pretrained):
-
-            init = torch.load(model_path, map_location='cpu')['state_dict']
-
-            ##FIX size mismatch error##### 
-            init['classifier.linear.weight'] = init['classifier.linear.weight'][:n_classes]
-            init['classifier.linear.bias'] = init['classifier.linear.bias'][:n_classes]
-            ##############################
-
-            self.engine.load_state_dict(init)  
             
     def sample(self, config=None):
         """ randomly sample a sub-network """
