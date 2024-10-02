@@ -7,14 +7,15 @@ from torch.autograd import Function
 import torch.nn.functional as F
 from scipy import io
 
-def quantize_layers(module):
+def quantize_layers(module, nbit_w=32, q_alpha_w=1, nbit_a=32, q_alpha_a=1):
     """
-    Recursively replaces Conv2d and Linear layers with QuanConv and Linear_Q layers in the given module.
+    Recursively replaces Conv2d and Linear layers with QuanConv and Linear_Q layers in the given module,
+    while transferring the weights and biases from the original layers to the quantized layers.
     """
-
+    
     # If the current module is Conv2d, replace with QuanConv
     if isinstance(module, nn.Conv2d):
-        return QuanConv(
+        new_layer = QuanConv(
             in_channels=module.in_channels,
             out_channels=module.out_channels,
             kernel_size=module.kernel_size,
@@ -23,28 +24,67 @@ def quantize_layers(module):
             dilation=module.dilation,
             groups=module.groups,
             bias=module.bias is not None,
-            nbit_w=4,
-            nbit_a=8,
-            q_alpha_w=0.5625,
+            nbit_w=nbit_w,
+            nbit_a=nbit_a,
+            q_alpha_w=q_alpha_w,
+            q_alpha_a=q_alpha_a,
         )
-    
+        # Transfer weights and bias from original Conv2d layer to new QuanConv layer
+        new_layer.weight.data = module.weight.data.clone()
+        if module.bias is not None:
+            new_layer.bias.data = module.bias.data.clone()
+        return new_layer
+
     # If the current module is Linear, replace with Linear_Q
     elif isinstance(module, nn.Linear):
-        return Linear_Q(
+        new_layer = Linear_Q(
             in_features=module.in_features,
             out_features=module.out_features,
             bias=module.bias is not None,
-            nbit_w=4,
-            nbit_a=8,
-            q_alpha_w=0.5625,
+            nbit_w=nbit_w,
+            nbit_a=nbit_a,
+            q_alpha_w=q_alpha_w,
+            q_alpha_a=q_alpha_a,
         )
-    
+        # Transfer weights and bias from original Linear layer to new Linear_Q layer
+        new_layer.weight.data = module.weight.data.clone()
+        if module.bias is not None:
+            new_layer.bias.data = module.bias.data.clone()
+        return new_layer
+
     # Recursively go through all children (layers) of the module
     for name, child in module.named_children():
-        if name !='downsample': # no quantization on skip connections
+        if name != 'downsample':  # no quantization on skip connections
             # Replace the child with the recursively modified version
-            setattr(module, name, quantize_layers(child))
+            setattr(module, name, quantize_layers(child, nbit_w, q_alpha_w, nbit_a, q_alpha_a))
     
+    return module
+
+def update_quantization_bits(module, nbit_w=None, q_alpha_w=None, nbit_a=None, q_alpha_a=None):
+    """
+    Recursively updates the nbit_w and nbit_a parameters of QuanConv and Linear_Q layers in the given module.
+    
+    Parameters:
+    - module: The neural network module whose layers will be updated.
+    - nbit_w: New number of bits for weights. If None, it will not be updated.
+    - nbit_a: New number of bits for activations. If None, it will not be updated.
+    """
+
+    # Check if the current module is QuanConv or Linear_Q, and update bits if applicable
+    if isinstance(module, QuanConv) or isinstance(module, Linear_Q):
+        if nbit_w is not None:
+            module.nbit_w = nbit_w
+            module.q_alpha_w = q_alpha_w
+        if nbit_a is not None:
+            module.nbit_a = nbit_a
+            module.q_alpha_a = q_alpha_a
+
+    # Recursively go through all children (layers) of the module
+    for name, child in module.named_children():
+        # Skip the 'downsample' layers if needed
+        if name != 'downsample':  # No updates on skip connections
+            update_quantization_bits(child, nbit_w, q_alpha_w, nbit_a, q_alpha_a)
+
     return module
 
 class ScaleSigner(Function):

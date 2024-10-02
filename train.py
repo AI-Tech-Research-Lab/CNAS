@@ -12,9 +12,47 @@ sys.path.append(os.getcwd())
  
 from train_utils import get_optimizer, get_loss, get_lr_scheduler, get_data_loaders, load_checkpoint, validate, initialize_seed, Log, train
 from utils import get_net_info, get_network_search, tiny_ml
-from Robustness.utility.perturb import get_net_info_runtime
-from Robustness.evaluate_cifar10c import compute_mCE
-from quantization.quant_dorefa import quantize_layers
+from quantization.quant_dorefa import quantize_layers, update_quantization_bits
+
+class RobustEvaluator:
+
+    def __init__(self, model, device, args):
+        self.model = model
+        self.device = device
+        self.args = args
+
+    def evaluate_ood(self, results):
+        """ Evaluates the model on Out-of-Distribution (OOD) robustness. """
+        print("Evaluating OOD robustness...")
+        # Compute mCE for CIFAR-C or other dataset as per args
+        # results['mCE'] = compute_mCE_CIFARC(self.args.ood_data, self.model, self.device, res=self.args.res)
+        from Robustness.evaluate_cifar10c import compute_mCE
+        results['mCE2'] = compute_mCE(self.args.dataset, self.model, self.device, res=self.args.res, load_ood=self.args.load_ood)
+        print(f"mCE2: {results['mCE2']}")
+
+    def evaluate_robustness(self, results, val_loader, top1_err):
+        """ Evaluates model robustness using SAM or other evaluation methods. """
+        print("Evaluating robustness...")
+
+        sigma_step = self.args.sigma_step
+        if self.args.sigma_max == self.args.sigma_min:
+            sigma_step = 1
+
+        n = round((self.args.sigma_max - self.args.sigma_min) / sigma_step) + 1
+        sigma_list = [round(self.args.sigma_min + i * sigma_step, 2) for i in range(n)]
+
+        # Retrieve runtime robustness info
+        from Robustness.utility.perturb import get_net_info_runtime
+        info_runtime = get_net_info_runtime(self.device, self.model, val_loader, sigma_list, print_info=True)
+        results['robustness'] = info_runtime['robustness'][0]
+        print(f"ROBUSTNESS: {results['robustness']}")
+
+        # Compute top-1 robustness score
+        alpha = self.args.alpha
+        alpha_norm = self.args.alpha_norm
+        results['top1_robust'] = np.round(alpha * top1_err + alpha_norm * (1 - alpha) * info_runtime['robustness'][0], 2)
+        print(f"Top-1 Robustness: {results['top1_robust']}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -108,7 +146,8 @@ if __name__ == "__main__":
 
     if args.quantization:
         print("Quantizing model")
-        model = quantize_layers(model)
+        model = quantize_layers(model) # Replace normal layers with quant layers but still FP-32
+
 
     logging.info("Training epochs: %s", args.epochs)
     logging.info(f"DATASET: {args.dataset}")
@@ -134,13 +173,25 @@ if __name__ == "__main__":
     scheduler = get_lr_scheduler(optimizer, 'cosine', epochs=epochs, lr_min=args.lr_min)
     
     if (os.path.exists(os.path.join(args.output_path,'ckpt.pth'))):
-        model, optimizer = load_checkpoint(model, optimizer, os.path.join(args.output_path,'ckpt.pth'))
+        model, optimizer = load_checkpoint(model, optimizer, device, os.path.join(args.output_path,'ckpt.pth'))
         logging.info("Loaded checkpoint")
         top1 = validate(val_loader, model, device, print_freq=100)/100
     else:
         logging.info("Start training...")
         top1, model, optimizer = train(train_loader, val_loader, epochs, model, device, optimizer, criterion, scheduler, log, ckpt_path=os.path.join(args.output_path,'ckpt.pth'))
         logging.info("Training finished")
+    
+    if args.quantization:
+        print("Quantization Aware Training")
+        model = update_quantization_bits(model, nbit_w=4, q_alpha_w=0.5625, nbit_a=8, q_alpha_a=1)
+        if (os.path.exists(os.path.join(args.output_path,'ckptq.pth'))):
+            model, optimizer = load_checkpoint(model, optimizer, device, os.path.join(args.output_path,'ckptq.pth'))
+            logging.info("Loaded checkpoint")
+            top1 = validate(val_loader, model, device, print_freq=100)/100
+        else:
+            logging.info("Start training...")
+            top1, model, optimizer = train(train_loader, val_loader, epochs, model, device, optimizer, criterion, scheduler, log, ckpt_path=os.path.join(args.output_path,'ckptq.pth'))
+            logging.info("Training finished")
 
     results={}
     logging.info(f"VAL ACCURACY: {np.round(top1*100,2)}")
@@ -148,33 +199,20 @@ if __name__ == "__main__":
     if args.eval_test:
         top1_test = validate(test_loader, model, device, print_freq=100)
         logging.info(f"TEST ACCURACY: {top1_test}")
-
-    if args.ood_eval:
-        
-        #results['mCE'] = compute_mCE_CIFARC(args.ood_data, model, device, res=args.res)
-        results['mCE2'] = compute_mCE(args.dataset, model, device, res=args.res, load_ood=args.load_ood)
     
     if args.drift:
-        results['top1_drift'] = validate_drift(test_loader, model, device)
+        results['top1_drift'] = 100 - validate_drift(test_loader, model, device)
         logging.info(f"TEST ACCURACY: {results['top1_drift']}")
 
-    input_shape = (3, res, res)
-    #Model cost
+    evaluator = RobustEvaluator(model, device, args)
+    if args.ood_eval:
+        evaluator.evaluate_ood(results)
     
     if args.optim == 'SAM' or args.eval_robust:
-        sigma_step = args.sigma_step
-        if args.sigma_max == args.sigma_min:
-            sigma_step = 1
-        n=round((args.sigma_max-args.sigma_min)/sigma_step)+1
-        sigma_list = [round(args.sigma_min + i * args.sigma_step, 2) for i in range(n)] 
+        evaluator.evaluate_robustness(results, val_loader, top1_err)
 
-        info_runtime = get_net_info_runtime(device, model, val_loader, sigma_list, print_info=True)
-        results['robustness'] = info_runtime['robustness'][0]
-        logging.info(f"ROBUSTNESS: {info_runtime['robustness'][0]}")
-        alpha = args.alpha
-        alpha_norm = args.alpha_norm
-        results['top1_robust'] = np.round(alpha * top1_err + alpha_norm * (1-alpha) * info_runtime['robustness'][0],2)
-
+    #Model cost
+    input_shape = (3, res, res)
     info = get_net_info(model, input_shape=input_shape, print_info=True)
 
     results['top1'] = np.round(top1_err,2)

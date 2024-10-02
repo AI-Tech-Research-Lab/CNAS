@@ -507,14 +507,12 @@ def get_net_info(net, input_shape=(3, 224, 224), print_info=False):
 
     return net_info
 
-def get_network_search(model, subnet_path, n_classes=10, supernet='supernets/ofa_mbv3_d234_e346_k357_w1.0', pretrained=True, func_constr=False):
+def get_network_search(model, subnet_path, n_classes=10, supernet='ofa_supernet_mbv3_10', pretrained=True, func_constr=False):
 
     config = json.load(open(subnet_path))
 
     if model!='nasbench':
-        ofa = OFAEvaluator(n_classes=n_classes,
-        model_path=supernet,
-        pretrained = pretrained)
+        ofa = OFAEvaluator(n_classes=n_classes, model_path=supernet, pretrained=pretrained)
         r=config.get("r",None)
         subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
     else:

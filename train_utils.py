@@ -222,94 +222,10 @@ def train(train_loader, val_loader, num_epochs, model, device, optimizer, criter
         if ckpt_path is not None:
             save_checkpoint(model, optimizer, ckpt_path)
         
-        top1=log.best_accuracy
+        top1=log.best_accuracy*100
         return top1, model, optimizer
 
-'''
-def train(train_loader, val_loader, num_epochs, model, device, criterion, optimizer, print_freq=10, ckpt='ckpt'):
 
-    batch_time = AverageMeter('Time', ':6.3f')
-    top1 = AverageMeter('Acc@1', ':6.2f')
-    progress = ProgressMeter(len(train_loader), [batch_time, top1], prefix='Train: ')
-    model = model.to(device)
-    for epoch in range(num_epochs):
-        # Training phase
-        model.train()
-        end = time.time()
-        for i, (images, labels) in enumerate(train_loader):
-            images, labels = images.to(device), labels.to(device)
-            optimizer.zero_grad()
-            outputs = model(images)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-
-            # Update training statistics
-            acc1 = accuracy(outputs, labels, topk=(1,))
-            top1.update(acc1[0].cpu().numpy()[0], images.size(0))
-
-            # measure elapsed time
-            batch_time.update(time.time() - end)
-            end = time.time()
-
-            if i % print_freq == 0:
-                progress.display(i)
-
-        # Validation phase
-        model.eval()
-        top1_val = validate(val_loader, model, device, print_freq)  # Reuse the validate function
-
-        # Print training and validation statistics
-        print(f'Train Epoch: {epoch + 1}, Train Accuracy: {top1.avg:.2f}%, Val Accuracy: {top1_val:.2f}%')
-
-    # Save the trained model weights
-    save_checkpoint(model, optimizer, ckpt)
-
-
-
-def train_mix(train_loader, val_loader, num_epochs, model, n_classes, device, criterion, optimizer, print_freq=10, ckpt='ckpt'):
-
-    batch_time = AverageMeter('Time', ':6.3f')
-    top1 = AverageMeter('Acc@1', ':6.2f')
-    progress = ProgressMeter(len(train_loader), [batch_time, top1], prefix='Train: ')
-    model = model.to(device)
-    cutmix = v2.CutMix(num_classes=n_classes)
-    mixup = v2.MixUp(num_classes=n_classes)
-    cutmix_or_mixup = v2.RandomChoice([cutmix, mixup])
-    for epoch in range(num_epochs):
-        # Training phase
-        model.train()
-        end = time.time()
-        for i, (images, labels) in enumerate(train_loader):
-            images, ori_labels = images.to(device), labels.to(device)
-            images, labels = cutmix_or_mixup(images, ori_labels)
-            optimizer.zero_grad()
-            outputs = model(images)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-
-            # Update training statistics
-            acc1 = accuracy(outputs, ori_labels, topk=(1,))
-            top1.update(acc1[0].cpu().numpy()[0], images.size(0))
-
-            # measure elapsed time
-            batch_time.update(time.time() - end)
-            end = time.time()
-
-            if i % print_freq == 0:
-                progress.display(i)
-
-        # Validation phase
-        model.eval()
-        top1_val = validate(val_loader, model, device, print_freq)  # Reuse the validate function
-
-        # Print training and validation statistics
-        print(f'Train Epoch: {epoch + 1}, Train Accuracy: {top1.avg:.2f}%, Val Accuracy: {top1_val:.2f}%')
-
-    # Save the trained model weights
-    save_checkpoint(model, optimizer, ckpt)
-'''
 
 def validate(val_loader, model, device=None, print_info=True, print_freq=0):
 
