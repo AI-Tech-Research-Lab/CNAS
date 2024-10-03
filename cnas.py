@@ -19,7 +19,7 @@ from pymoo.operators.mutation.pm import PolynomialMutation
 
 from utils import get_correlation, get_net_info, tiny_ml
 from NasSearchSpace.ofa.evaluator import OFAEvaluator
-from NasSearchSpace.ofa.search_space import OFASearchSpace
+from NasSearchSpace.ofa.search_space import getOFASearchSpace
 from NasSearchSpace.nasbench201.search_space import NASBench201SearchSpace
 from acc_predictor.factory import get_acc_predictor
 from utils import prepare_eval_folder, MySampling, BinaryCrossover, MyMutation
@@ -101,10 +101,10 @@ class CNAS:
         self.ee_epochs = kwargs.pop('ee_epochs', 0) # early exit epochs with support set
         self.slurm = kwargs.pop('slurm', False)  # use slurm for parallel evaluation
         self.quantization=kwargs.pop('quantization',False) #use quantization
+        self.drift=kwargs.pop('drift',False) #use drift during training
         
-
         if self.model != 'nasbench':
-            self.search_space = OFASearchSpace(self.model, self.lr, self.ur, self.rstep)
+            self.search_space = getOFASearchSpace(self.model, self.lr, self.ur, self.rstep)
         else:
             self.search_space = NASBench201SearchSpace(self.dataset, self.save_path)
 
@@ -350,7 +350,7 @@ class CNAS:
                 sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.lr, alpha_norm=self.alpha_norm, val_split=self.val_split,
                 method = self.method, support_set = self.support_set, tune_epsilon = self.tune_epsilon, 
                 w_alpha = self.w_alpha, w_beta = self.w_beta, w_gamma = self.w_gamma, 
-                warmup_ee_epochs = self.warmup_ee_epochs, ee_epochs = self.ee_epochs, quantization=self.quantization)
+                warmup_ee_epochs = self.warmup_ee_epochs, ee_epochs = self.ee_epochs, quantization=self.quantization, drift=self.drift, n_classes=self.n_classes)
             
             if self.slurm:
                 subprocess.call("sbatch {}/run_slurm.sh".format(gen_dir), shell=True)
@@ -746,7 +746,7 @@ if __name__ == '__main__':
     parser.add_argument('--search_space', type=str, default='mobilenetv3',
                         help='type of search space')
     parser.add_argument('--bench_eval', action='store_true', default=False,help='evaluate on NASBench201')
-    parser.add_argument('--pretrained', action='store_true', default=False,
+    parser.add_argument('--pretrained', action='store_true', default=True,
                         help='use pretrained weights')                    
     parser.add_argument('--n_workers', type=int, default=4,
                         help='number of workers for dataloader per evaluation job')
@@ -803,6 +803,7 @@ if __name__ == '__main__':
     parser.add_argument('--ee_epochs', type = int, default=0, help='early exit epochs with support set')
     parser.add_argument('--slurm', action='store_true', default=False, help='use slurm for parallel evaluation')
     parser.add_argument('--quantization', action='store_true', default=False, help='use weights and activations quantization')
+    parser.add_argument('--drift', action='store_true', default=False, help='use drift during training')
     cfgs = parser.parse_args()
     main(cfgs)
 

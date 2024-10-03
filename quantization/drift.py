@@ -1,5 +1,6 @@
 
 import copy
+import logging
 from scipy import io
 import numpy as np
 import torch
@@ -34,6 +35,7 @@ def validate_drift(test_loader, model, device):
     archive = matrix_weights_time() 
     accs = []
     for timestep in range(8):
+        logging.info(f"Validating with drift at timestep {timestep}")
         drift_values = archive[:, timestep] / 1e-5
         update_drift_in_model(model, drift_values)
         accs.append(validate(test_loader, model, device, print_freq=100))
@@ -103,5 +105,5 @@ def train_with_drift(train_loader, val_loader, num_epochs, model, device, optimi
         if ckpt_path is not None:
             save_checkpoint(model, optimizer, ckpt_path)
         
-        top1=log.best_accuracy
+        top1=log.best_accuracy*100
         return top1, model, optimizer

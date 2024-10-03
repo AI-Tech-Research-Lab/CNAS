@@ -214,6 +214,8 @@ def bash_command_template_single_exit(**kwargs):
     cfg['val_split'] = kwargs['val_split']
     cfg['n_workers'] = kwargs['n_workers']
     cfg['quantization'] = kwargs['quantization']
+    cfg['drift'] = kwargs['drift']
+    cfg['n_classes'] = kwargs['n_classes']
 
     execution_line = "python train.py".format(gpus)
     for k, v in cfg.items():
@@ -507,14 +509,15 @@ def get_net_info(net, input_shape=(3, 224, 224), print_info=False):
 
     return net_info
 
-def get_network_search(model, subnet_path, n_classes=10, supernet='ofa_supernet_mbv3_10', pretrained=True, func_constr=False):
+def get_network_search(model, subnet_path, n_classes=10, supernet='./NasSearchSpace/ofa/supernets/ofa_mbv3_d234_e346_k357_w1.0', pretrained=True, func_constr=False):
 
     config = json.load(open(subnet_path))
 
     if model!='nasbench':
         ofa = OFAEvaluator(n_classes=n_classes, model_path=supernet, pretrained=pretrained)
         r=config.get("r",None)
-        subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
+        #subnet, _ = ofa.sample({'ks': config['ks'], 'e': config['e'], 'd': config['d']})
+        subnet, _ = ofa.sample(config)
     else:
         print("NASBench201 model selected")
         bench=NASBench201SearchSpace()

@@ -1,5 +1,5 @@
 import argparse
-from quantization.drift import validate_drift
+from quantization.drift import train_with_drift, validate_drift
 import torch
 
 import sys
@@ -144,11 +144,6 @@ if __name__ == "__main__":
     if res is None:
         res = args.res
 
-    if args.quantization:
-        print("Quantizing model")
-        model = quantize_layers(model) # Replace normal layers with quant layers but still FP-32
-
-
     logging.info("Training epochs: %s", args.epochs)
     logging.info(f"DATASET: {args.dataset}")
     logging.info("Resolution: %s", res)
@@ -165,44 +160,56 @@ if __name__ == "__main__":
 
     model.to(device)
     epochs = args.epochs
+    results={}
 
     optimizer = get_optimizer(model.parameters(), args.optim, args.learning_rate, args.momentum, args.weight_decay, args.rho, args.adaptive, args.nesterov)
-
     criterion = get_loss('ce')
-    
     scheduler = get_lr_scheduler(optimizer, 'cosine', epochs=epochs, lr_min=args.lr_min)
     
     if (os.path.exists(os.path.join(args.output_path,'ckpt.pth'))):
         model, optimizer = load_checkpoint(model, optimizer, device, os.path.join(args.output_path,'ckpt.pth'))
         logging.info("Loaded checkpoint")
-        top1 = validate(val_loader, model, device, print_freq=100)/100
+        top1 = validate(val_loader, model, device, print_freq=100)
     else:
         logging.info("Start training...")
         top1, model, optimizer = train(train_loader, val_loader, epochs, model, device, optimizer, criterion, scheduler, log, ckpt_path=os.path.join(args.output_path,'ckpt.pth'))
         logging.info("Training finished")
+
+    logging.info(f"VAL ACCURACY: {np.round(top1,2)}")
+    top1_err = 100 - top1
     
     if args.quantization:
         print("Quantization Aware Training")
-        model = update_quantization_bits(model, nbit_w=4, q_alpha_w=0.5625, nbit_a=8, q_alpha_a=1)
+        log = Log(log_each=10)
+        model = quantize_layers(model, nbit_w=4, nbit_a=8, q_alpha_w=0.5625, q_alpha_a=1)
+        optimizer = get_optimizer(model.parameters(), args.optim, args.learning_rate, args.momentum, args.weight_decay, args.rho, args.adaptive, args.nesterov)
+        scheduler = get_lr_scheduler(optimizer, 'cosine', epochs=epochs, lr_min=args.lr_min)
+
         if (os.path.exists(os.path.join(args.output_path,'ckptq.pth'))):
             model, optimizer = load_checkpoint(model, optimizer, device, os.path.join(args.output_path,'ckptq.pth'))
             logging.info("Loaded checkpoint")
-            top1 = validate(val_loader, model, device, print_freq=100)/100
+            top1 = validate(val_loader, model, device, print_freq=100)
         else:
-            logging.info("Start training...")
-            top1, model, optimizer = train(train_loader, val_loader, epochs, model, device, optimizer, criterion, scheduler, log, ckpt_path=os.path.join(args.output_path,'ckptq.pth'))
+            if args.drift:
+                logging.info("Start training with drift...")
+                top1, model, optimizer = train_with_drift(train_loader, val_loader, epochs, model, device, optimizer, criterion, scheduler, log, ckpt_path=os.path.join(args.output_path,'ckptq.pth'))
+            else:
+                logging.info("Start training...")
+                top1, model, optimizer = train(train_loader, val_loader, epochs, model, device, optimizer, criterion, scheduler, log, ckpt_path=os.path.join(args.output_path,'ckptq.pth'))
             logging.info("Training finished")
+        
+        logging.info(f"VAL ACCURACY: {np.round(top1,2)}")
+        results['top1']=np.round(100-top1,2)
+        if args.drift:
+            avg_top1_drift, top1_drifts = validate_drift(val_loader, model, device)
+            avg_top1_drift = round(100-avg_top1_drift, 2)
+            top1_drifts = [round(100 - drift, 2) for drift in top1_drifts]
+            results['avg_top1_drift'] = avg_top1_drift
+            results['top1_drifts'] = top1_drifts
 
-    results={}
-    logging.info(f"VAL ACCURACY: {np.round(top1*100,2)}")
-    top1_err = (1 - top1) * 100
     if args.eval_test:
         top1_test = validate(test_loader, model, device, print_freq=100)
         logging.info(f"TEST ACCURACY: {top1_test}")
-    
-    if args.drift:
-        results['top1_drift'] = 100 - validate_drift(test_loader, model, device)
-        logging.info(f"TEST ACCURACY: {results['top1_drift']}")
 
     evaluator = RobustEvaluator(model, device, args)
     if args.ood_eval:
@@ -215,7 +222,7 @@ if __name__ == "__main__":
     input_shape = (3, res, res)
     info = get_net_info(model, input_shape=input_shape, print_info=True)
 
-    results['top1'] = np.round(top1_err,2)
+    results['top1'] = top1_err
     results['macs'] = info['macs']
     results['activations'] = info['activations']
     results['params'] = info['params']

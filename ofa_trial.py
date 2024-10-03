@@ -11,7 +11,7 @@ from train_utils import Log, get_data_loaders, get_loss, get_lr_scheduler, get_o
 dataset = 'cifar10'
 res = 160
 args = {'dataset': dataset, 'batch_size': 128, 'n_workers': 4, 'val_split': 0.1, 'eval_test': False, 'epochs': 5, 'seed': 12,
-        'optim': 'sam', 'learning_rate': 0.1, 'momentum': 0.9, 'weight_decay': 5e-5, 'rho': 2.0, 'adaptive': True, 'nesterov': False, 'lr_min': 0, 'output_path': 'results/prova-ofa'}
+        'optim': 'sgd', 'learning_rate': 0.1, 'momentum': 0.9, 'weight_decay': 5e-5, 'rho': 2.0, 'adaptive': True, 'nesterov': False, 'lr_min': 0, 'output_path': 'results/prova-ofa'}
 from types import SimpleNamespace
 
 # Convert dictionary to SimpleNamespace object
@@ -28,7 +28,9 @@ ofa = OFAEvaluator(n_classes=10,model_path='NasSearchSpace/ofa/supernets/ofa_sup
 with open(os.path.join(args.output_path,'net.subnet'), 'r') as f:
     config = json.load(f)
 '''
-model,config = ofa.sample()
+config={"d": [0, 2, 2, 0, 1], "e": [0.35, 0.35, 0.25, 0.2, 0.35, 0.25, 0.2, 0.25, 0.2, 0.35, 0.2, 0.2, 0.35, 0.35, 0.2, 0.25, 0.25, 0.2], "w": [2, 0, 1, 0, 2, 0]}
+model,_=ofa.sample(config)
+#model,config = ofa.sample()
 print(config)
 #model = ofa.sample(config)[0]
 # save config to json file
