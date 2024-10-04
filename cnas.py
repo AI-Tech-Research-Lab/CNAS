@@ -67,6 +67,7 @@ class CNAS:
         self.rstep = kwargs.pop('rstep',4) #resolution step
         self.seed = kwargs.pop('seed', 42)  # random seed
         self.optim = kwargs.pop('optim', "SGD") # training optimizer
+        self.slurm = kwargs.pop('slurm', False)  # use slurm for parallel evaluation
         # Trainer type 
         self.trainer_type = kwargs.pop('trainer_type', 'single-exit')
         # Technological constraints params
@@ -89,6 +90,8 @@ class CNAS:
             sigma_step = 1
         n=round((self.sigma_max-self.sigma_min)/sigma_step)+1
         self.alpha_norm = 1.0 # alpha factor for entropic training
+        self.eval_robust = kwargs.pop('eval_robust', False) # evaluate robustness
+
         # Early Exit params
         self.method = kwargs.pop('method', 'bernulli') # method for early exit training
         self.support_set = kwargs.pop('support_set', False) # use support set for early exit training
@@ -99,7 +102,8 @@ class CNAS:
         self.w_gamma = kwargs.pop('w_gamma', 1.0)
         self.warmup_ee_epochs = kwargs.pop('warmup_ee_epochs', 5) # warmup epochs for early exit
         self.ee_epochs = kwargs.pop('ee_epochs', 0) # early exit epochs with support set
-        self.slurm = kwargs.pop('slurm', False)  # use slurm for parallel evaluation
+
+        # Quantization, drift
         self.quantization=kwargs.pop('quantization',False) #use quantization
         self.drift=kwargs.pop('drift',False) #use drift during training
         
@@ -347,7 +351,7 @@ class CNAS:
                 mmax =self.mmax, amax = self.amax, wp=self.wp, wm=self.wm, wa=self.wa,
                 top1min=self.top1min, penalty = self.penalty, func_constr=self.func_constr, supernet_path=self.supernet_path, pretrained=self.pretrained, 
                 n_epochs = self.n_epochs, optim=self.optim, sigma_min=self.sigma_min,
-                sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.lr, alpha_norm=self.alpha_norm, val_split=self.val_split,
+                sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.lr, alpha_norm=self.alpha_norm, self.eval_robust, val_split=self.val_split,
                 method = self.method, support_set = self.support_set, tune_epsilon = self.tune_epsilon, 
                 w_alpha = self.w_alpha, w_beta = self.w_beta, w_gamma = self.w_gamma, 
                 warmup_ee_epochs = self.warmup_ee_epochs, ee_epochs = self.ee_epochs, quantization=self.quantization, drift=self.drift, n_classes=self.n_classes)
@@ -792,6 +796,7 @@ if __name__ == '__main__':
     parser.add_argument('--sigma_max', type = float, default=0.05, help='max noise perturbation intensity')
     parser.add_argument('--sigma_step', type = float, default=0, help='noise perturbation intensity step')
     parser.add_argument('--alpha', type = float, default=0.5, help='alpha parameter for entropic figure')
+    parser.add_argument('--eval_robust', action='store_true', default=False, help='evaluate robustness')
     parser.add_argument('--res', type = int, default=32, help='fixed resolution for entropic training')
     parser.add_argument('--w_alpha', type = float, default=1.0, help='weight for alpha factor')
     parser.add_argument('--method', type = str, default='bernulli', help='method for early exit training')

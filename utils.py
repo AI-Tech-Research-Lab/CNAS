@@ -201,6 +201,7 @@ def bash_command_template_single_exit(**kwargs):
     cfg['sigma_max'] = kwargs['sigma_max']
     cfg['sigma_step'] = kwargs['sigma_step']
     cfg['alpha'] = kwargs['alpha']
+    cfg['eval_robust'] = kwargs['eval_robust']  
     cfg['res'] = kwargs['res']
     cfg['func_constr'] = kwargs['func_constr']
     cfg ['pmax'] = kwargs['pmax']
