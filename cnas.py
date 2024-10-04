@@ -351,7 +351,7 @@ class CNAS:
                 mmax =self.mmax, amax = self.amax, wp=self.wp, wm=self.wm, wa=self.wa,
                 top1min=self.top1min, penalty = self.penalty, func_constr=self.func_constr, supernet_path=self.supernet_path, pretrained=self.pretrained, 
                 n_epochs = self.n_epochs, optim=self.optim, sigma_min=self.sigma_min,
-                sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.lr, alpha_norm=self.alpha_norm, self.eval_robust, val_split=self.val_split,
+                sigma_max=self.sigma_max, sigma_step=self.sigma_step, alpha=self.alpha, res=self.lr, alpha_norm=self.alpha_norm, eval_robust=self.eval_robust, val_split=self.val_split,
                 method = self.method, support_set = self.support_set, tune_epsilon = self.tune_epsilon, 
                 w_alpha = self.w_alpha, w_beta = self.w_beta, w_gamma = self.w_gamma, 
                 warmup_ee_epochs = self.warmup_ee_epochs, ee_epochs = self.ee_epochs, quantization=self.quantization, drift=self.drift, n_classes=self.n_classes)
