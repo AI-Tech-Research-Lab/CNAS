@@ -12,7 +12,7 @@ sys.path.append(os.getcwd())
  
 from train_utils import get_optimizer, get_loss, get_lr_scheduler, get_data_loaders, load_checkpoint, validate, initialize_seed, Log, train
 from utils import get_net_info, get_network_search, tiny_ml
-from quantization.quant_dorefa import quantize_layers, update_quantization_bits
+from quantization.quant_dorefa import quantize_layers, update_quantization_scheme
 
 class RobustEvaluator:
 
@@ -157,6 +157,9 @@ if __name__ == "__main__":
     print("Num val samples: ", len(val_loader.dataset))
 
     log = Log(log_each=10)
+    
+    if args.quantization:
+        model = quantize_layers(model) #just replace the layers with quantized ones but still FP32
 
     model.to(device)
     epochs = args.epochs
@@ -172,7 +175,8 @@ if __name__ == "__main__":
         top1 = validate(val_loader, model, device, print_freq=100)
     else:
         logging.info("Start training...")
-        top1, model, optimizer = train(train_loader, val_loader, epochs, model, device, optimizer, criterion, scheduler, log, ckpt_path=os.path.join(args.output_path,'ckpt.pth'))
+        ckpt_path = os.path.join(args.output_path,'ckpt.pth') if args.save_ckpt else None
+        top1, model, optimizer = train(train_loader, val_loader, epochs, model, device, optimizer, criterion, scheduler, log, ckpt_path=ckpt_path)
         logging.info("Training finished")
 
     logging.info(f"VAL ACCURACY: {np.round(top1,2)}")
@@ -181,7 +185,7 @@ if __name__ == "__main__":
     if args.quantization:
         print("Quantization Aware Training")
         log = Log(log_each=10)
-        model = quantize_layers(model, nbit_w=4, nbit_a=8, q_alpha_w=0.5625, q_alpha_a=1)
+        model = update_quantization_scheme(model, nbit_w=4, nbit_a=8, q_alpha_w=0.5625, q_alpha_a=1)
         optimizer = get_optimizer(model.parameters(), args.optim, args.learning_rate, args.momentum, args.weight_decay, args.rho, args.adaptive, args.nesterov)
         scheduler = get_lr_scheduler(optimizer, 'cosine', epochs=epochs, lr_min=args.lr_min)
 
@@ -190,12 +194,13 @@ if __name__ == "__main__":
             logging.info("Loaded checkpoint")
             top1 = validate(val_loader, model, device, print_freq=100)
         else:
+            ckpt_path = os.path.join(args.output_path,'ckptq.pth') if args.save_ckpt else None
             if args.drift:
                 logging.info("Start training with drift...")
-                top1, model, optimizer = train_with_drift(train_loader, val_loader, epochs, model, device, optimizer, criterion, scheduler, log, ckpt_path=os.path.join(args.output_path,'ckptq.pth'))
+                top1, model, optimizer = train_with_drift(train_loader, val_loader, epochs, model, device, optimizer, criterion, scheduler, log, ckpt_path=ckpt_path)
             else:
                 logging.info("Start training...")
-                top1, model, optimizer = train(train_loader, val_loader, epochs, model, device, optimizer, criterion, scheduler, log, ckpt_path=os.path.join(args.output_path,'ckptq.pth'))
+                top1, model, optimizer = train(train_loader, val_loader, epochs, model, device, optimizer, criterion, scheduler, log, ckpt_path=ckpt_path)
             logging.info("Training finished")
         
         logging.info(f"VAL ACCURACY: {np.round(top1,2)}")
@@ -215,7 +220,7 @@ if __name__ == "__main__":
     if args.ood_eval:
         evaluator.evaluate_ood(results)
     
-    if args.optim == 'SAM' or args.eval_robust:
+    if args.eval_robust: #args.optim == 'SAM' or 
         evaluator.evaluate_robustness(results, val_loader, top1_err)
 
     #Model cost
@@ -243,4 +248,3 @@ if __name__ == "__main__":
 
     with open(save_path, 'w') as handle:
         json.dump(results, handle)
-    

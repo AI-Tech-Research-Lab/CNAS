@@ -60,7 +60,7 @@ def quantize_layers(module, nbit_w=32, q_alpha_w=1, nbit_a=32, q_alpha_a=1):
     
     return module
 
-def update_quantization_bits(module, nbit_w=None, q_alpha_w=None, nbit_a=None, q_alpha_a=None):
+def update_quantization_scheme(module, nbit_w=None, q_alpha_w=None, nbit_a=None, q_alpha_a=None):
     """
     Recursively updates the nbit_w and nbit_a parameters of QuanConv and Linear_Q layers in the given module.
     
@@ -83,7 +83,7 @@ def update_quantization_bits(module, nbit_w=None, q_alpha_w=None, nbit_a=None, q
     for name, child in module.named_children():
         # Skip the 'downsample' layers if needed
         if name != 'downsample':  # No updates on skip connections
-            update_quantization_bits(child, nbit_w, q_alpha_w, nbit_a, q_alpha_a)
+            update_quantization_scheme(child, nbit_w, q_alpha_w, nbit_a, q_alpha_a)
 
     return module
 
