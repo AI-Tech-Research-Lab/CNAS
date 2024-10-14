@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 import math
@@ -56,7 +57,7 @@ def generate_cnn_model(lines, y, x, name):
     prev_block = lines[0][3]
     first_line = True
     prev_output_dimensions = ()
-    csv_data = [['K', 'C', 'Y', 'X', 'R', 'S', 'T']]
+    csv_data = [['K', 'C', 'Y', 'X', 'R', 'S', 'T', 'SX', 'SY', 'Precision']]  # Updated header
 
     for conv_line, is_first_conv, is_block, block_number in lines:
         if not is_block and not is_first_conv:
@@ -84,7 +85,6 @@ def generate_cnn_model(lines, y, x, name):
                 x_output = x
                 y_output = y
                 first_line = False
-
             else:
                 # Calculate X and Y using the provided formula
                 x_output = calculate_output_size(prev_output_dimensions[0], prev_output_dimensions[3],
@@ -95,8 +95,8 @@ def generate_cnn_model(lines, y, x, name):
             model_str += f"Layer {layer_name} {{\n"
             model_str += f"Type: {'DSCONV' if is_dsconv else 'CONV'}\n"
             model_str += f"Stride {{ X: {stride_x}, Y: {stride_y} }}\n"
-            model_str += (f"Dimensions {{ K: {out_channels}, C: {in_channels}, R: {kernel_y}, S: {kernel_x},"
-                          f" Y:{y_output}, X:{x_output} }}\n")
+            model_str += (f"Dimensions {{ K: {out_channels}, C: {in_channels}, R: {kernel_y}, S: {kernel_x}," 
+                           f" Y:{y_output}, X:{x_output} }}\n")
             model_str += "}\n\n"
 
             if is_block:
@@ -105,7 +105,7 @@ def generate_cnn_model(lines, y, x, name):
             prev_output_dimensions = (x_output, y_output, kernel_y, kernel_x, stride_y, stride_x, padding_y,
                                       padding_x)
             csv_data.append([out_channels, in_channels, y_output, x_output, kernel_y, kernel_x,
-                             2 if out_channels == 1 else 1])
+                             2 if out_channels == 1 else 1, stride_x, stride_y, 'INT4'])  # Added SX, SY, and Precision (now set to 4)
 
     model_str += "}\n"
 
@@ -136,10 +136,16 @@ if __name__ == "__main__":
     network_name = extract_network_name(file_path)
 
     if network_name and conv_lines:
+        output_path='../qgamma/data/model'
+        output_path2 = '../qmaestro/data/model'
+        # Create full paths for the output files
+        model_output_path = os.path.join(output_path2, f'{network_name}_model.m')
+        csv_output_path = os.path.join(output_path, f'{network_name}_model.csv')
+
         cnn_model_str, csv_data = generate_cnn_model(conv_lines, y_value, x_value, network_name)
 
-        save_cnn_model(f'{network_name}_model.m', cnn_model_str)
-        save_cnn_csv(f'{network_name}_model.csv', csv_data)
+        save_cnn_model(model_output_path, cnn_model_str)
+        save_cnn_csv(csv_output_path, csv_data)
 
         print(f"{network_name}_model.m and {network_name}_model.csv files generated successfully.")
     elif not network_name:

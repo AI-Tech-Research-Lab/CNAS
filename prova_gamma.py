@@ -1,17 +1,44 @@
 import json
 import os
-from ofa_evaluator import OFAEvaluator
+from NasSearchSpace.ofa.evaluator import OFAEvaluator
+import torch.nn as nn
+import torchvision
 import sys
 import subprocess
 
+'''
+def count_layers(module):
+    """
+    Recursively count the number of layers in a given module.
+    Skips downsample blocks and only counts the actual layers (e.g., Conv2d, Linear).
+    """
+    count = 0
+    # Iterate over all named submodules
+    for name, child in module.named_children():
+        print("name",name)
+        # Check if the current block is a downsample block, and skip it
+        if 'downsample' in name:
+            print(f"Skipping downsample block: {name}")
+            continue
+        # If the child is a container (e.g., Sequential or ModuleList), recurse into it
+        if isinstance(child, (nn.Sequential, nn.ModuleList)) or 'Bottle' in child.__class__.__name__:
+            print(f"Recursing into container: {name}")
+            count += count_layers(child)
+        # Otherwise, count the Conv2d and Linear layers
+        elif isinstance(child, (nn.Conv2d, nn.Linear)):
+            print(f"Counting layer: {name}")
+            count += 1
+            print(child)  # Optional: print to verify counted layers
+    return count
+'''
+
 config = 'net.subnet'
 n_classes = 10
-supernet = 'supernets/ofa_mbv3_d234_e346_k357_w1.0'
-pretrained = True
+supernet = 'NasSearchSpace/ofa/supernets/ofa_resnet50'
+pretrained = False
 net_config = json.load(open(config))
 evaluator = OFAEvaluator(n_classes=n_classes, model_path=supernet, pretrained=pretrained)
 subnet, _ = evaluator.sample(net_config)
-print(subnet)
 
 # Specify the file name where you want to save the architecture description
 architecture_file = 'model_architecture.txt'
@@ -67,7 +94,7 @@ else:
 
 # Specify the shell script path
 #shell_script_path = 'run_gamma.sh'
-shell_script_path = '../gamma/run_gamma.sh'
+shell_script_path = 'run_gamma.sh'
 
 # Construct the command to call the shell script
 shell_command = ['bash', shell_script_path]
