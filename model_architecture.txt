@@ -1,0 +1,570 @@
+ResNets(
+  (input_stem): ModuleList(
+    (0): ConvLayer(
+      (conv): Conv2d(3, 24, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+      (bn): BatchNorm2d(24, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (act): ReLU(inplace=True)
+    )
+    (1): ConvLayer(
+      (conv): Conv2d(24, 48, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn): BatchNorm2d(48, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (act): ReLU(inplace=True)
+    )
+  )
+  (max_pooling): MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
+  (blocks): ModuleList(
+    (0): ResNetBottleneckBlock(
+      (conv1): Sequential(
+        (conv): Conv2d(48, 32, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv2): Sequential(
+        (conv): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv3): Sequential(
+        (conv): Conv2d(32, 168, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(168, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (avg_pool): AvgPool2d(kernel_size=1, stride=1, padding=0)
+        (conv): Conv2d(48, 168, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(168, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (final_act): ReLU(inplace=True)
+    )
+    (1-2): 2 x ResNetBottleneckBlock(
+      (conv1): Sequential(
+        (conv): Conv2d(168, 40, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(40, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv2): Sequential(
+        (conv): Conv2d(40, 40, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(40, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv3): Sequential(
+        (conv): Conv2d(40, 168, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(168, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): IdentityLayer()
+      (final_act): ReLU(inplace=True)
+    )
+    (3): ResNetBottleneckBlock(
+      (conv1): Sequential(
+        (conv): Conv2d(168, 80, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(80, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv2): Sequential(
+        (conv): Conv2d(80, 80, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(80, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv3): Sequential(
+        (conv): Conv2d(80, 408, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(408, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (avg_pool): AvgPool2d(kernel_size=2, stride=2, padding=0)
+        (conv): Conv2d(168, 408, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(408, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (final_act): ReLU(inplace=True)
+    )
+    (4): ResNetBottleneckBlock(
+      (conv1): Sequential(
+        (conv): Conv2d(408, 104, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(104, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv2): Sequential(
+        (conv): Conv2d(104, 104, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(104, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv3): Sequential(
+        (conv): Conv2d(104, 408, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(408, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): IdentityLayer()
+      (final_act): ReLU(inplace=True)
+    )
+    (5): ResNetBottleneckBlock(
+      (conv1): Sequential(
+        (conv): Conv2d(408, 80, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(80, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv2): Sequential(
+        (conv): Conv2d(80, 80, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(80, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv3): Sequential(
+        (conv): Conv2d(80, 408, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(408, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): IdentityLayer()
+      (final_act): ReLU(inplace=True)
+    )
+    (6): ResNetBottleneckBlock(
+      (conv1): Sequential(
+        (conv): Conv2d(408, 208, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(208, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv2): Sequential(
+        (conv): Conv2d(208, 208, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(208, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv3): Sequential(
+        (conv): Conv2d(208, 816, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(816, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (avg_pool): AvgPool2d(kernel_size=2, stride=2, padding=0)
+        (conv): Conv2d(408, 816, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(816, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (final_act): ReLU(inplace=True)
+    )
+    (7): ResNetBottleneckBlock(
+      (conv1): Sequential(
+        (conv): Conv2d(816, 208, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(208, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv2): Sequential(
+        (conv): Conv2d(208, 208, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(208, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv3): Sequential(
+        (conv): Conv2d(208, 816, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(816, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): IdentityLayer()
+      (final_act): ReLU(inplace=True)
+    )
+    (8): ResNetBottleneckBlock(
+      (conv1): Sequential(
+        (conv): Conv2d(816, 160, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv2): Sequential(
+        (conv): Conv2d(160, 160, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv3): Sequential(
+        (conv): Conv2d(160, 816, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(816, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): IdentityLayer()
+      (final_act): ReLU(inplace=True)
+    )
+    (9-10): 2 x ResNetBottleneckBlock(
+      (conv1): Sequential(
+        (conv): Conv2d(816, 208, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(208, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv2): Sequential(
+        (conv): Conv2d(208, 208, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(208, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv3): Sequential(
+        (conv): Conv2d(208, 816, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(816, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): IdentityLayer()
+      (final_act): ReLU(inplace=True)
+    )
+    (11): ResNetBottleneckBlock(
+      (conv1): Sequential(
+        (conv): Conv2d(816, 408, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(408, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv2): Sequential(
+        (conv): Conv2d(408, 408, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(408, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv3): Sequential(
+        (conv): Conv2d(408, 1640, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(1640, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (avg_pool): AvgPool2d(kernel_size=2, stride=2, padding=0)
+        (conv): Conv2d(816, 1640, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(1640, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (final_act): ReLU(inplace=True)
+    )
+    (12): ResNetBottleneckBlock(
+      (conv1): Sequential(
+        (conv): Conv2d(1640, 408, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(408, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv2): Sequential(
+        (conv): Conv2d(408, 408, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(408, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (conv3): Sequential(
+        (conv): Conv2d(408, 1640, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(1640, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): IdentityLayer()
+      (final_act): ReLU(inplace=True)
+    )
+  )
+  (global_avg_pool): MyGlobalAvgPool2d(keep_dim=False)
+  (classifier): LinearLayer(
+    (linear): Linear(in_features=1640, out_features=10, bias=True)
+  )
+)
+name input_stem
+Recursing into container: input_stem
+name 0
+name 1
+name max_pooling
+name blocks
+Recursing into container: blocks
+name 0
+Recursing into container: 0
+name conv1
+Recursing into container: conv1
+name conv
+Counting layer: conv
+Conv2d(48, 32, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name act
+name conv2
+Recursing into container: conv2
+name conv
+Counting layer: conv
+Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+name bn
+name act
+name conv3
+Recursing into container: conv3
+name conv
+Counting layer: conv
+Conv2d(32, 168, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name downsample
+Skipping downsample block: downsample
+name final_act
+name 1
+Recursing into container: 1
+name conv1
+Recursing into container: conv1
+name conv
+Counting layer: conv
+Conv2d(168, 40, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name act
+name conv2
+Recursing into container: conv2
+name conv
+Counting layer: conv
+Conv2d(40, 40, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+name bn
+name act
+name conv3
+Recursing into container: conv3
+name conv
+Counting layer: conv
+Conv2d(40, 168, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name downsample
+Skipping downsample block: downsample
+name final_act
+name 2
+Recursing into container: 2
+name conv1
+Recursing into container: conv1
+name conv
+Counting layer: conv
+Conv2d(168, 40, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name act
+name conv2
+Recursing into container: conv2
+name conv
+Counting layer: conv
+Conv2d(40, 40, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+name bn
+name act
+name conv3
+Recursing into container: conv3
+name conv
+Counting layer: conv
+Conv2d(40, 168, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name downsample
+Skipping downsample block: downsample
+name final_act
+name 3
+Recursing into container: 3
+name conv1
+Recursing into container: conv1
+name conv
+Counting layer: conv
+Conv2d(168, 80, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name act
+name conv2
+Recursing into container: conv2
+name conv
+Counting layer: conv
+Conv2d(80, 80, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+name bn
+name act
+name conv3
+Recursing into container: conv3
+name conv
+Counting layer: conv
+Conv2d(80, 408, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name downsample
+Skipping downsample block: downsample
+name final_act
+name 4
+Recursing into container: 4
+name conv1
+Recursing into container: conv1
+name conv
+Counting layer: conv
+Conv2d(408, 104, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name act
+name conv2
+Recursing into container: conv2
+name conv
+Counting layer: conv
+Conv2d(104, 104, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+name bn
+name act
+name conv3
+Recursing into container: conv3
+name conv
+Counting layer: conv
+Conv2d(104, 408, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name downsample
+Skipping downsample block: downsample
+name final_act
+name 5
+Recursing into container: 5
+name conv1
+Recursing into container: conv1
+name conv
+Counting layer: conv
+Conv2d(408, 80, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name act
+name conv2
+Recursing into container: conv2
+name conv
+Counting layer: conv
+Conv2d(80, 80, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+name bn
+name act
+name conv3
+Recursing into container: conv3
+name conv
+Counting layer: conv
+Conv2d(80, 408, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name downsample
+Skipping downsample block: downsample
+name final_act
+name 6
+Recursing into container: 6
+name conv1
+Recursing into container: conv1
+name conv
+Counting layer: conv
+Conv2d(408, 208, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name act
+name conv2
+Recursing into container: conv2
+name conv
+Counting layer: conv
+Conv2d(208, 208, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+name bn
+name act
+name conv3
+Recursing into container: conv3
+name conv
+Counting layer: conv
+Conv2d(208, 816, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name downsample
+Skipping downsample block: downsample
+name final_act
+name 7
+Recursing into container: 7
+name conv1
+Recursing into container: conv1
+name conv
+Counting layer: conv
+Conv2d(816, 208, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name act
+name conv2
+Recursing into container: conv2
+name conv
+Counting layer: conv
+Conv2d(208, 208, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+name bn
+name act
+name conv3
+Recursing into container: conv3
+name conv
+Counting layer: conv
+Conv2d(208, 816, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name downsample
+Skipping downsample block: downsample
+name final_act
+name 8
+Recursing into container: 8
+name conv1
+Recursing into container: conv1
+name conv
+Counting layer: conv
+Conv2d(816, 160, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name act
+name conv2
+Recursing into container: conv2
+name conv
+Counting layer: conv
+Conv2d(160, 160, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+name bn
+name act
+name conv3
+Recursing into container: conv3
+name conv
+Counting layer: conv
+Conv2d(160, 816, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name downsample
+Skipping downsample block: downsample
+name final_act
+name 9
+Recursing into container: 9
+name conv1
+Recursing into container: conv1
+name conv
+Counting layer: conv
+Conv2d(816, 208, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name act
+name conv2
+Recursing into container: conv2
+name conv
+Counting layer: conv
+Conv2d(208, 208, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+name bn
+name act
+name conv3
+Recursing into container: conv3
+name conv
+Counting layer: conv
+Conv2d(208, 816, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name downsample
+Skipping downsample block: downsample
+name final_act
+name 10
+Recursing into container: 10
+name conv1
+Recursing into container: conv1
+name conv
+Counting layer: conv
+Conv2d(816, 208, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name act
+name conv2
+Recursing into container: conv2
+name conv
+Counting layer: conv
+Conv2d(208, 208, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+name bn
+name act
+name conv3
+Recursing into container: conv3
+name conv
+Counting layer: conv
+Conv2d(208, 816, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name downsample
+Skipping downsample block: downsample
+name final_act
+name 11
+Recursing into container: 11
+name conv1
+Recursing into container: conv1
+name conv
+Counting layer: conv
+Conv2d(816, 408, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name act
+name conv2
+Recursing into container: conv2
+name conv
+Counting layer: conv
+Conv2d(408, 408, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+name bn
+name act
+name conv3
+Recursing into container: conv3
+name conv
+Counting layer: conv
+Conv2d(408, 1640, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name downsample
+Skipping downsample block: downsample
+name final_act
+name 12
+Recursing into container: 12
+name conv1
+Recursing into container: conv1
+name conv
+Counting layer: conv
+Conv2d(1640, 408, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name act
+name conv2
+Recursing into container: conv2
+name conv
+Counting layer: conv
+Conv2d(408, 408, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+name bn
+name act
+name conv3
+Recursing into container: conv3
+name conv
+Counting layer: conv
+Conv2d(408, 1640, kernel_size=(1, 1), stride=(1, 1), bias=False)
+name bn
+name downsample
+Skipping downsample block: downsample
+name final_act
+name global_avg_pool
+name classifier
+Number of layers: 39
