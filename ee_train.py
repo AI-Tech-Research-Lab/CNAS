@@ -210,8 +210,15 @@ if __name__ == "__main__":
     else:
         backbone, classifiers, epsilon = get_ee_efficientnet(model=backbone, img_size=res, n_classes=n_classes, get_binaries=get_binaries)
 
-    # MODEL COST PROFILING
+    #------------------------------
+    # Added to create the onnx file of subnet found
+    # backbone = model
+    torch_input = torch.randn(1, 3, res, res).to(device) # device = cuda:{}. It has to run on GPU & 4D
+    torch.onnx.export(backbone, torch_input, 'multi_exits_cifar10.onnx', opset_version=11)  # create onnx file
+    print("onnx created!!!")
+    #------------------------------
 
+    # MODEL COST PROFILING
     input_size = (3, res, res)
     
     net = copy.deepcopy(backbone)
