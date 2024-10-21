@@ -100,8 +100,7 @@ Once the search is completed, you can choose suitable architectures by:
 Syntax: python post_search.py \
     --save search-cifar10/final \ # path to the dir to store the selected architectures
     --expr search-cifar10/iter_30.stats \ # path to last iteration stats file in experiment dir
-    -n 3 \ # number of desired architectures you want, the most accurate archecture will always be selected 
-    --supernet_path /path/to/OFA/supernet/weights \
+    -n 3 \ # number of desired architectures you want, the most accurate architecture will always be selected 
     --prefer params \ # your preferences, i.e. you want an architecture with the lowest sec_obj value (e.g., 'params') or alternatively with the best trade-off ('trade-off')
     --n_exits \ # optional, used to filter the results by the number of exits of the network
     --save_stats_csv \ # flag to be set whether to save post search results 
