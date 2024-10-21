@@ -1,6 +1,7 @@
 # Search a ResNet50 on CIFAR-10 optimizing the average top1 accuracy in presence of drift (single obj)
 
-python cnas.py --first_obj avg_top1_drift --n_gpus 1 --gpu 1 --n_workers 4 \
+python cnas.py --resume results/resnet_quant_search/iter_0 \
+              --first_obj avg_top1_drift --n_gpus 1 --gpu 1 --n_workers 4 \
               --data ../datasets/cifar10 --dataset cifar10 --n_classes 10 \
               --first_predictor as --optim SAM \
               --supernet_path NasSearchSpace/ofa/supernets/ofa_supernet_resnet50 \

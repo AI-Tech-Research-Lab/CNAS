@@ -172,7 +172,6 @@ class CNAS:
             # Algo 1 line 13-14 / Fig. 3(e) in the paper
             stats = self._evaluate(candidates, it=it)
             c_first_err = [t[0] for t in stats]
-            complexity = [t[1] for t in stats]
 
             if self.first_predictor is not None:
             # check for accuracy predictor's performance
@@ -180,6 +179,7 @@ class CNAS:
                     np.vstack((a_first_err_pred, c_first_err_pred)), np.array([x[1] for x in archive] + c_first_err))
 
             if self.sec_predictor is not None:
+                complexity = [t[1] for t in stats]
                 # check for complexity predictor's performance
                 rmse_c, rho_c, tau_c = get_correlation(
                     np.vstack((a_sec_err_pred, c_sec_err_pred)), np.array([x[2] for x in archive] + complexity))   
