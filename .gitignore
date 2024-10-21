@@ -142,7 +142,6 @@ data/
 EarlyExits/
 NasSearchSpace/
 Robustness/
-quantization/
 
 # exp folders
 results/

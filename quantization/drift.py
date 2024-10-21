@@ -33,8 +33,9 @@ def update_drift_in_model(model, drift_values):
 
 def validate_drift(test_loader, model, device):
     archive = matrix_weights_time() 
+    np.delete(archive, 1, axis=1) # remove the second column
     accs = []
-    for timestep in range(8):
+    for timestep in range(7):
         logging.info(f"Validating with drift at timestep {timestep}")
         drift_values = archive[:, timestep] / 1e-5
         update_drift_in_model(model, drift_values)
@@ -46,7 +47,7 @@ def train_with_drift(train_loader, val_loader, num_epochs, model, device, optimi
         model.to(device)
         best_model = copy.deepcopy({'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}) #initialize best model with the first model
         archive=matrix_weights_time()
-
+        np.delete(archive, 1, axis=1) # remove the second column
         for epoch in range(num_epochs):
             model.train()
             log.train(model, optimizer, len_dataset=len(train_loader))

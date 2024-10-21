@@ -16,6 +16,8 @@ from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.operators.crossover.pntx import TwoPointCrossover
 from pymoo.operators.mutation.pm import PolynomialMutation
+from pymoo.operators.sampling.lhs import LHS
+from pymoo.algorithms.soo.nonconvex.de import DE
 
 from utils import get_correlation, get_net_info, tiny_ml
 from NasSearchSpace.ofa.evaluator import OFAEvaluator
@@ -416,13 +418,23 @@ class CNAS:
         top_K_subnets = np.array([self.search_space.encode(x[0]) for x in archive[:K]])
 
         problem = AuxiliarySingleObjProblem(self.search_space, acc_predictor)  #optimize only accuracy (1st obj)
-
+        
+        '''
         method = GA(
                 pop_size=40,
                 sampling=top_K_subnets,  
                 crossover=TwoPointCrossover(prob=0.9),#get_crossover("int_two_point", prob=0.9),
                 mutation=PolynomialMutation(eta=1.0),#get_mutation("int_pm", eta=1.0),
                 eliminate_duplicates=True) 
+        '''
+        method = DE(
+            pop_size=40,
+            sampling=LHS(),
+            variant="DE/rand/1/bin",
+            CR=0.9,
+            dither="vector",
+            jitter=False
+        )
 
         # kick-off the search
         res = minimize(
