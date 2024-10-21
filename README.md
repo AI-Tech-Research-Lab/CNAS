@@ -103,7 +103,9 @@ Syntax: python post_search.py \
     -n 3 \ # number of desired architectures you want, the most accurate architecture will always be selected 
     --prefer params \ # your preferences, i.e. you want an architecture with the lowest sec_obj value (e.g., 'params') or alternatively with the best trade-off ('trade-off')
     --n_exits \ # optional, used to filter the results by the number of exits of the network
-    --save_stats_csv \ # flag to be set whether to save post search results 
+    --save_stats_csv \ # flag to be set whether to save post search results
+    --first_obj top1 \ # specifies first objective
+    --sec_obj params # specifies second objective (optional)
 """
 ```
 - If you do not have preferences, pass `trade-off` to argument `--prefer`, architectures will then be selected based on trade-offs. 
