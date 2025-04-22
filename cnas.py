@@ -119,6 +119,9 @@ class CNAS:
         use_cuda = torch.cuda.is_available() and self.gpu_list
         initialize_seed(self.seed, use_cuda)
         it_start = 1
+        nas_patience=10
+        nas_patience_counter=0
+
         if self.resume:
             archive = self._resume_from_dir()
             split = self.resume.rsplit("_",1)
@@ -232,6 +235,34 @@ class CNAS:
             
             #with open(os.path.join(self.save_path, "iter_{}.stats".format(it)), "w") as handle:
                 #json.dump({'archive': archive, 'candidates': archive[-self.n_iter:]}, handle)
+
+            if self.sec_obj is not None:
+                # Load the hypervolume from the previous iteration
+                hv_old = json.load(open(os.path.join(self.save_path, "iter_{}.stats".format(it-1))))['hv']
+                if hv > hv_old:
+                    nas_patience_counter = 0
+                else:
+                    nas_patience_counter += 1
+            else:
+                # n_candidates is the number of new solutions added to the archive
+                if n_candidates == 0:  # No new solutions added
+                    best_err = 10**10  # Set a high error when no candidates are added
+                else:
+                    # Get the minimum error from the new candidates in the archive
+                    best_err = min(x[1] for x in archive[-n_candidates:])
+                
+                # Get the minimum error from the previous solutions in the archive
+                best_err_old = min(x[1] for x in archive[:-n_candidates])
+                
+                if best_err >= best_err_old:
+                    nas_patience_counter += 1
+                else:
+                    nas_patience_counter = 0
+
+            # Check if the patience counter has reached the limit
+            if nas_patience_counter >= nas_patience:
+                print("Early stopping criterion met")
+                break
 
             if _DEBUG:
                 # plot
