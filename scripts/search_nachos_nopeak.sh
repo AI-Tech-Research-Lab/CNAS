@@ -3,13 +3,14 @@
 # No peak regularization: no --support_set and w_gamma=0
 
 dataset=cifar10 val_split=0.1
+seed=1
 
 python cnas.py --sec_obj avg_macs \
               --n_gpus 1 --gpu 1 --n_workers 4  --seed 1 \
               --data datasets/$dataset --dataset $dataset \
               --first_predictor as --sec_predictor as \
               --supernet_path NasSearchSpace/ofa/supernets/ofa_mbv3_d234_e346_k357_w1.0 --pretrained  \
-              --save results/nachos_${dataset}_nopeak_seed1 --iterations 10 \
+              --save results/nachos_${dataset}_nopeak_seed${seed} --iterations 10 \
               --search_space cbnmobilenetv3 --trainer_type multi_exits \
               --method bernulli --tune_epsilon\
               --val_split $val_split \
