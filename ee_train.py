@@ -201,7 +201,7 @@ if __name__ == "__main__":
         logging.info(f"TEST ACCURACY BACKBONE: {top1_test}")
     
     results={}
-    results['backbone_top1'] = float(np.round(100-top1,2))
+    results['backbone_top1'] = float(np.round((1-top1)*100,2))
 
     #Create the EENN on top of the trained backbone
 
@@ -620,31 +620,6 @@ if __name__ == "__main__":
     #log.info('Branches scores on exiting samples: {}'.format(best_scores))
     #log.info('Exit ratios: {}'.format(weights))
     #log.info('Average MACS: {:.2f}'.format(avg_macs))
-
-    def print_dict_types(d, prefix=''):
-        if isinstance(d, dict):
-            for k, v in d.items():
-                new_prefix = f"{prefix}.{k}" if prefix else str(k)
-                print_dict_types(v, new_prefix)
-        elif isinstance(d, list):
-            for i, item in enumerate(d):
-                new_prefix = f"{prefix}[{i}]"
-                print_dict_types(item, new_prefix)
-        else:
-            print(f"{prefix}: {type(d)}")
-
-    # Example usage
-    #print_dict_types(results)
-    
-    def convert_to_builtin_types(obj):
-        if isinstance(obj, dict):
-            return {k: convert_to_builtin_types(v) for k, v in obj.items()}
-        elif isinstance(obj, list):
-            return [convert_to_builtin_types(i) for i in obj]
-        elif isinstance(obj, np.generic):
-            return obj.item()
-        else:
-            return obj
     
     with open(save_path, 'w') as handle:
             json.dump(results, handle)
