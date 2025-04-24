@@ -10,5 +10,5 @@ python cnas.py --sec_obj avg_macs \
               --save results/search_edanas_$dataset --iterations 30 \
               --search_space eemobilenetv3 --trainer_type multi_exits \
               --method joint --val_split $val_split \
-              --n_epochs 0  --ee_epochs 5 \
+              --n_epochs 0  --ee_epochs 1 \
               --lr 32 --ur 32 --rstep 4
