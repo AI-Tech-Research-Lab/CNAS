@@ -194,14 +194,14 @@ if __name__ == "__main__":
             logging.info("Training finished")
     
     if args.backbone_epochs == 0:
-        top1 = validate(val_loader, backbone, device, print_freq=100)/100
+        top1 = validate(val_loader, backbone, device, print_freq=100)
     logging.info(f"VAL ACCURACY BACKBONE: {np.round(top1*100,2)}")
     if args.eval_test:
         top1_test = validate(test_loader, backbone, device, print_freq=100)
         logging.info(f"TEST ACCURACY BACKBONE: {top1_test}")
     
     results={}
-    results['backbone_top1'] = float(np.round((1-top1)*100,2))
+    results['backbone_top1'] = float(np.round((100-top1,2))
 
     #Create the EENN on top of the trained backbone
 
