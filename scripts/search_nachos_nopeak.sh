@@ -5,7 +5,7 @@
 dataset=cifar10 val_split=0.1
 seed=1
 
-python cnas.py --sec_obj avg_macs \
+python cnas.py --sec_obj avg_macs --resume results/nachos_${dataset}_nopeak_seed${seed}/iter_0 \
               --n_gpus 1 --gpu 1 --n_workers 4  --seed 1 \
               --data datasets/$dataset --dataset $dataset \
               --first_predictor as --sec_predictor as \

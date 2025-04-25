@@ -201,7 +201,7 @@ if __name__ == "__main__":
         logging.info(f"TEST ACCURACY BACKBONE: {top1_test}")
     
     results={}
-    results['backbone_top1'] = float(np.round((100-top1,2))
+    results['backbone_top1'] = float(np.round(100-top1,2))
 
     #Create the EENN on top of the trained backbone
 
