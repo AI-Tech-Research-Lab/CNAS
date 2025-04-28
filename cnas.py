@@ -238,7 +238,12 @@ class CNAS:
 
             if self.sec_obj is not None:
                 # Load the hypervolume from the previous iteration
-                hv_old = json.load(open(os.path.join(self.save_path, "iter_{}.stats".format(it-1))))['hv']
+                stats_file = os.path.join(self.save_path, "iter_{}.stats".format(it-1))
+                if os.path.exists(stats_file):
+                    with open(stats_file, 'r') as f:
+                        hv_old = json.load(f)['hv']
+                else:
+                    hv_old = 0
                 if hv > hv_old:
                     nas_patience_counter = 0
                 else:
