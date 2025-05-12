@@ -203,8 +203,6 @@ if __name__ == "__main__":
     results={}
     results['backbone_top1'] = float(np.round(100-top1,2))
 
-    #Create the EENN on top of the trained backbone
-
     if 'mobilenetv3' in args.model:
         backbone, classifiers, epsilon = get_eenn(subnet=backbone, subnet_path=args.model_path, res=res, n_classes=n_classes, get_binaries=get_binaries)
     else:
@@ -249,14 +247,13 @@ if __name__ == "__main__":
         print("Single branch model")
         results['exits_ratio']=[1.0]
         results['avg_macs']=b_macs[-1]+c_macs[-1]
-        results['top1']=np.round(100-top1*100,2)
+        results['top1']=float(np.round(100-top1,2))
         results['branch_scores']={'global':top1}
         results['params']=b_params[-1]+sum(c_params)
         results['macs']=b_macs[-1]+c_macs[-1]
         with open(save_path, 'w') as handle:
             json.dump(results, handle)
         sys.exit()
-
 
     # GLOBAL GATE to switch on/off the EECs (not used)
     '''
@@ -625,4 +622,3 @@ if __name__ == "__main__":
             json.dump(results, handle)
 
     #log.info('#' * 100)
-    
