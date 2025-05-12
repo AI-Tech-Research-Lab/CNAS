@@ -100,11 +100,9 @@ def main(args):
         sort_idx = np.argsort(first_obj)
         F = np.column_stack((first_obj, sec_obj))[sort_idx, :]
         F = F[(F[:, 0] >= 0) & (F[:, 1] >= 0)] #remove negative values
-        print("F:", F)
         front = NonDominatedSorting().do(F, only_non_dominated_front=True)
         ps = np.array(subnets)[sort_idx][front]
         pf = F[front, :]
-        print("PARETO:", pf)
         # choose the architectures with highest trade-off
         dm = HighTradeoffPoints(n_survive=args.n)
         I = dm.do(pf)
