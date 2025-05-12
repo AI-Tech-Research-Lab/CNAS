@@ -12,6 +12,6 @@ python cnas.py --sec_obj avg_macs \
               --supernet_path NasSearchSpace/ofa/supernets/ofa_mbv3_d234_e346_k357_w1.0 --pretrained  \
               --save results/search_edanas_dataset${dataset}_seed$seed --iterations 30 \
               --search_space eemobilenetv3 --trainer_type multi_exits \
-              --method joint --joint_type losses --val_split $val_split \
+              --method joint --val_split $val_split \
               --n_epochs 0  --ee_epochs 5 \
               --lr $img_size --ur $img_size --rstep 4

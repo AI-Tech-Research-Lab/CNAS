@@ -2,7 +2,7 @@
 
 # w_beta = 0.0 and no --mmax and --top1min
 
-datasets="cifar10 cinic10 svhn imagenette"
+datasets="cinic10 imagenette"
 seeds="1 2 3 4"
 val_split=0.1
 

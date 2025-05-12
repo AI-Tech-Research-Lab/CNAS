@@ -3,7 +3,7 @@
 
 #!/bin/sh
 
-datasets="cifar10 cinic10 svhn imagenette"
+datasets="cinic10 svhn imagenette"
 seeds="1 2 3 4"
 val_split=0.1
 
@@ -22,7 +22,6 @@ for dataset in $datasets; do
     fi
 
     python cnas.py --sec_obj avg_macs \
-                   --resume results/nachos_${dataset}_constraints_seed${seed}/iter_0 \
                    --n_gpus 1 --gpu 1 --n_workers 4 --seed $seed \
                    --data datasets/$dataset --dataset $dataset \
                    --first_predictor as --sec_predictor as \
