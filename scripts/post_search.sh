@@ -5,7 +5,7 @@
 first_obj=top1
 sec_obj=avg_macs
 iter=10
-folder=results/nachos_cifar10_noconstraints_seed2
+folder=results/edanas/search_edanas_datasetcinic10_seed1
 
 python post_search.py \
   --get_archive --n 10 \
