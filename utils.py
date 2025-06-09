@@ -226,7 +226,7 @@ def bash_command_template_single_exit(**kwargs):
                     execution_line += " --{}".format(k)
             else:
                 execution_line += " --{} {}".format(k, v)
-    execution_line += ' &'
+    #execution_line += ' &'
     return execution_line
 
 def get_template_by_type(gpus, subnet, save, type, **kwargs):

@@ -4,7 +4,7 @@
 optim=SAM; n_epochs=1; first_obj=top1_robust #optim=SGD
 gpu=0
 #
-dataset=cifar10
+dataset=cifar10 n_classes=10
 
 sec_obj=tiny_ml
 pmax=5.0
@@ -21,7 +21,7 @@ ur=224 #max resolution
 rstep=4 #resolution step
 
 python cnas.py --n_gpus 1 --gpu 1 --gpu_list $gpu --n_workers 4 \
-        --data datasets/$dataset --dataset $dataset \
+        --data datasets/$dataset --dataset $dataset --n_classes $n_classes \
         --supernet_path NasSearchSpace/ofa/supernets/ofa_mbv3_d234_e346_k357_w1.0 \
         --pretrained --search_space mobilenetv3 --trainer_type single_exit \
         --alpha $alpha --lr $lr --ur $ur --rstep $rstep --optim $optim --eval_robust \

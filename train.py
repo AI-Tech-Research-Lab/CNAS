@@ -109,6 +109,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    #save args in a txt file in the output path
+    with open(os.path.join(args.output_path, 'args.txt'), 'w') as f:
+        for arg in vars(args):
+            f.write(f"{arg}: {getattr(args, arg)}\n")
+
     log_format = '%(asctime)s %(message)s'
     logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                         format=log_format, datefmt='%m/%d %I:%M:%S %p')
