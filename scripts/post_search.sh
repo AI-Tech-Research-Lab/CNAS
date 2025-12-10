@@ -5,10 +5,10 @@
 first_obj=top1
 sec_obj=avg_macs
 iter=10
-folder=results/edanas/search_edanas_datasetcinic10_seed1
+folder=results/search_benchmark_macs
 
 python post_search.py \
   --get_archive --n 10 \
   --save $folder/final \
   --expr $folder/iter_$iter.stats \
-  --first_obj $first_obj --sec_obj $sec_obj 
+  --first_obj $first_obj --sec_obj $sec_obj --sec_obj_max 7 \

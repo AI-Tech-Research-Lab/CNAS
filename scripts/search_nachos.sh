@@ -3,8 +3,8 @@
 
 #!/bin/sh
 
-datasets="cinic10 svhn imagenette"
-seeds="1 2 3 4"
+datasets="cifar10"
+seeds="1"
 val_split=0.1
 
 for dataset in $datasets; do
@@ -17,8 +17,8 @@ for dataset in $datasets; do
 
     # Special case for imagenette
     if [ "$dataset" = "imagenette" ]; then
-      lr=160
-      ur=160
+      lr=100
+      ur=100
     fi
 
     python cnas.py --sec_obj avg_macs \
@@ -32,7 +32,7 @@ for dataset in $datasets; do
                    --val_split $val_split \
                    --n_epochs 10 --warmup_ee_epochs 5 --ee_epochs 5 \
                    --w_alpha 1.0 --w_beta 1.0 --w_gamma 1.0 \
-                   --mmax 2.7 --top1min 0.65 \
+                   --mmax 5 --top1min 0.65 \
                    --lr $lr --ur $ur --rstep 4
   done
 done

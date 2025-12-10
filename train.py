@@ -161,6 +161,11 @@ if __name__ == "__main__":
     print("Num train samples: ", len(train_loader.dataset))
     print("Num val samples: ", len(val_loader.dataset))
 
+    input_shape = (3, res, res)
+    info = get_net_info(model, input_shape=input_shape, print_info=True)
+    print("Macs: ")
+    print(info['macs'])
+
     log = Log(log_each=10)
     
     if args.quantization:

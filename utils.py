@@ -22,11 +22,12 @@ from NasSearchSpace.nasbench201.search_space import NASBench201SearchSpace
 from NasSearchSpace.nasbench201.model import NASBenchNet
 
 DEFAULT_CFG = {
-    'gpus': '0', 'config': None, 'init': None, 'trn_batch_size': 128, 'vld_batch_size': 250, 'num_workers': 4,
+    'gpus': '0', 'config': None, 'init': None, 'trn_batch_size': 256, 'vld_batch_size': 250, 'num_workers': 4,
     'n_epochs': 0, 'save': None, 'resolution': 224, 'valid_size': 10000, 'test': True, 'latency': None,
     'verbose': False, 'classifier_only': False, 'reset_running_statistics': True,
 
 }
+#trn batch size 128
 
 target_layers = {'Conv2D':Conv2d,
                  'Flatten':Flatten,

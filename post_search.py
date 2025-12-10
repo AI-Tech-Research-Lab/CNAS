@@ -84,7 +84,21 @@ def main(args):
     print("NUM CANDIDATES")
     print(len(archive))
 
-    if args.sec_obj is None:
+    print(min([v[2] for v in archive]))
+
+    if args.sec_obj_max is not None:
+        print(f"Filtering: Removing solutions with {args.sec_obj} > {args.sec_obj_max}")
+        archive_temp = []
+        for v in archive:
+            # v[0] is subnet, v[1] is first_obj, v[2] is sec_obj
+            if len(v) > 2 and v[2] <= args.sec_obj_max:
+                archive_temp.append(v)
+        
+        print(f"Archive length before filter: {len(archive)}")
+        archive = archive_temp
+        print(f"Archive length after filter: {len(archive)}")
+
+    if args.prefer != 'trade-off':
         subnets, first_obj = [v[0] for v in archive], [v[1] for v in archive]
         prefer = args.first_obj
     else:
@@ -92,7 +106,7 @@ def main(args):
         prefer = 'trade-off'
         ps_sec_obj = np.array(sec_obj)
 
-    if args.sec_obj is None:
+    if args.prefer != 'trade-off':
         ps = np.array(subnets)
         ps_first_obj = np.array(first_obj)
         I = ps_first_obj.argsort()[:args.n]
@@ -172,6 +186,8 @@ if __name__ == '__main__':
                         help='second objective to optimize')
     parser.add_argument('--sec_obj', type=str, default=None,
                         help='second objective to optimize')
+    parser.add_argument('--sec_obj_max', type=float, default=None,
+                        help='filter out solutions where sec_obj is greater than this value')
     parser.add_argument('--n', type=int, default=1,
                         help='number of architectures desired')
     parser.add_argument('--supernet_path', type=str, default='./data/ofa_mbv3_d234_e346_k357_w1.0',
@@ -204,6 +220,8 @@ if __name__ == '__main__':
                         help='maximum resolution')
     parser.add_argument('--rstep', type = int, default=4,
                         help='resolution step')
+    parser.add_argument('--prefer', type=str, default='trade-off',
+                        help='selection preference: trade-off, first_obj')
     cfgs = parser.parse_args()
     main(cfgs)
 
