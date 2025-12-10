@@ -56,7 +56,7 @@ Download the dataset from the link embedded in the name. Datasets with * can be 
 
 ## How to launch the search
 ```python
-Syntax: python msunas.py \
+Syntax: python cnas.py \
     --resume /path/to/iter/stats \ # iter stats file path
     --n_gpus 8 \ # number of available gpus
     --gpu 1 \ # required number of gpus per evaluation job
